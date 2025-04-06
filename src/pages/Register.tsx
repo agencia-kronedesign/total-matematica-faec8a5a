@@ -1,107 +1,114 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import Logo from '@/components/Logo';
 
 const Register = () => {
-  const { toast } = useToast();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const { signUp, user, loading } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Cadastro não implementado",
-      description: "Esta funcionalidade será implementada em uma versão futura.",
-    });
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    await signUp(email, password, name);
   };
 
+  if (!loading && user) {
+    return <Navigate to="/" />;
+  }
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      
-      <main className="flex-grow flex items-center justify-center bg-gray-50 py-12">
-        <div className="max-w-md w-full mx-auto p-8 bg-white rounded-lg shadow-md">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-totalBlue">Crie sua conta</h1>
-            <p className="text-gray-600">Junte-se ao Total Matemática</p>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1 flex flex-col items-center">
+          <Logo />
+          <CardTitle className="text-2xl mt-4">Crie sua conta</CardTitle>
+          <CardDescription>
+            Preencha os campos abaixo para se cadastrar
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-gray-700">Nome completo</label>
-              <Input id="name" type="text" required />
+              <Label htmlFor="name">Nome completo</Label>
+              <Input
+                id="name"
+                placeholder="Digite seu nome completo"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
-            
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
-              <Input id="email" type="email" required />
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Digite seu email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
-            
             <div className="space-y-2">
-              <label htmlFor="user-type" className="text-sm font-medium text-gray-700">Tipo de usuário</label>
-              <Select>
-                <SelectTrigger id="user-type">
-                  <SelectValue placeholder="Selecione seu perfil" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Aluno</SelectItem>
-                  <SelectItem value="parent">Pai/Responsável</SelectItem>
-                  <SelectItem value="teacher">Professor</SelectItem>
-                  <SelectItem value="coordinator">Coordenador</SelectItem>
-                  <SelectItem value="director">Diretor</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Crie uma senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </div>
-            
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-gray-700">Senha</label>
-              <Input id="password" type="password" required />
+              <Label htmlFor="confirmPassword">Confirme a senha</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Confirme sua senha"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
             </div>
             
-            <div className="space-y-2">
-              <label htmlFor="confirm-password" className="text-sm font-medium text-gray-700">Confirmar senha</label>
-              <Input id="confirm-password" type="password" required />
-            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
             
-            <div className="flex items-center space-x-2">
-              <Checkbox id="terms" required />
-              <label
-                htmlFor="terms"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Concordo com os{" "}
-                <Link to="/termos" className="text-totalBlue hover:underline">
-                  termos de serviço
-                </Link>
-                {" "}e{" "}
-                <Link to="/privacidade" className="text-totalBlue hover:underline">
-                  política de privacidade
-                </Link>
-              </label>
-            </div>
-            
-            <Button type="submit" className="w-full bg-totalBlue hover:bg-blue-900 text-white">
-              Cadastrar
+            <Button type="submit" className="w-full bg-totalBlue" disabled={loading}>
+              {loading ? 'Processando...' : 'Cadastrar'}
             </Button>
           </form>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Já tem uma conta?{" "}
-              <Link to="/entrar" className="text-totalBlue hover:underline">
-                Faça login
-              </Link>
-            </p>
-          </div>
-        </div>
-      </main>
-      
-      <Footer />
+        </CardContent>
+        <CardFooter>
+          <p className="text-sm text-center w-full">
+            Já tem uma conta?{' '}
+            <Link to="/entrar" className="text-totalBlue hover:underline">
+              Entrar
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 };

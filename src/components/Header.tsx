@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import Logo from './Logo';
 import { Link } from 'react-router-dom';
+import UserMenu from './UserMenu';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -20,7 +22,7 @@ const Header = () => {
             <Link to="/contato" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">CONTATO</Link>
             <Link to="/teste" className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors">FAÇA UM TESTE</Link>
           </nav>
-          <Link to="/entrar" className="bg-totalYellow text-totalBlue font-semibold py-2 px-6 rounded-md hover:bg-opacity-90 transition-colors">entrar</Link>
+          <UserMenu />
         </div>
         
         {/* Mobile menu button */}
@@ -38,7 +40,9 @@ const Header = () => {
             <Link to="/faq" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">FAQ</Link>
             <Link to="/contato" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">CONTATO</Link>
             <Link to="/teste" className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md text-center hover:bg-opacity-90 transition-colors">FAÇA UM TESTE</Link>
-            <Link to="/entrar" className="bg-totalYellow text-totalBlue font-semibold py-2 px-6 rounded-md text-center hover:bg-opacity-90 transition-colors">entrar</Link>
+            <div className="pt-2">
+              <UserMenu />
+            </div>
           </nav>
         </div>
       )}
