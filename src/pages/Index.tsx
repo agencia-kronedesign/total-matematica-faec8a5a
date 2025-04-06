@@ -53,9 +53,9 @@ const Index = () => {
       <Header />
 
       {/* Banner Section */}
-      <section className="bg-totalBlue text-white relative w-full">
-        <div className="grid md:grid-cols-2 items-center min-h-[70vh]">
-          <div className="text-center md:text-left px-4 md:px-12 py-10 md:py-0 z-10">
+      <section className="bg-totalBlue text-white relative pt-10 pb-20">
+        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
+          <div className="text-center md:text-left">
             <h2 className="text-2xl md:text-4xl font-bold mb-6">
               Integrando alunos e professores <br />
               na solução de problemas!
@@ -77,22 +77,13 @@ const Index = () => {
               />
             </div>
           </div>
-          <div className="hidden md:block h-full w-full">
+          <div className="hidden md:block">
             <img 
               src="/lovable-uploads/b5a407ac-ea59-4b73-8b59-9d39b9833bda.png" 
               alt="Matemática Criativa: Integrando alunos e professores" 
-              className="w-full h-full object-cover object-center"
+              className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
             />
           </div>
-        </div>
-        
-        {/* Versão mobile da imagem */}
-        <div className="md:hidden w-full">
-          <img 
-            src="/lovable-uploads/b5a407ac-ea59-4b73-8b59-9d39b9833bda.png" 
-            alt="Matemática Criativa: Integrando alunos e professores" 
-            className="w-full h-auto"
-          />
         </div>
       </section>
 
