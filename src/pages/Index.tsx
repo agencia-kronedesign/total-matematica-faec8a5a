@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -11,45 +10,33 @@ import Testimonial from '@/components/Testimonial';
 import { Book, Users, Calendar, Video } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-
 const Index = () => {
   const [isMethodVideoOpen, setIsMethodVideoOpen] = useState(false);
   const [isPracticeVideoOpen, setIsPracticeVideoOpen] = useState(false);
-
-  const benefits = [
-    {
-      icon: Book,
-      title: "Sequência Didática",
-      description: "Exercícios Claros"
-    },
-    {
-      icon: Users,
-      title: "Aprendizado Cooperativo",
-      description: "Alunos se ajudam mutuamente"
-    },
-    {
-      icon: Calendar,
-      title: "Exercícios Diários",
-      description: "Exercícios práticos"
-    },
-    {
-      icon: Video,
-      title: "Vídeo Aulas",
-      description: "Aprenda quando quiser"
-    }
-  ];
-
-  const testimonials = [
-    {
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80",
-      name: "Maria Silva",
-      role: "Professora de Matemática",
-      quote: "O Total Matemática transformou minha sala de aula. Os alunos ficam mais engajados e entusiasmados!"
-    }
-  ];
-
-  return (
-    <div className="flex flex-col min-h-screen">
+  const benefits = [{
+    icon: Book,
+    title: "Sequência Didática",
+    description: "Exercícios Claros"
+  }, {
+    icon: Users,
+    title: "Aprendizado Cooperativo",
+    description: "Alunos se ajudam mutuamente"
+  }, {
+    icon: Calendar,
+    title: "Exercícios Diários",
+    description: "Exercícios práticos"
+  }, {
+    icon: Video,
+    title: "Vídeo Aulas",
+    description: "Aprenda quando quiser"
+  }];
+  const testimonials = [{
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80",
+    name: "Maria Silva",
+    role: "Professora de Matemática",
+    quote: "O Total Matemática transformou minha sala de aula. Os alunos ficam mais engajados e entusiasmados!"
+  }];
+  return <div className="flex flex-col min-h-screen">
       <Header />
 
       {/* Banner Section */}
@@ -67,22 +54,12 @@ const Index = () => {
             <p className="text-lg mb-8">Veja como é fácil!</p>
             
             <div className="flex flex-wrap justify-center md:justify-start gap-4">
-              <VideoButton 
-                title="Método" 
-                onClick={() => setIsMethodVideoOpen(true)} 
-              />
-              <VideoButton 
-                title="Na prática" 
-                onClick={() => setIsPracticeVideoOpen(true)} 
-              />
+              <VideoButton title="Método" onClick={() => setIsMethodVideoOpen(true)} />
+              <VideoButton title="Na prática" onClick={() => setIsPracticeVideoOpen(true)} />
             </div>
           </div>
           <div className="hidden md:block">
-            <img 
-              src="/lovable-uploads/8e0adf32-fb01-4c24-88b2-8f0e8da78656.png" 
-              alt="Criança aprendendo matemática" 
-              className="max-w-full h-auto mx-auto"
-            />
+            
           </div>
         </div>
       </section>
@@ -97,14 +74,7 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {benefits.map((benefit, index) => (
-              <BenefitCard 
-                key={index}
-                icon={benefit.icon}
-                title={benefit.title}
-                description={benefit.description}
-              />
-            ))}
+            {benefits.map((benefit, index) => <BenefitCard key={index} icon={benefit.icon} title={benefit.title} description={benefit.description} />)}
           </div>
         </div>
       </section>
@@ -117,15 +87,7 @@ const Index = () => {
           </h2>
           
           <div className="grid md:grid-cols-1 gap-6 mb-12 max-w-3xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <Testimonial 
-                key={index}
-                image={testimonial.image}
-                name={testimonial.name}
-                role={testimonial.role}
-                quote={testimonial.quote}
-              />
-            ))}
+            {testimonials.map((testimonial, index) => <Testimonial key={index} image={testimonial.image} name={testimonial.name} role={testimonial.role} quote={testimonial.quote} />)}
           </div>
           
           <div className="text-center">
@@ -146,22 +108,10 @@ const Index = () => {
           </h2>
           
           <form className="max-w-md mx-auto space-y-4">
-            <input
-              type="text"
-              placeholder="Nome"
-              className="w-full px-4 py-2 rounded border-none"
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full px-4 py-2 rounded border-none"
-            />
+            <input type="text" placeholder="Nome" className="w-full px-4 py-2 rounded border-none" />
+            <input type="email" placeholder="Email" className="w-full px-4 py-2 rounded border-none" />
             <div className="flex items-center justify-center space-x-2">
-              <input 
-                id="terms" 
-                type="checkbox" 
-                className="rounded border-gray-300"
-              />
+              <input id="terms" type="checkbox" className="rounded border-gray-300" />
               <label htmlFor="terms" className="text-sm text-totalBlue">
                 Aceito os termos de uso
               </label>
@@ -200,21 +150,11 @@ const Index = () => {
       <Footer />
       
       {/* Video Modals */}
-      <VideoModal 
-        isOpen={isMethodVideoOpen}
-        onClose={() => setIsMethodVideoOpen(false)}
-        title="Conheça nosso método"
-        videoId="dQw4w9WgXcQ" // Placeholder video ID
-      />
+      <VideoModal isOpen={isMethodVideoOpen} onClose={() => setIsMethodVideoOpen(false)} title="Conheça nosso método" videoId="dQw4w9WgXcQ" // Placeholder video ID
+    />
       
-      <VideoModal 
-        isOpen={isPracticeVideoOpen}
-        onClose={() => setIsPracticeVideoOpen(false)}
-        title="Total Matemática na prática"
-        videoId="dQw4w9WgXcQ" // Placeholder video ID
-      />
-    </div>
-  );
+      <VideoModal isOpen={isPracticeVideoOpen} onClose={() => setIsPracticeVideoOpen(false)} title="Total Matemática na prática" videoId="dQw4w9WgXcQ" // Placeholder video ID
+    />
+    </div>;
 };
-
 export default Index;
