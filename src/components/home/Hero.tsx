@@ -14,7 +14,7 @@ const Hero: React.FC<HeroProps> = ({ onMethodVideoOpen, onPracticeVideoOpen }) =
       <div 
         className="absolute inset-0 w-full h-full bg-cover bg-center"
         style={{ 
-          backgroundImage: `url(/lovable-uploads/a63f3fae-f28a-4838-a059-6b2aec5cdc78.png)`,
+          backgroundImage: `url(/lovable-uploads/bc954b0c-ede2-4350-b84c-0a1923be05b1.png)`,
           filter: 'brightness(0.7)' // Add slight darkening to improve text readability
         }}
       >
@@ -46,4 +46,3 @@ const Hero: React.FC<HeroProps> = ({ onMethodVideoOpen, onPracticeVideoOpen }) =
 };
 
 export default Hero;
-
