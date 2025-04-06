@@ -2,7 +2,7 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 import { cn } from "@/lib/utils"
-import { ChartConfig, THEMES } from "./chart-context"
+import { ChartConfig, THEMES, ChartContext } from "./chart-context"
 
 type ChartStyleProps = {
   id: string
@@ -41,10 +41,6 @@ ${colorConfig
     />
   )
 }
-
-const ChartContext = React.createContext<{ config: ChartConfig } | null>(null)
-
-export { ChartContext }
 
 export const ChartContainer = React.forwardRef<
   HTMLDivElement,

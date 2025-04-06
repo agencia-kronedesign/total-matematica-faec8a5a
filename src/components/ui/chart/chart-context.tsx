@@ -18,7 +18,7 @@ type ChartContextProps = {
 // Format: { THEME_NAME: CSS_SELECTOR }
 export const THEMES = { light: "", dark: ".dark" } as const
 
-const ChartContext = React.createContext<ChartContextProps | null>(null)
+export const ChartContext = React.createContext<ChartContextProps | null>(null)
 
 export function useChart() {
   const context = React.useContext(ChartContext)
