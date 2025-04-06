@@ -8,7 +8,7 @@ import VideoButton from '@/components/VideoButton';
 import VideoModal from '@/components/VideoModal';
 import ContactForm from '@/components/ContactForm';
 import Testimonial from '@/components/Testimonial';
-import { Book, Users, Calendar, Video, ChevronDown } from 'lucide-react';
+import { Book, Users, Calendar, Video } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -39,48 +39,73 @@ const Index = () => {
     }
   ];
 
+  const testimonials = [
+    {
+      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80",
+      name: "Maria Silva",
+      role: "Professora de Matemática",
+      quote: "O Total Matemática transformou minha sala de aula. Os alunos ficam mais engajados e entusiasmados!"
+    }
+  ];
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      {/* Hero Section - Full Width */}
-      <section className="relative w-full">
-        {/* Yellow header bar */}
-        <div className="bg-totalYellow h-12"></div>
-        
-        {/* Main hero with background image */}
-        <div className="relative h-[70vh] bg-totalBlue">
-          <img 
-            src="/lovable-uploads/fbf672bd-0589-43f6-9578-6a3226fb3d13.png" 
-            alt="Criança com símbolos matemáticos" 
-            className="w-full h-full object-cover object-center absolute inset-0 opacity-90 mix-blend-overlay"
-          />
-          
-          <div className="absolute inset-0 flex flex-col justify-center items-center text-center text-white z-10">
-            <h2 className="text-xl md:text-2xl font-medium mb-2">
+      {/* Banner Section */}
+      <section className="bg-totalBlue text-white relative w-full">
+        <div className="grid md:grid-cols-2 items-center min-h-[70vh]">
+          <div className="text-center md:text-left px-4 md:px-12 py-10 md:py-0 z-10">
+            <h2 className="text-2xl md:text-4xl font-bold mb-6">
               Integrando alunos e professores <br />
               na solução de problemas!
             </h2>
-            <h1 className="text-3xl md:text-5xl font-bold text-totalYellow mb-8">
+            <h1 className="text-3xl md:text-5xl font-bold text-totalYellow mb-10">
               Matemática <br />
               Criativa
             </h1>
+            <p className="text-lg mb-8">Veja como é fácil!</p>
+            
+            <div className="flex flex-wrap justify-center md:justify-start gap-4">
+              <VideoButton 
+                title="Método" 
+                onClick={() => setIsMethodVideoOpen(true)} 
+              />
+              <VideoButton 
+                title="Na prática" 
+                onClick={() => setIsPracticeVideoOpen(true)} 
+              />
+            </div>
           </div>
+          <div className="hidden md:block h-full w-full">
+            <img 
+              src="/lovable-uploads/b5a407ac-ea59-4b73-8b59-9d39b9833bda.png" 
+              alt="Matemática Criativa: Integrando alunos e professores" 
+              className="w-full h-full object-cover object-center"
+            />
+          </div>
+        </div>
+        
+        {/* Versão mobile da imagem */}
+        <div className="md:hidden w-full">
+          <img 
+            src="/lovable-uploads/b5a407ac-ea59-4b73-8b59-9d39b9833bda.png" 
+            alt="Matemática Criativa: Integrando alunos e professores" 
+            className="w-full h-auto"
+          />
         </div>
       </section>
 
       {/* Benefits Section */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-12 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <p className="text-lg md:text-xl mb-2">Criamos um método didático que</p>
-            <h2 className="section-heading text-lg md:text-xl font-bold">
-              auxilia professores e alunos a praticar<br />
-              matemática de forma eficiente e inovadora!
+            <h2 className="section-heading">
+              Criamos um método didático que auxilia professores e alunos a praticar matemática de forma eficiente e inovadora!
             </h2>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {benefits.map((benefit, index) => (
               <BenefitCard 
                 key={index}
@@ -93,91 +118,64 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Video Preview Section */}
-      <section className="py-12 px-4 bg-gray-50">
-        <div className="container mx-auto text-center">
-          <h2 className="text-xl font-semibold text-totalBlue mb-8">
-            Veja como é fácil!
-            <div className="w-48 h-1 bg-totalYellow mx-auto mt-2"></div>
-          </h2>
-          
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mt-10">
-            <div className="relative cursor-pointer" onClick={() => setIsMethodVideoOpen(true)}>
-              <img 
-                src="https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1470&auto=format&fit=crop"
-                alt="Método" 
-                className="w-full h-48 object-cover rounded"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-white py-2 text-totalBlue font-medium">
-                Método
-              </div>
-            </div>
-            <div className="relative cursor-pointer" onClick={() => setIsPracticeVideoOpen(true)}>
-              <img 
-                src="https://images.unsplash.com/photo-1560785496-3c9d27877182?q=80&w=1374&auto=format&fit=crop"
-                alt="Na prática" 
-                className="w-full h-48 object-cover rounded"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-white py-2 text-totalBlue font-medium">
-                Na prática
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      
       {/* Testimonial Section */}
-      <section className="py-16 px-4 bg-totalBlue text-white">
-        <div className="container mx-auto text-center">
-          <p className="text-sm uppercase tracking-wider mb-2">Confira</p>
-          <h2 className="text-2xl font-bold mb-12">
-            Alguns de nossos exercícios<br />
-            para seus alunos!
+      <section className="py-12 px-4 bg-gray-50">
+        <div className="container mx-auto">
+          <h2 className="section-heading text-center mb-8">
+            Veja algumas possibilidades:
           </h2>
           
-          <div className="max-w-md mx-auto mb-16">
-            <img 
-              src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1470&auto=format&fit=crop"
-              alt="Professora com material didático" 
-              className="w-full rounded"
-            />
+          <div className="grid md:grid-cols-1 gap-6 mb-12 max-w-3xl mx-auto">
+            {testimonials.map((testimonial, index) => (
+              <Testimonial 
+                key={index}
+                image={testimonial.image}
+                name={testimonial.name}
+                role={testimonial.role}
+                quote={testimonial.quote}
+              />
+            ))}
           </div>
           
-          <p className="text-sm text-totalYellow mb-2">Hora de praticar!</p>
-          <h3 className="text-xl font-semibold mb-6">Faça um teste agora mesmo:</h3>
-          
-          <Link to="/teste">
-            <Button className="bg-white text-totalBlue border border-white hover:bg-totalBlue hover:text-white transition-colors rounded-full py-2 px-8">
-              Fazer um teste!
-            </Button>
-          </Link>
+          <div className="text-center">
+            <Link to="/signup">
+              <Button className="btn-amarelo text-lg py-3 px-10">
+                Faça você mesmo!
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
       
-      {/* Request Demo Section */}
-      <section className="py-12 px-4 bg-gray-200">
+      {/* Video Conference Request Section */}
+      <section className="py-12 px-4 bg-totalYellow">
         <div className="container mx-auto text-center">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">
-            Converse com a gente!
+          <h2 className="text-2xl font-bold text-totalBlue mb-6">
+            Solicite uma videoconferência ou visita de um representante!
           </h2>
-          <h3 className="text-2xl font-bold text-totalBlue mb-8">
-            Solicite uma demonstração
-          </h3>
           
-          <form className="max-w-md mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <input
-                type="text"
-                placeholder="Seu nome"
-                className="w-full px-4 py-2 rounded border-none"
+          <form className="max-w-md mx-auto space-y-4">
+            <input
+              type="text"
+              placeholder="Nome"
+              className="w-full px-4 py-2 rounded border-none"
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              className="w-full px-4 py-2 rounded border-none"
+            />
+            <div className="flex items-center justify-center space-x-2">
+              <input 
+                id="terms" 
+                type="checkbox" 
+                className="rounded border-gray-300"
               />
-              <input
-                type="email"
-                placeholder="Seu e-mail"
-                className="w-full px-4 py-2 rounded border-none"
-              />
+              <label htmlFor="terms" className="text-sm text-totalBlue">
+                Aceito os termos de uso
+              </label>
             </div>
-            <button className="bg-totalBlue text-white font-semibold py-2 px-8 rounded w-full md:w-auto hover:bg-blue-900 transition-colors">
+            <button className="bg-totalBlue text-white font-semibold py-2 px-8 rounded hover:bg-blue-900 transition-colors">
               Vamos conversar!
             </button>
           </form>
@@ -185,43 +183,29 @@ const Index = () => {
       </section>
       
       {/* FAQ Section */}
-      <section className="py-12 px-4 bg-white">
-        <div className="container mx-auto text-center">
-          <h2 className="text-xl font-semibold text-totalBlue mb-8">
-            Tire suas dúvidas
-            <div className="w-48 h-1 bg-totalYellow mx-auto mt-2"></div>
+      <Faq />
+      
+      {/* Contact Section */}
+      <section className="py-12 px-4 bg-totalBlue">
+        <div className="container mx-auto">
+          <h2 className="text-2xl font-bold text-white text-center mb-8">
+            Fale Conosco / Sugestões
           </h2>
-          
-          <div className="max-w-2xl mx-auto mt-8">
-            <div className="border-b border-gray-200 py-4">
-              <div className="flex justify-between items-center cursor-pointer">
-                <h3 className="font-medium text-left">Qual a formação da equipe técnica?</h3>
-                <ChevronDown size={20} />
-              </div>
-            </div>
-            <div className="border-b border-gray-200 py-4">
-              <div className="flex justify-between items-center cursor-pointer">
-                <h3 className="font-medium text-left">FAQ 1</h3>
-                <ChevronDown size={20} />
-              </div>
-            </div>
-            <div className="border-b border-gray-200 py-4">
-              <div className="flex justify-between items-center cursor-pointer">
-                <h3 className="font-medium text-left">FAQ 2</h3>
-                <ChevronDown size={20} />
-              </div>
-            </div>
-            
-            <div className="text-center mt-8">
-              <button className="text-sm text-totalBlue font-medium hover:underline">
-                Veja mais questões!
-              </button>
-            </div>
-          </div>
+          <ContactForm />
         </div>
       </section>
       
-      {/* Footer */}
+      {/* Registration Button */}
+      <section className="py-10 px-4 bg-totalYellow text-center">
+        <div className="container mx-auto">
+          <Link to="/cadastrar">
+            <Button className="bg-totalBlue text-white font-bold py-3 px-10 rounded-full text-lg hover:bg-blue-900 transition-colors">
+              Cadastrar
+            </Button>
+          </Link>
+        </div>
+      </section>
+      
       <Footer />
       
       {/* Video Modals */}
