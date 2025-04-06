@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,10 +11,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, BookOpen } from 'lucide-react';
+import { User, LogOut, Settings, BookOpen, LayoutDashboard } from 'lucide-react';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   if (!user) {
     return (
@@ -42,6 +48,12 @@ const UserMenu = () => {
         <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
+            <LayoutDashboard className="h-4 w-4" />
+            <span>Dashboard</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link to="/perfil" className="flex items-center gap-2 cursor-pointer">
             <User className="h-4 w-4" />
             <span>Perfil</span>
@@ -60,7 +72,7 @@ const UserMenu = () => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut()} className="text-red-600 cursor-pointer">
+        <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
           <LogOut className="h-4 w-4 mr-2" />
           <span>Sair</span>
         </DropdownMenuItem>
