@@ -14,12 +14,12 @@ const Hero: React.FC<HeroProps> = ({ onMethodVideoOpen, onPracticeVideoOpen }) =
       <div 
         className="absolute inset-0 w-full h-full bg-cover bg-center"
         style={{ 
-          backgroundImage: `url(/lovable-uploads/bc954b0c-ede2-4350-b84c-0a1923be05b1.png)`,
-          filter: 'brightness(0.7)' // Add slight darkening to improve text readability
+          backgroundImage: `url(/lovable-uploads/db0b72d9-4f58-4df8-bb13-d25968dce1e5.png)`,
+          filter: 'brightness(0.9)' // Reduzido de 0.7 para 0.9 para clarear a imagem
         }}
       >
         {/* Overlay for better text visibility */}
-        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+        <div className="absolute inset-0 bg-black bg-opacity-20"></div>
       </div>
       
       {/* Hero Content */}
