@@ -79,9 +79,9 @@ const Index = () => {
           </div>
           <div className="hidden md:block">
             <img 
-              src="/lovable-uploads/b5a407ac-ea59-4b73-8b59-9d39b9833bda.png" 
-              alt="Matemática Criativa: Integrando alunos e professores" 
-              className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
+              src="/lovable-uploads/8e0adf32-fb01-4c24-88b2-8f0e8da78656.png" 
+              alt="Criança aprendendo matemática" 
+              className="max-w-full h-auto mx-auto"
             />
           </div>
         </div>
