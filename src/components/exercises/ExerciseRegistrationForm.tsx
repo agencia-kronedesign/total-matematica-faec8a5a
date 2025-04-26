@@ -1,12 +1,10 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { Save, Loader } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,15 +13,9 @@ import { useCategoriesAndSubcategories } from '@/hooks/useCategoriesAndSubcatego
 import CategorySelection from './form/CategorySelection';
 import SubcategoryField from './form/SubcategoryField';
 import ImageUpload from './form/ImageUpload';
-
-const formSchema = z.object({
-  subcategoria_id: z.string({ required_error: "Selecione uma subcategoria" }),
-  ordem: z.coerce.number().int().min(1, { message: "A ordem deve ser um número inteiro positivo" }),
-  formula: z.string().min(1, { message: "A fórmula é obrigatória" }),
-  margem_erro: z.coerce.number().min(0, { message: "A margem de erro deve ser um número positivo" }),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import NumericFields from './form/NumericFields';
+import FormulaField from './form/FormulaField';
+import { exerciseFormSchema, type ExerciseFormValues } from './form/types';
 
 const ExerciseRegistrationForm = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -33,8 +25,8 @@ const ExerciseRegistrationForm = () => {
   const { categories, subcategories, isLoading } = useCategoriesAndSubcategories();
   const queryClient = useQueryClient();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<ExerciseFormValues>({
+    resolver: zodResolver(exerciseFormSchema),
     defaultValues: {
       ordem: 1,
       formula: '',
@@ -68,7 +60,7 @@ const ExerciseRegistrationForm = () => {
     reader.readAsDataURL(file);
   };
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: ExerciseFormValues) => {
     try {
       setIsUploading(true);
 
@@ -163,79 +155,8 @@ const ExerciseRegistrationForm = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="ordem"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ordem</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="margem_erro"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center">
-                      Margem de Erro
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="ml-2">
-                            <span className="text-xs bg-slate-200 rounded-full h-5 w-5 inline-flex items-center justify-center">?</span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
-                              Valor entre 0 e 1 que representa a margem de erro aceita.
-                              Ex: 0.1 aceita respostas dentro de 10% do valor correto.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" step="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="formula"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center">
-                    Fórmula
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger className="ml-2">
-                          <span className="text-xs bg-slate-200 rounded-full h-5 w-5 inline-flex items-center justify-center">?</span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            Expressão matemática que será calculada. Use 'n' como variável.
-                            Exemplo: "2*n + 5" ou "Math.pow(n, 2)"
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <NumericFields form={form} />
+            <FormulaField form={form} />
 
             <ImageUpload
               imagePreview={imagePreview}
