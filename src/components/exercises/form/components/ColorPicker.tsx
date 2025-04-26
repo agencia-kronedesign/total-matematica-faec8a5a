@@ -2,7 +2,7 @@
 import React from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Swatch } from "lucide-react";
+import { Palette } from "lucide-react";
 import { UseFormReturn } from 'react-hook-form';
 import { CategoryFormValues } from '../schemas/categoryFormSchema';
 
@@ -34,7 +34,7 @@ const ColorPicker = ({ form }: ColorPickerProps) => {
                 className="h-4 w-4 rounded-full border"
                 style={{ backgroundColor: selectedColor }}
               />
-              <Swatch className="h-4 w-4" />
+              <Palette className="h-4 w-4" />
               <span>Selecionar cor</span>
             </div>
           </Button>
@@ -60,3 +60,4 @@ const ColorPicker = ({ form }: ColorPickerProps) => {
 };
 
 export default ColorPicker;
+
