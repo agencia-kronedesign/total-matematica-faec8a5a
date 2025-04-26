@@ -1,7 +1,5 @@
+
 import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -10,121 +8,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
-import CategoryForm from '../CategoryForm';
-
-interface Category {
-  id: string;
-  nome: string;
-  descricao?: string;
-  nivel_dificuldade?: number;
-  ordem?: number;
-  ativo?: boolean;
-}
+import { DifficultyBadge } from './category/DifficultyBadge';
+import { StatusBadge } from './category/StatusBadge';
+import { DeleteCategoryDialog } from './category/DeleteCategoryDialog';
+import { EditCategoryDialog } from './category/EditCategoryDialog';
+import { useCategoryManagement } from './category/useCategoryManagement';
 
 const CategoryList = () => {
-  const [selectedCategory, setSelectedCategory] = React.useState<Category | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
-  const queryClient = useQueryClient();
-
-  const { data: categories, isLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categorias')
-        .select('*')
-        .order('ordem', { ascending: true });
-      
-      if (error) throw error;
-      return data as Category[];
-    },
-  });
-
-  const checkSubcategories = async (categoryId: string) => {
-    const { data, error } = await supabase
-      .from('subcategorias')
-      .select('id')
-      .eq('categoria_id', categoryId)
-      .eq('ativo', true)
-      .single();
-
-    if (error && error.code === 'PGRST116') {
-      // No subcategories found
-      return false;
-    }
-
-    return true;
-  };
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const hasSubcategories = await checkSubcategories(id);
-      
-      if (hasSubcategories) {
-        throw new Error('Esta categoria possui subcategorias ativas. Remova todas as subcategorias primeiro.');
-      }
-
-      const { error } = await supabase
-        .from('categorias')
-        .update({ ativo: false })
-        .eq('id', id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('Categoria desativada com sucesso');
-      setIsDeleteDialogOpen(false);
-    },
-    onError: (error: Error) => {
-      console.error('Error deleting category:', error);
-      toast.error(error.message || 'Erro ao desativar categoria');
-      setIsDeleteDialogOpen(false);
-    },
-  });
-
-  const getDifficultyLabel = (nivel: number | undefined) => {
-    if (!nivel) return 'Não definida';
-    if (nivel <= 2) return 'Fácil';
-    if (nivel <= 4) return 'Médio';
-    return 'Difícil';
-  };
-  
-  const getDifficultyBadgeClass = (nivel: number | undefined) => {
-    if (!nivel) return 'bg-gray-100 text-gray-800';
-    if (nivel <= 2) return 'bg-green-100 text-green-800';
-    if (nivel <= 4) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
-  };
-
-  const handleDeleteClick = (category: Category) => {
-    setSelectedCategory(category);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleEditClick = (category: Category) => {
-    setSelectedCategory(category);
-    setIsEditDialogOpen(true);
-  };
+  const {
+    categories,
+    isLoading,
+    selectedCategory,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+    isEditDialogOpen,
+    setIsEditDialogOpen,
+    handleDeleteClick,
+    handleEditClick,
+    deleteMutation,
+    queryClient,
+  } = useCategoryManagement();
 
   if (isLoading) {
     return <div>Carregando categorias...</div>;
@@ -148,15 +53,11 @@ const CategoryList = () => {
               <TableRow key={category.id}>
                 <TableCell className="font-medium">{category.nome}</TableCell>
                 <TableCell>
-                  <Badge className={getDifficultyBadgeClass(category.nivel_dificuldade)}>
-                    {getDifficultyLabel(category.nivel_dificuldade)}
-                  </Badge>
+                  <DifficultyBadge level={category.nivel_dificuldade} />
                 </TableCell>
                 <TableCell>{category.ordem || '-'}</TableCell>
                 <TableCell>
-                  <Badge variant={category.ativo ? 'default' : 'secondary'}>
-                    {category.ativo ? 'Ativa' : 'Inativa'}
-                  </Badge>
+                  <StatusBadge isActive={category.ativo ?? false} />
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
@@ -182,42 +83,24 @@ const CategoryList = () => {
         </Table>
       </div>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Desativar Categoria</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja desativar a categoria "{selectedCategory?.nome}"?
-              Esta ação só será possível se não houver subcategorias ativas associadas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => selectedCategory && deleteMutation.mutate(selectedCategory.id)}
-            >
-              Confirmar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Editar Categoria</DialogTitle>
-          </DialogHeader>
-          {selectedCategory && (
-            <CategoryForm
-              editData={selectedCategory}
-              onSuccess={() => {
-                setIsEditDialogOpen(false);
-                queryClient.invalidateQueries({ queryKey: ['categories'] });
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedCategory && (
+        <>
+          <DeleteCategoryDialog
+            isOpen={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            categoryName={selectedCategory.nome}
+            onConfirm={() => deleteMutation.mutate(selectedCategory.id)}
+          />
+          <EditCategoryDialog
+            isOpen={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            category={selectedCategory}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['categories'] });
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };
