@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -9,6 +10,9 @@ import CategoryForm from '@/components/exercises/form/CategoryForm';
 import CategoryList from '@/components/exercises/form/components/CategoryList';
 
 const ExerciseForm = () => {
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get('tab');
+
   return (
     <ProtectedRoute>
       <SidebarProvider defaultOpen={true}>
@@ -20,7 +24,7 @@ const ExerciseForm = () => {
                 {location.pathname.includes('/editar') ? 'Editar Exercício' : 'Cadastro de Exercícios'}
               </h1>
               
-              <Tabs defaultValue="exercicio" className="space-y-6">
+              <Tabs defaultValue={tab || "exercicio"} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="exercicio">Exercício</TabsTrigger>
                   <TabsTrigger value="categoria">Nova Categoria</TabsTrigger>

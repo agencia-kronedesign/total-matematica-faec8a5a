@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +13,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   BarChart2,
@@ -28,23 +30,32 @@ import {
   MessageSquare,
   Settings,
   AlertTriangle,
+  Plus,
+  ListFilter
 } from 'lucide-react';
 
 const DashboardSidebar = () => {
   const { user, signOut } = useAuth();
   const location = useLocation();
   
-  // Extrair nome do usuário do objeto user (assumindo que está em user.user_metadata.nome)
   const userName = user?.user_metadata?.nome || 'Aluno';
   
-  // Determinar se o item está ativo com base na rota atual
   const isActive = (path: string) => location.pathname === path;
   
   const menuItems = [
     { title: "Informações", icon: Info, path: "/informacoes", badge: 6 },
     { title: "Relatórios", icon: FileText, path: "/relatorios" },
     { title: "Mensagens", icon: MessageSquare, path: "/mensagens", badge: 14 },
-    { title: "Exercícios", icon: Book, path: "/exercicios" },
+    {
+      title: "Exercícios",
+      icon: Book,
+      path: "/exercicios",
+      subItems: [
+        { title: "Todos os Exercícios", path: "/exercicios" },
+        { title: "Novo Exercício", path: "/exercicios/cadastrar" },
+        { title: "Gerenciar Categorias", path: "/exercicios/cadastrar?tab=lista-categorias" }
+      ]
+    },
     { title: "Atividades em Classe", icon: BookOpen, path: "/atividades" },
     { title: "Tarefas", icon: List, path: "/tarefas", badge: "NOVA" },
     { title: "Exercício do dia", icon: BarChart2, path: "/exercicio-do-dia" },
@@ -98,21 +109,42 @@ const DashboardSidebar = () => {
               
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton isActive={isActive(item.path)} asChild>
-                    <Link to={item.path}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <div className={`ml-auto flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium ${
-                          item.badge === "NOVA" 
-                            ? "bg-yellow-300 text-totalBlue" 
-                            : "bg-totalBlue text-white"
-                        }`}>
-                          {item.badge}
-                        </div>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
+                  {item.subItems ? (
+                    <SidebarMenuSub>
+                      <SidebarMenuButton>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                      {item.subItems.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton
+                            isActive={isActive(subItem.path)}
+                            asChild
+                          >
+                            <Link to={subItem.path}>
+                              <span>{subItem.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  ) : (
+                    <SidebarMenuButton isActive={isActive(item.path)} asChild>
+                      <Link to={item.path}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                        {item.badge && (
+                          <div className={`ml-auto flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium ${
+                            item.badge === "NOVA" 
+                              ? "bg-yellow-300 text-totalBlue" 
+                              : "bg-totalBlue text-white"
+                          }`}>
+                            {item.badge}
+                          </div>
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

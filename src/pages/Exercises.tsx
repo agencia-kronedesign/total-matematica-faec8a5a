@@ -8,7 +8,7 @@ import ExerciseFilters from '@/components/exercises/ExerciseFilters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, ListFilter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Exercises = () => {
@@ -25,12 +25,20 @@ const Exercises = () => {
             <div className="container mx-auto px-4 py-6">
               <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-totalBlue">Exercícios</h1>
-                <Button asChild variant="default">
-                  <Link to="/exercicios/cadastrar" className="flex items-center">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Cadastrar Exercício
-                  </Link>
-                </Button>
+                <div className="flex gap-2">
+                  <Button asChild variant="outline">
+                    <Link to="/exercicios/cadastrar?tab=lista-categorias" className="flex items-center">
+                      <ListFilter className="mr-2 h-4 w-4" />
+                      Gerenciar Categorias
+                    </Link>
+                  </Button>
+                  <Button asChild variant="default">
+                    <Link to="/exercicios/cadastrar" className="flex items-center">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Cadastrar Exercício
+                    </Link>
+                  </Button>
+                </div>
               </div>
               
               <Tabs defaultValue="todos" className="mb-8">
@@ -80,4 +88,3 @@ const Exercises = () => {
 };
 
 export default Exercises;
-
