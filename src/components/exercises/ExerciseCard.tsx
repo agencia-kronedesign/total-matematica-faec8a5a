@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import ExerciseActions from './ExerciseActions';
 import type { Exercise } from '@/hooks/useExercises';
 
 interface ExerciseCardProps {
@@ -25,7 +26,9 @@ const ExerciseCard = ({ exercise }: ExerciseCardProps) => {
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden relative">
+      <ExerciseActions exercise={exercise} />
+      
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-semibold">
