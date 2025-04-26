@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import ExerciseRegistrationForm from '@/components/exercises/ExerciseRegistrationForm';
 import CategoryForm from '@/components/exercises/form/CategoryForm';
 import SubcategoryForm from '@/components/exercises/form/SubcategoryForm';
+import CategoryList from '@/components/exercises/form/components/CategoryList';
 
 const ExerciseForm = () => {
   const [searchParams] = useSearchParams();
@@ -36,7 +37,7 @@ const ExerciseForm = () => {
               </div>
               
               <Tabs defaultValue={tab || "dados"} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="dados" className="flex items-center gap-2">
                     <Pencil className="h-4 w-4" />
                     Dados do Exercício
@@ -48,6 +49,10 @@ const ExerciseForm = () => {
                   <TabsTrigger value="subcategoria" className="flex items-center gap-2">
                     <ListPlus className="h-4 w-4" />
                     Nova Subcategoria
+                  </TabsTrigger>
+                  <TabsTrigger value="lista-categorias" className="flex items-center gap-2">
+                    <List className="h-4 w-4" />
+                    Lista de Categorias
                   </TabsTrigger>
                 </TabsList>
 
@@ -61,6 +66,10 @@ const ExerciseForm = () => {
 
                 <TabsContent value="subcategoria">
                   <SubcategoryForm />
+                </TabsContent>
+
+                <TabsContent value="lista-categorias">
+                  <CategoryList />
                 </TabsContent>
               </Tabs>
             </div>
