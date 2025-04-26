@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { Save, Upload, Loader, ImageIcon } from 'lucide-react';
+import { Save, Loader } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCategoriesAndSubcategories } from '@/hooks/useCategoriesAndSubcategories';
-import ImageUploadPreview from './ImageUploadPreview';
+import CategorySelection from './form/CategorySelection';
+import SubcategoryField from './form/SubcategoryField';
+import ImageUpload from './form/ImageUpload';
 
-// Validation schema for the exercise form
 const formSchema = z.object({
   subcategoria_id: z.string({ required_error: "Selecione uma subcategoria" }),
   ordem: z.coerce.number().int().min(1, { message: "A ordem deve ser um número inteiro positivo" }),
@@ -42,7 +42,6 @@ const ExerciseRegistrationForm = () => {
     },
   });
 
-  // Filter subcategories based on the selected category
   const filteredSubcategories = subcategories.filter(
     (subcategory) => subcategory.categoria_id === selectedCategory
   );
@@ -51,21 +50,17 @@ const ExerciseRegistrationForm = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('A imagem não deve exceder 5MB');
       return;
     }
 
-    // Check file type
     if (!file.type.startsWith('image/')) {
       toast.error('O arquivo deve ser uma imagem');
       return;
     }
 
     setImageFile(file);
-
-    // Generate preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
@@ -77,7 +72,6 @@ const ExerciseRegistrationForm = () => {
     try {
       setIsUploading(true);
 
-      // First insert the exercise data
       const { data: exerciseData, error: exerciseError } = await supabase
         .from('exercicios')
         .insert({
@@ -93,12 +87,8 @@ const ExerciseRegistrationForm = () => {
         throw new Error(`Erro ao salvar exercício: ${exerciseError.message}`);
       }
 
-      // If there's an image, upload it
       if (imageFile && exerciseData?.id) {
-        // Create a storage path for the image
         const filePath = `exercises/${exerciseData.id}/${imageFile.name}`;
-        
-        // Upload the image
         const { error: uploadError } = await supabase
           .storage
           .from('exercise-images')
@@ -108,13 +98,11 @@ const ExerciseRegistrationForm = () => {
           throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
         }
 
-        // Get the public URL for the image
         const { data: urlData } = supabase
           .storage
           .from('exercise-images')
           .getPublicUrl(filePath);
 
-        // Update the exercise with the image URL
         const { error: updateError } = await supabase
           .from('exercicios')
           .update({
@@ -127,16 +115,13 @@ const ExerciseRegistrationForm = () => {
         }
       }
 
-      // Success notification
       toast.success('Exercício cadastrado com sucesso!');
       
-      // Reset the form
       form.reset();
       setImageFile(null);
       setImagePreview(null);
       setSelectedCategory(null);
       
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['exercises'] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao cadastrar exercício');
@@ -160,65 +145,24 @@ const ExerciseRegistrationForm = () => {
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Category selection */}
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <FormLabel>Categoria</FormLabel>
-                  <Select
-                    value={selectedCategory || ""}
-                    onValueChange={(value) => {
-                      setSelectedCategory(value);
-                      // Clear the subcategory when category changes
-                      form.setValue('subcategoria_id', '');
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Subcategory selection */}
-                <FormField
-                  control={form.control}
-                  name="subcategoria_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subcategoria</FormLabel>
-                      <Select
-                        disabled={!selectedCategory}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione uma subcategoria" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {filteredSubcategories.map((subcategory) => (
-                            <SelectItem key={subcategory.id} value={subcategory.id}>
-                              {subcategory.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                <CategorySelection 
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={(value) => {
+                    setSelectedCategory(value);
+                    form.setValue('subcategoria_id', '');
+                  }}
+                />
+                <SubcategoryField
+                  form={form}
+                  subcategories={filteredSubcategories}
+                  disabled={!selectedCategory}
                 />
               </div>
             </div>
 
-            {/* Order and Margin of error */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -264,7 +208,6 @@ const ExerciseRegistrationForm = () => {
               />
             </div>
 
-            {/* Formula */}
             <FormField
               control={form.control}
               name="formula"
@@ -294,40 +237,15 @@ const ExerciseRegistrationForm = () => {
               )}
             />
 
-            {/* Image upload */}
-            <div className="space-y-2">
-              <FormLabel>Imagem do Exercício</FormLabel>
-              <div className="flex flex-col md:flex-row gap-4 items-start">
-                <div className="flex-1">
-                  <label htmlFor="image-upload" className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center hover:border-blue-500 transition-colors">
-                      <ImageIcon className="h-10 w-10 text-gray-400 mb-2" />
-                      <span className="text-sm text-gray-500">Clique para selecionar uma imagem</span>
-                      <span className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP (máx. 5MB)</span>
-                    </div>
-                    <input
-                      id="image-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageChange}
-                    />
-                  </label>
-                </div>
+            <ImageUpload
+              imagePreview={imagePreview}
+              onImageChange={handleImageChange}
+              onRemoveImage={() => {
+                setImageFile(null);
+                setImagePreview(null);
+              }}
+            />
 
-                {imagePreview && (
-                  <ImageUploadPreview
-                    imagePreview={imagePreview}
-                    onRemove={() => {
-                      setImageFile(null);
-                      setImagePreview(null);
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Submit button */}
             <div className="flex justify-end">
               <Button
                 type="submit"
