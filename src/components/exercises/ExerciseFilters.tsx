@@ -7,8 +7,10 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Search, Filter } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useCategoriesAndSubcategories } from '@/hooks/useCategoriesAndSubcategories';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ExerciseFiltersProps {
   onCategoryChange: (category: string | null) => void;
@@ -16,6 +18,30 @@ interface ExerciseFiltersProps {
 }
 
 const ExerciseFilters = ({ onCategoryChange, onDifficultyChange }: ExerciseFiltersProps) => {
+  const { categories, isLoading } = useCategoriesAndSubcategories();
+  
+  const renderCategorySelect = () => {
+    if (isLoading) {
+      return <Skeleton className="h-10 w-[180px]" />;
+    }
+
+    return (
+      <Select onValueChange={(value) => onCategoryChange(value === 'todas' ? null : value)}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Categoria" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="todas">Todas as categorias</SelectItem>
+          {categories.map((category) => (
+            <SelectItem key={category.id} value={category.id}>
+              {category.nome}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+
   return (
     <div className="flex flex-col md:flex-row gap-4">
       <div className="relative flex-1">
@@ -27,18 +53,7 @@ const ExerciseFilters = ({ onCategoryChange, onDifficultyChange }: ExerciseFilte
       </div>
       
       <div className="flex gap-2">
-        <Select onValueChange={(value) => onCategoryChange(value === 'todas' ? null : value)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas as categorias</SelectItem>
-            <SelectItem value="aritmetica">Aritmética</SelectItem>
-            <SelectItem value="algebra">Álgebra</SelectItem>
-            <SelectItem value="geometria">Geometria</SelectItem>
-            <SelectItem value="probabilidade">Probabilidade</SelectItem>
-          </SelectContent>
-        </Select>
+        {renderCategorySelect()}
         
         <Select onValueChange={(value) => onDifficultyChange(value === 'todos' ? null : value)}>
           <SelectTrigger className="w-[180px]">
