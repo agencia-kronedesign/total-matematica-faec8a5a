@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import CategoryForm from '../../CategoryForm';
-import { Category } from '../types';
+import { Category } from './types';
 
 interface EditCategoryDialogProps {
   isOpen: boolean;
