@@ -29,6 +29,7 @@ const CategoryList = () => {
     handleEditClick,
     deleteMutation,
     queryClient,
+    subcategoriesCount,
   } = useCategoryManagement();
 
   if (isLoading) {
@@ -90,6 +91,7 @@ const CategoryList = () => {
             onOpenChange={setIsDeleteDialogOpen}
             categoryName={selectedCategory.nome}
             onConfirm={() => deleteMutation.mutate(selectedCategory.id)}
+            subcategoriesCount={subcategoriesCount}
           />
           <EditCategoryDialog
             isOpen={isEditDialogOpen}
