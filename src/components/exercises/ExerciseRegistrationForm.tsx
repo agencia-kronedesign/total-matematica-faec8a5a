@@ -83,10 +83,10 @@ const ExerciseRegistrationForm = () => {
       }
 
       if (imageFile && exerciseData?.id) {
-        const filePath = `exercises/${exerciseData.id}/${imageFile.name}`;
+        const filePath = `${exerciseData.id}/${imageFile.name}`;
         const { error: uploadError } = await supabase
           .storage
-          .from('exercise-images')
+          .from('exercise-images')  // Use the correct bucket name
           .upload(filePath, imageFile);
 
         if (uploadError) {
@@ -95,7 +95,7 @@ const ExerciseRegistrationForm = () => {
 
         const { data: urlData } = supabase
           .storage
-          .from('exercise-images')
+          .from('exercise-images')  // Use the correct bucket name
           .getPublicUrl(filePath);
 
         const { error: updateError } = await supabase
