@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
 import ExerciseRegistrationForm from '@/components/exercises/ExerciseRegistrationForm';
+import CategoryForm from '@/components/exercises/form/CategoryForm';
+import SubcategoryForm from '@/components/exercises/form/SubcategoryForm';
 
 const ExerciseForm = () => {
   const [searchParams] = useSearchParams();
