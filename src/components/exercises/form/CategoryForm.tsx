@@ -10,6 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 const categoryFormSchema = z.object({
   nome: z.string().min(1, { message: "Nome é obrigatório" }),
@@ -21,6 +23,9 @@ const categoryFormSchema = z.object({
 });
 
 const CategoryForm = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authError, setAuthError] = useState(false);
+
   const form = useForm<z.infer<typeof categoryFormSchema>>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
@@ -32,6 +37,25 @@ const CategoryForm = () => {
 
   const onSubmit = async (data: z.infer<typeof categoryFormSchema>) => {
     try {
+      setIsSubmitting(true);
+      setAuthError(false);
+      
+      // First, check the current auth session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        setAuthError(true);
+        toast.error('Erro de autenticação. Faça login novamente.');
+        return;
+      }
+      
+      if (!sessionData.session) {
+        setAuthError(true);
+        toast.error('Você precisa estar autenticado para criar categorias');
+        return;
+      }
+      
       // Ensure 'nome' is treated as required by TypeScript
       if (!data.nome) {
         toast.error('Nome é obrigatório');
@@ -50,13 +74,24 @@ const CategoryForm = () => {
         })
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting category:', error);
+        if (error.code === '42501') {
+          setAuthError(true);
+          toast.error('Permissão negada. Você precisa estar autenticado.');
+        } else {
+          toast.error(`Erro ao criar categoria: ${error.message}`);
+        }
+        return;
+      }
 
       toast.success('Categoria criada com sucesso!');
       form.reset();
     } catch (error) {
-      toast.error('Erro ao criar categoria');
-      console.error(error);
+      console.error('Unexpected error:', error);
+      toast.error('Erro inesperado ao criar categoria');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -66,6 +101,17 @@ const CategoryForm = () => {
         <CardTitle>Cadastrar Categoria</CardTitle>
       </CardHeader>
       <CardContent>
+        {authError && (
+          <Alert variant="destructive" className="mb-4">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Erro de autenticação</AlertTitle>
+            <AlertDescription>
+              Você precisa estar autenticado para criar categorias. 
+              Verifique se você está logado ou se tem as permissões necessárias.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -140,7 +186,13 @@ const CategoryForm = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full">Salvar Categoria</Button>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Salvando...' : 'Salvar Categoria'}
+            </Button>
           </form>
         </Form>
       </CardContent>
