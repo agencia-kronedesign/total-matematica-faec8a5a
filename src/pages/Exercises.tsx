@@ -7,6 +7,9 @@ import ExerciseList from '@/components/exercises/ExerciseList';
 import ExerciseFilters from '@/components/exercises/ExerciseFilters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Exercises = () => {
   const { user } = useAuth();
@@ -20,7 +23,15 @@ const Exercises = () => {
           <DashboardSidebar />
           <div className="flex-1 overflow-auto">
             <div className="container mx-auto px-4 py-6">
-              <h1 className="text-2xl font-bold text-totalBlue mb-6">Exercícios</h1>
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-totalBlue">Exercícios</h1>
+                <Button asChild variant="default">
+                  <Link to="/exercicios/cadastrar" className="flex items-center">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Cadastrar Exercício
+                  </Link>
+                </Button>
+              </div>
               
               <Tabs defaultValue="todos" className="mb-8">
                 <TabsList className="bg-gray-100">
@@ -69,3 +80,4 @@ const Exercises = () => {
 };
 
 export default Exercises;
+
