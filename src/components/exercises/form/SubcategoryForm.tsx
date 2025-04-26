@@ -52,9 +52,28 @@ const SubcategoryForm = () => {
 
   const onSubmit = async (data: z.infer<typeof subcategoryFormSchema>) => {
     try {
+      // Ensure 'nome' and 'categoria_id' are treated as required by TypeScript
+      if (!data.nome) {
+        toast.error('Nome é obrigatório');
+        return;
+      }
+      
+      if (!data.categoria_id) {
+        toast.error('Selecione uma categoria');
+        return;
+      }
+      
       const { data: newSubcategory, error } = await supabase
         .from('subcategorias')
-        .insert(data)
+        .insert({
+          nome: data.nome,
+          categoria_id: data.categoria_id,
+          descricao: data.descricao,
+          ordem: data.ordem,
+          nivel_dificuldade: data.nivel_dificuldade,
+          cor: data.cor,
+          ativo: data.ativo
+        })
         .select();
 
       if (error) throw error;

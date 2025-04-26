@@ -20,9 +20,7 @@ const categoryFormSchema = z.object({
   ativo: z.boolean().default(true)
 });
 
-const SubcategoryForm = () => {
-  const [categories, setCategories] = useState<any[]>([]);
-
+const CategoryForm = () => {
   const form = useForm<z.infer<typeof categoryFormSchema>>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
@@ -34,9 +32,22 @@ const SubcategoryForm = () => {
 
   const onSubmit = async (data: z.infer<typeof categoryFormSchema>) => {
     try {
+      // Ensure 'nome' is treated as required by TypeScript
+      if (!data.nome) {
+        toast.error('Nome é obrigatório');
+        return;
+      }
+      
       const { data: newCategory, error } = await supabase
         .from('categorias')
-        .insert(data)
+        .insert({
+          nome: data.nome,
+          descricao: data.descricao,
+          ordem: data.ordem,
+          nivel_dificuldade: data.nivel_dificuldade,
+          cor: data.cor,
+          ativo: data.ativo
+        })
         .select();
 
       if (error) throw error;
@@ -137,4 +148,4 @@ const SubcategoryForm = () => {
   );
 };
 
-export default SubcategoryForm;
+export default CategoryForm;
