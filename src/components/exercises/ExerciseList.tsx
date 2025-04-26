@@ -2,6 +2,7 @@
 import React from 'react';
 import ExerciseCard from './ExerciseCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useExercises } from '@/hooks/useExercises';
 
 interface ExerciseListProps {
   filter: 'todos' | 'pendentes' | 'concluidos';
@@ -9,81 +10,31 @@ interface ExerciseListProps {
   selectedDifficulty: string | null;
 }
 
-// Dados de exemplo para demonstração
-const mockExercises = [
-  {
-    id: '1',
-    title: 'Equações de Primeiro Grau',
-    category: 'algebra',
-    difficulty: 'facil',
-    description: 'Resolva as seguintes equações de primeiro grau.',
-    dueDate: '2025-05-10',
-    completed: false
-  },
-  {
-    id: '2',
-    title: 'Geometria Analítica',
-    category: 'geometria',
-    difficulty: 'medio',
-    description: 'Calcule a distância entre pontos no plano cartesiano.',
-    dueDate: '2025-05-15',
-    completed: true
-  },
-  {
-    id: '3',
-    title: 'Probabilidade Condicional',
-    category: 'probabilidade',
-    difficulty: 'dificil',
-    description: 'Resolva problemas de probabilidade condicional.',
-    dueDate: '2025-05-20',
-    completed: false
-  },
-  {
-    id: '4',
-    title: 'Operações com Frações',
-    category: 'aritmetica',
-    difficulty: 'facil',
-    description: 'Realize operações de adição, subtração, multiplicação e divisão com frações.',
-    dueDate: '2025-05-12',
-    completed: false
-  },
-  {
-    id: '5',
-    title: 'Teorema de Pitágoras',
-    category: 'geometria',
-    difficulty: 'medio',
-    description: 'Aplique o Teorema de Pitágoras para resolver problemas.',
-    dueDate: '2025-05-18',
-    completed: true
-  },
-];
-
 const ExerciseList = ({ filter, selectedCategory, selectedDifficulty }: ExerciseListProps) => {
-  // Simulando um carregamento
-  const [loading, setLoading] = React.useState(true);
+  const { data: exercises, isLoading } = useExercises();
   
-  React.useEffect(() => {
-    // Simulando o tempo de carregamento
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
-  
-  // Filtrando os exercícios com base nas seleções
-  const filteredExercises = mockExercises.filter(exercise => {
-    // Filtro por status (todos, pendentes, concluídos)
-    if (filter === 'pendentes' && exercise.completed) return false;
-    if (filter === 'concluidos' && !exercise.completed) return false;
+  const filteredExercises = exercises?.filter(exercise => {
+    if (!exercise.subcategoria) return false;
     
     // Filtro por categoria
-    if (selectedCategory && exercise.category !== selectedCategory) return false;
+    if (selectedCategory && exercise.subcategoria.categoria.id !== selectedCategory) {
+      return false;
+    }
     
     // Filtro por dificuldade
-    if (selectedDifficulty && exercise.difficulty !== selectedDifficulty) return false;
+    if (selectedDifficulty) {
+      const nivel = exercise.subcategoria.nivel_dificuldade;
+      if (!nivel) return false;
+      
+      if (selectedDifficulty === 'facil' && nivel > 2) return false;
+      if (selectedDifficulty === 'medio' && (nivel <= 2 || nivel > 4)) return false;
+      if (selectedDifficulty === 'dificil' && nivel <= 4) return false;
+    }
     
     return true;
   });
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[1, 2, 3, 4, 5, 6].map(i => (
@@ -101,7 +52,7 @@ const ExerciseList = ({ filter, selectedCategory, selectedDifficulty }: Exercise
     );
   }
   
-  if (filteredExercises.length === 0) {
+  if (!filteredExercises || filteredExercises.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-lg text-gray-600">Nenhum exercício encontrado para os filtros selecionados.</p>
