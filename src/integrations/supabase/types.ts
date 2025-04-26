@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      aluno_responsavel: {
+        Row: {
+          aluno_id: string
+          autorizacao_buscar: boolean | null
+          created_at: string
+          id: string
+          parentesco: string
+          responsavel_financeiro: boolean | null
+          responsavel_id: string
+          responsavel_principal: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          aluno_id: string
+          autorizacao_buscar?: boolean | null
+          created_at?: string
+          id?: string
+          parentesco: string
+          responsavel_financeiro?: boolean | null
+          responsavel_id: string
+          responsavel_principal?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          aluno_id?: string
+          autorizacao_buscar?: boolean | null
+          created_at?: string
+          id?: string
+          parentesco?: string
+          responsavel_financeiro?: boolean | null
+          responsavel_id?: string
+          responsavel_principal?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aluno_responsavel_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aluno_responsavel_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atividade_exercicios: {
         Row: {
           atividade_id: string | null
@@ -107,24 +158,39 @@ export type Database = {
       }
       categorias: {
         Row: {
+          ativo: boolean | null
+          cor: string | null
           created_at: string
           descricao: string | null
+          icone_url: string | null
           id: string
+          nivel_dificuldade: number | null
           nome: string
+          ordem: number | null
           updated_at: string
         }
         Insert: {
+          ativo?: boolean | null
+          cor?: string | null
           created_at?: string
           descricao?: string | null
+          icone_url?: string | null
           id?: string
+          nivel_dificuldade?: number | null
           nome: string
+          ordem?: number | null
           updated_at?: string
         }
         Update: {
+          ativo?: boolean | null
+          cor?: string | null
           created_at?: string
           descricao?: string | null
+          icone_url?: string | null
           id?: string
+          nivel_dificuldade?: number | null
           nome?: string
+          ordem?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -133,49 +199,76 @@ export type Database = {
         Row: {
           cidade: string | null
           cnpj: string | null
+          coordenador_email: string | null
+          coordenador_nome: string | null
           created_at: string
           data_contrato: string | null
+          diretor_email: string | null
+          diretor_nome: string | null
           email: string | null
           endereco: string | null
           estado: string | null
+          horario_funcionamento: string | null
           id: string
           logotipo_url: string | null
+          niveis_ensino: string[] | null
           nome: string
           pais: string | null
+          redes_sociais: Json | null
+          site: string | null
           status: boolean | null
           telefone: string | null
+          tipo_escola: string | null
           updated_at: string
         }
         Insert: {
           cidade?: string | null
           cnpj?: string | null
+          coordenador_email?: string | null
+          coordenador_nome?: string | null
           created_at?: string
           data_contrato?: string | null
+          diretor_email?: string | null
+          diretor_nome?: string | null
           email?: string | null
           endereco?: string | null
           estado?: string | null
+          horario_funcionamento?: string | null
           id?: string
           logotipo_url?: string | null
+          niveis_ensino?: string[] | null
           nome: string
           pais?: string | null
+          redes_sociais?: Json | null
+          site?: string | null
           status?: boolean | null
           telefone?: string | null
+          tipo_escola?: string | null
           updated_at?: string
         }
         Update: {
           cidade?: string | null
           cnpj?: string | null
+          coordenador_email?: string | null
+          coordenador_nome?: string | null
           created_at?: string
           data_contrato?: string | null
+          diretor_email?: string | null
+          diretor_nome?: string | null
           email?: string | null
           endereco?: string | null
           estado?: string | null
+          horario_funcionamento?: string | null
           id?: string
           logotipo_url?: string | null
+          niveis_ensino?: string[] | null
           nome?: string
           pais?: string | null
+          redes_sociais?: Json | null
+          site?: string | null
           status?: boolean | null
           telefone?: string | null
+          tipo_escola?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -426,6 +519,54 @@ export type Database = {
         }
         Relationships: []
       }
+      responsaveis: {
+        Row: {
+          cep: string | null
+          cidade: string | null
+          cpf: string | null
+          created_at: string
+          email: string
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome: string
+          rg: string | null
+          telefone: string | null
+          tipo_responsavel: string
+          updated_at: string
+        }
+        Insert: {
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
+          created_at?: string
+          email: string
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          rg?: string | null
+          telefone?: string | null
+          tipo_responsavel: string
+          updated_at?: string
+        }
+        Update: {
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          rg?: string | null
+          telefone?: string | null
+          tipo_responsavel?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       respostas: {
         Row: {
           acerto_nivel: Database["public"]["Enums"]["acerto_nivel_type"] | null
@@ -495,27 +636,45 @@ export type Database = {
       }
       subcategorias: {
         Row: {
+          ativo: boolean | null
           categoria_id: string | null
+          cor: string | null
           created_at: string
           descricao: string | null
+          icone_url: string | null
           id: string
+          nivel_dificuldade: number | null
           nome: string
+          ordem: number | null
+          prerequisitos: string[] | null
           updated_at: string
         }
         Insert: {
+          ativo?: boolean | null
           categoria_id?: string | null
+          cor?: string | null
           created_at?: string
           descricao?: string | null
+          icone_url?: string | null
           id?: string
+          nivel_dificuldade?: number | null
           nome: string
+          ordem?: number | null
+          prerequisitos?: string[] | null
           updated_at?: string
         }
         Update: {
+          ativo?: boolean | null
           categoria_id?: string | null
+          cor?: string | null
           created_at?: string
           descricao?: string | null
+          icone_url?: string | null
           id?: string
+          nivel_dificuldade?: number | null
           nome?: string
+          ordem?: number | null
+          prerequisitos?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -613,12 +772,21 @@ export type Database = {
       usuarios: {
         Row: {
           ativo: boolean | null
+          cep: string | null
+          cidade: string | null
+          cpf: string | null
           created_at: string
           data_criacao: string
+          data_nascimento: string | null
           email: string
+          endereco: string | null
+          estado: string | null
+          foto_url: string | null
           id: string
           nome: string
+          numero_matricula: string | null
           perfil_acesso_id: string | null
+          rg: string | null
           telefone: string | null
           tipo_usuario: Database["public"]["Enums"]["user_type"]
           ultima_atividade: string | null
@@ -626,12 +794,21 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean | null
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
           created_at?: string
           data_criacao?: string
+          data_nascimento?: string | null
           email: string
+          endereco?: string | null
+          estado?: string | null
+          foto_url?: string | null
           id: string
           nome: string
+          numero_matricula?: string | null
           perfil_acesso_id?: string | null
+          rg?: string | null
           telefone?: string | null
           tipo_usuario: Database["public"]["Enums"]["user_type"]
           ultima_atividade?: string | null
@@ -639,12 +816,21 @@ export type Database = {
         }
         Update: {
           ativo?: boolean | null
+          cep?: string | null
+          cidade?: string | null
+          cpf?: string | null
           created_at?: string
           data_criacao?: string
+          data_nascimento?: string | null
           email?: string
+          endereco?: string | null
+          estado?: string | null
+          foto_url?: string | null
           id?: string
           nome?: string
+          numero_matricula?: string | null
           perfil_acesso_id?: string | null
+          rg?: string | null
           telefone?: string | null
           tipo_usuario?: Database["public"]["Enums"]["user_type"]
           ultima_atividade?: string | null
