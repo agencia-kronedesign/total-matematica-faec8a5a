@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,8 +59,30 @@ const CategoryList = () => {
     },
   });
 
+  const checkSubcategories = async (categoryId: string) => {
+    const { data, error } = await supabase
+      .from('subcategorias')
+      .select('id')
+      .eq('categoria_id', categoryId)
+      .eq('ativo', true)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      // No subcategories found
+      return false;
+    }
+
+    return true;
+  };
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const hasSubcategories = await checkSubcategories(id);
+      
+      if (hasSubcategories) {
+        throw new Error('Esta categoria possui subcategorias ativas. Remova todas as subcategorias primeiro.');
+      }
+
       const { error } = await supabase
         .from('categorias')
         .update({ ativo: false })
@@ -74,9 +95,10 @@ const CategoryList = () => {
       toast.success('Categoria desativada com sucesso');
       setIsDeleteDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error deleting category:', error);
-      toast.error('Erro ao desativar categoria');
+      toast.error(error.message || 'Erro ao desativar categoria');
+      setIsDeleteDialogOpen(false);
     },
   });
 
@@ -166,7 +188,7 @@ const CategoryList = () => {
             <AlertDialogTitle>Desativar Categoria</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja desativar a categoria "{selectedCategory?.nome}"?
-              Esta ação não pode ser desfeita.
+              Esta ação só será possível se não houver subcategorias ativas associadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
