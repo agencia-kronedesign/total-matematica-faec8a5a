@@ -13,6 +13,7 @@ import FormulaField from './form/FormulaField';
 import ExerciseImageUpload from './form/components/ExerciseImageUpload';
 import { useExerciseForm } from '@/hooks/useExerciseForm';
 import { ExerciseFormValues } from './form/types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExerciseRegistrationFormProps {
   exerciseId?: string;
