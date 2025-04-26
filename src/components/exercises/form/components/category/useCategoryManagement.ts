@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,19 +41,42 @@ export const useCategoryManagement = () => {
       const count = await checkSubcategories(id);
       
       if (count > 0) {
-        throw new Error(`Não é possível desativar esta categoria pois ela possui ${count} subcategoria${count > 1 ? 's' : ''} ativa${count > 1 ? 's' : ''}. Remova todas as subcategorias primeiro.`);
+        throw new Error(`Não é possível deletar esta categoria pois ela possui ${count} subcategoria${count > 1 ? 's' : ''} ativa${count > 1 ? 's' : ''}. Remova todas as subcategorias primeiro.`);
       }
 
+      // Primeiro, verificar se há exercícios vinculados às subcategorias
+      const { data: subcategorias, error: subcatError } = await supabase
+        .from('subcategorias')
+        .select('id')
+        .eq('categoria_id', id);
+
+      if (subcatError) throw subcatError;
+
+      if (subcategorias && subcategorias.length > 0) {
+        const subcatIds = subcategorias.map(sub => sub.id);
+        const { count: exerciseCount, error: exerciseError } = await supabase
+          .from('exercicios')
+          .select('*', { count: 'exact', head: true })
+          .in('subcategoria_id', subcatIds);
+
+        if (exerciseError) throw exerciseError;
+
+        if (exerciseCount && exerciseCount > 0) {
+          throw new Error('Não é possível deletar esta categoria pois existem exercícios vinculados às suas subcategorias.');
+        }
+      }
+
+      // Se não houver exercícios, podemos deletar a categoria
       const { error } = await supabase
         .from('categorias')
-        .update({ ativo: false })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('Categoria desativada com sucesso');
+      toast.success('Categoria deletada com sucesso');
       setIsDeleteDialogOpen(false);
     },
     onError: (error: Error) => {

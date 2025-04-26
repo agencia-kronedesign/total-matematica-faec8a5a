@@ -30,20 +30,20 @@ export const DeleteCategoryDialog = ({
   <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>Desativar Categoria</AlertDialogTitle>
+        <AlertDialogTitle>Deletar Categoria</AlertDialogTitle>
         <AlertDialogDescription className="space-y-4">
           {subcategoriesCount > 0 ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 Esta categoria possui {subcategoriesCount} subcategoria{subcategoriesCount > 1 ? 's' : ''} ativa{subcategoriesCount > 1 ? 's' : ''}.
-                Você precisa remover todas as subcategorias antes de desativar esta categoria.
+                Você precisa remover todas as subcategorias antes de deletar esta categoria.
               </AlertDescription>
             </Alert>
           ) : (
             <>
-              Tem certeza que deseja desativar a categoria "{categoryName}"?
-              Esta ação não poderá ser desfeita.
+              Tem certeza que deseja deletar a categoria "{categoryName}"?
+              Esta ação não poderá ser desfeita e todos os dados relacionados serão permanentemente removidos.
             </>
           )}
         </AlertDialogDescription>
