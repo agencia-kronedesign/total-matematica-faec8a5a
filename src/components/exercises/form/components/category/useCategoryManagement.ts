@@ -17,7 +17,7 @@ export const useCategoryManagement = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categorias')
-        .select('*')
+        .select('id, nome, descricao, nivel_dificuldade, ordem, cor, ativo')
         .order('ordem', { ascending: true });
       
       if (error) throw error;

@@ -5,5 +5,6 @@ export interface Category {
   descricao?: string;
   nivel_dificuldade?: number;
   ordem?: number;
+  cor?: string;
   ativo?: boolean;
 }
