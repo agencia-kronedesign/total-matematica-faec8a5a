@@ -15,7 +15,10 @@ import SubcategoryField from './form/SubcategoryField';
 import ImageUpload from './form/ImageUpload';
 import NumericFields from './form/NumericFields';
 import FormulaField from './form/FormulaField';
+import CategoryForm from './form/CategoryForm';
+import SubcategoryForm from './form/SubcategoryForm';
 import { exerciseFormSchema, type ExerciseFormValues } from './form/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ExerciseRegistrationForm = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -135,59 +138,77 @@ const ExerciseRegistrationForm = () => {
   return (
     <Card>
       <CardContent className="pt-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <CategorySelection 
-                  categories={categories}
-                  selectedCategory={selectedCategory}
-                  onCategoryChange={(value) => {
-                    setSelectedCategory(value);
-                    form.setValue('subcategoria_id', '');
+        <Tabs defaultValue="exercicio">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="exercicio">Exercício</TabsTrigger>
+            <TabsTrigger value="categoria">Cadastrar Categoria</TabsTrigger>
+            <TabsTrigger value="subcategoria">Cadastrar Subcategoria</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="exercicio">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <CategorySelection 
+                      categories={categories}
+                      selectedCategory={selectedCategory}
+                      onCategoryChange={(value) => {
+                        setSelectedCategory(value);
+                        form.setValue('subcategoria_id', '');
+                      }}
+                    />
+                    <SubcategoryField
+                      form={form}
+                      subcategories={filteredSubcategories}
+                      disabled={!selectedCategory}
+                    />
+                  </div>
+                </div>
+
+                <NumericFields form={form} />
+                <FormulaField form={form} />
+
+                <ImageUpload
+                  imagePreview={imagePreview}
+                  onImageChange={handleImageChange}
+                  onRemoveImage={() => {
+                    setImageFile(null);
+                    setImagePreview(null);
                   }}
                 />
-                <SubcategoryField
-                  form={form}
-                  subcategories={filteredSubcategories}
-                  disabled={!selectedCategory}
-                />
-              </div>
-            </div>
 
-            <NumericFields form={form} />
-            <FormulaField form={form} />
+                <div className="flex justify-end">
+                  <Button
+                    type="submit"
+                    disabled={isUploading}
+                    className="flex items-center"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader className="animate-spin mr-2 h-4 w-4" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Salvar Exercício
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </TabsContent>
 
-            <ImageUpload
-              imagePreview={imagePreview}
-              onImageChange={handleImageChange}
-              onRemoveImage={() => {
-                setImageFile(null);
-                setImagePreview(null);
-              }}
-            />
+          <TabsContent value="categoria">
+            <CategoryForm />
+          </TabsContent>
 
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                disabled={isUploading}
-                className="flex items-center"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader className="animate-spin mr-2 h-4 w-4" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Salvar Exercício
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+          <TabsContent value="subcategoria">
+            <SubcategoryForm />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
