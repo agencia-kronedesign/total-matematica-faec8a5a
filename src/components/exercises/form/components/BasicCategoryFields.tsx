@@ -4,6 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { CategoryFormValues } from '../schemas/categoryFormSchema';
+import ColorPicker from './ColorPicker';
 
 interface BasicCategoryFieldsProps {
   form: UseFormReturn<CategoryFormValues>;
@@ -53,6 +54,8 @@ const BasicCategoryFields = ({ form }: BasicCategoryFieldsProps) => {
           </FormItem>
         )}
       />
+
+      <ColorPicker form={form} />
     </>
   );
 };
