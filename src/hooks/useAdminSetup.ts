@@ -25,27 +25,33 @@ export const useAdminSetup = () => {
   useEffect(() => {
     const checkAdminSetup = async () => {
       try {
+        console.log('🔍 Iniciando verificação de setup admin...');
         setState(prev => ({ ...prev, loading: true, error: null }));
 
         // Verificar se a chave de setup está presente e é válida
         const setupKey = searchParams.get('setup');
-        console.log('Setup key from URL:', setupKey);
-        console.log('Expected key:', ADMIN_SETUP_KEY);
+        console.log('🔑 Chave da URL:', setupKey);
+        console.log('🔑 Chave esperada:', ADMIN_SETUP_KEY);
         const hasValidKey = setupKey === ADMIN_SETUP_KEY;
-        console.log('Has valid key:', hasValidKey);
+        console.log('✅ Chave válida:', hasValidKey);
 
         // Contar quantos administradores existem
+        console.log('👥 Verificando administradores existentes...');
         const { count, error } = await supabase
           .from('usuarios')
           .select('id', { count: 'exact', head: true })
           .eq('tipo_usuario', 'admin');
 
         if (error) {
+          console.error('❌ Erro ao buscar admins:', error);
           throw error;
         }
 
         const adminCount = count || 0;
+        console.log('👥 Total de admins:', adminCount);
+        
         const canShowSetup = hasValidKey && adminCount === 0;
+        console.log('🎯 Pode mostrar setup:', canShowSetup);
 
         setState({
           canShowSetup,
@@ -56,6 +62,7 @@ export const useAdminSetup = () => {
         });
 
       } catch (error: any) {
+        console.error('💥 Erro no useAdminSetup:', error);
         setState(prev => ({
           ...prev,
           loading: false,
