@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminSetup } from '@/hooks/useAdminSetup';
 import Logo from '@/components/Logo';
 
 const Register = () => {
@@ -16,8 +18,11 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [adminCreating, setAdminCreating] = useState(false);
+  
   const { signUp, user, loading } = useAuth();
   const { toast } = useToast();
+  const { canShowSetup, loading: setupLoading, setupMessage } = useAdminSetup();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +44,7 @@ const Register = () => {
   const createFirstAdmin = async () => {
     try {
       setError('');
+      setAdminCreating(true);
       
       // Primeiro, criar o usuário
       const { data, error } = await supabase.auth.signUp({
@@ -69,12 +75,16 @@ const Register = () => {
               title: "Admin criado com sucesso!",
               description: "Email: admin@sistema.com | Senha: admin123",
             });
+            
+            // Recarregar a página para ocultar o botão
+            window.location.reload();
           } catch (updateError: any) {
             toast({
               title: "Erro ao promover usuário",
               description: updateError.message,
               variant: "destructive",
             });
+            setAdminCreating(false);
           }
         }, 2000);
       }
@@ -85,6 +95,7 @@ const Register = () => {
         description: error.message,
         variant: "destructive",
       });
+      setAdminCreating(false);
     }
   };
 
@@ -155,17 +166,39 @@ const Register = () => {
             </Button>
           </form>
           
-          <div className="mt-4 pt-4 border-t">
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full text-sm"
-              onClick={createFirstAdmin}
-              disabled={loading}
-            >
-              Criar Primeiro Admin (admin@sistema.com)
-            </Button>
-          </div>
+          {/* Mensagens informativas sobre configuração de admin */}
+          {setupMessage && (
+            <div className="mt-4">
+              <Alert variant={setupMessage.type === 'error' ? 'destructive' : 'default'}>
+                <AlertDescription>
+                  {setupMessage.message}
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+          
+          {/* Seção de criação do primeiro administrador (apenas com chave válida) */}
+          {canShowSetup && !setupLoading && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="mb-3">
+                <Alert>
+                  <AlertDescription className="text-sm">
+                    <strong>Configuração Inicial:</strong> Você está no modo de setup inicial do sistema. 
+                    Clique no botão abaixo para criar o primeiro administrador.
+                  </AlertDescription>
+                </Alert>
+              </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full text-sm"
+                onClick={createFirstAdmin}
+                disabled={loading || adminCreating}
+              >
+                {adminCreating ? 'Criando Administrador...' : 'Criar Primeiro Admin (admin@sistema.com)'}
+              </Button>
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           <p className="text-sm text-center w-full">
