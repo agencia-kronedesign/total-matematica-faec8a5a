@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAdminSetup } from '@/hooks/useAdminSetup';
+import { useSecureAdminSetup } from '@/hooks/useSecureAdminSetup';
 import Logo from '@/components/Logo';
 
 const Register = () => {
@@ -22,7 +22,7 @@ const Register = () => {
   
   const { signUp, user, loading } = useAuth();
   const { toast } = useToast();
-  const { canShowSetup, loading: setupLoading, setupMessage } = useAdminSetup();
+  const { canShowSetup, loading: setupLoading, setupMessage } = useSecureAdminSetup();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

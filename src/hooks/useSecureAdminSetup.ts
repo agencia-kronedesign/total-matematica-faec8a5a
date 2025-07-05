@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
-const ADMIN_SETUP_KEY = 'ADMIN_SETUP_2024';
-
 interface AdminSetupState {
   canShowSetup: boolean;
   loading: boolean;
@@ -12,7 +10,12 @@ interface AdminSetupState {
   hasValidKey: boolean;
 }
 
-export const useAdminSetup = () => {
+// Rate limiting for setup attempts
+const setupAttempts = new Map<string, { count: number; lastAttempt: number }>();
+const MAX_ATTEMPTS = 5;
+const ATTEMPT_WINDOW = 15 * 60 * 1000; // 15 minutes
+
+export const useSecureAdminSetup = () => {
   const [searchParams] = useSearchParams();
   const [state, setState] = useState<AdminSetupState>({
     canShowSetup: false,
@@ -22,20 +25,75 @@ export const useAdminSetup = () => {
     hasValidKey: false,
   });
 
+  const validateSetupKey = async (key: string): Promise<boolean> => {
+    try {
+      // Rate limiting by IP (using a simple client-side approach)
+      const clientId = 'setup_' + (navigator.userAgent + navigator.language).slice(0, 50);
+      const now = Date.now();
+      const attempts = setupAttempts.get(clientId);
+      
+      if (attempts && attempts.count >= MAX_ATTEMPTS && now - attempts.lastAttempt < ATTEMPT_WINDOW) {
+        throw new Error('Muitas tentativas de configuração. Tente novamente em 15 minutos.');
+      }
+
+      // Update attempt counter
+      setupAttempts.set(clientId, {
+        count: attempts ? attempts.count + 1 : 1,
+        lastAttempt: now
+      });
+
+      // Server-side validation through edge function
+      const { data, error } = await supabase.functions.invoke('validate-admin-setup', {
+        body: { setupKey: key }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.valid === true;
+    } catch (error) {
+      console.error('❌ Erro na validação da chave:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const checkAdminSetup = async () => {
       try {
-        console.log('🔍 Iniciando verificação de setup admin...');
+        console.log('🔍 Iniciando verificação segura de setup admin...');
         setState(prev => ({ ...prev, loading: true, error: null }));
 
-        // Verificar se a chave de setup está presente e é válida
+        // Check if setup key is present
         const setupKey = searchParams.get('setup');
-        console.log('🔑 Chave da URL:', setupKey);
-        console.log('🔑 Chave esperada:', ADMIN_SETUP_KEY);
-        const hasValidKey = setupKey === ADMIN_SETUP_KEY;
+        
+        if (!setupKey) {
+          setState({
+            canShowSetup: false,
+            loading: false,
+            error: null,
+            adminCount: 0,
+            hasValidKey: false,
+          });
+          return;
+        }
+
+        // Validate setup key securely
+        const hasValidKey = await validateSetupKey(setupKey);
         console.log('✅ Chave válida:', hasValidKey);
 
-        // Contar quantos administradores existem
+        if (!hasValidKey) {
+          setState({
+            canShowSetup: false,
+            loading: false,
+            error: 'Chave de configuração inválida',
+            adminCount: 0,
+            hasValidKey: false,
+          });
+          return;
+        }
+
+        // Count existing administrators
         console.log('👥 Verificando administradores existentes...');
         const { count, error } = await supabase
           .from('usuarios')
@@ -62,7 +120,7 @@ export const useAdminSetup = () => {
         });
 
       } catch (error: any) {
-        console.error('💥 Erro no useAdminSetup:', error);
+        console.error('💥 Erro no useSecureAdminSetup:', error);
         setState(prev => ({
           ...prev,
           loading: false,

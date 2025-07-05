@@ -36,10 +36,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('usuarios')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Erro ao buscar perfil:', error);
+        return;
+      }
+      
+      // Handle case where no profile exists
+      if (!data) {
+        console.warn('Perfil não encontrado para o usuário:', userId);
         return;
       }
       
@@ -91,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             nome: nome,
           },

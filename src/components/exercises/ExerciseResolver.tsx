@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { SafeMathEvaluator } from '@/utils/safeMathEvaluator';
 
 const formSchema = z.object({
   input: z.coerce.number()
@@ -55,8 +56,12 @@ export function ExerciseResolver({
   });
 
   const calculateResult = (formula: string, input: number, answer: number, margin: number) => {
-    // Substitui 'n' pelo valor de entrada e avalia a expressão
-    const expectedResult = eval(formula.replace(/n/g, input.toString()));
+    // Validate and safely evaluate the mathematical expression
+    if (!SafeMathEvaluator.isValidFormula(formula)) {
+      throw new Error('Fórmula inválida ou insegura');
+    }
+    
+    const expectedResult = SafeMathEvaluator.evaluate(formula, input);
     const userAnswer = answer;
     
     // Calcula as margens de erro
