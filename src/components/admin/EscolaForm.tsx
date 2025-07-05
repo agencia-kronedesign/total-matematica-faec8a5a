@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +23,44 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
   const { createEscola, updateEscola } = useEscolas();
   const [loading, setLoading] = useState(false);
   const [observacoesCount, setObservacoesCount] = useState(0);
+
+  // Brazilian states
+  const estados = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+    'MG', 'MS', 'MT', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
+
+  // Cities by state (major cities for each state)
+  const cidadesPorEstado: Record<string, string[]> = {
+    'AC': ['Rio Branco', 'Cruzeiro do Sul', 'Sena Madureira', 'Tarauacá'],
+    'AL': ['Maceió', 'Arapiraca', 'Palmeira dos Índios', 'Rio Largo'],
+    'AP': ['Macapá', 'Santana', 'Laranjal do Jari', 'Oiapoque'],
+    'AM': ['Manaus', 'Parintins', 'Itacoatiara', 'Manacapuru'],
+    'BA': ['Salvador', 'Feira de Santana', 'Vitória da Conquista', 'Camaçari', 'Juazeiro', 'Ilhéus'],
+    'CE': ['Fortaleza', 'Caucaia', 'Juazeiro do Norte', 'Maracanaú', 'Sobral'],
+    'DF': ['Brasília', 'Taguatinga', 'Ceilândia', 'Gama', 'Planaltina'],
+    'ES': ['Vitória', 'Vila Velha', 'Cariacica', 'Serra', 'Cachoeiro de Itapemirim'],
+    'GO': ['Goiânia', 'Aparecida de Goiânia', 'Anápolis', 'Rio Verde', 'Luziânia'],
+    'MA': ['São Luís', 'Imperatriz', 'São José de Ribamar', 'Timon', 'Caxias'],
+    'MG': ['Belo Horizonte', 'Uberlândia', 'Contagem', 'Juiz de Fora', 'Betim', 'Montes Claros'],
+    'MS': ['Campo Grande', 'Dourados', 'Três Lagoas', 'Corumbá', 'Ponta Porã'],
+    'MT': ['Cuiabá', 'Várzea Grande', 'Rondonópolis', 'Sinop', 'Tangará da Serra'],
+    'PA': ['Belém', 'Ananindeua', 'Santarém', 'Marabá', 'Parauapebas'],
+    'PB': ['João Pessoa', 'Campina Grande', 'Santa Rita', 'Patos', 'Bayeux'],
+    'PR': ['Curitiba', 'Londrina', 'Maringá', 'Ponta Grossa', 'Cascavel', 'São José dos Pinhais'],
+    'PE': ['Recife', 'Jaboatão dos Guararapes', 'Olinda', 'Caruaru', 'Petrolina'],
+    'PI': ['Teresina', 'Parnaíba', 'Picos', 'Piripiri', 'Floriano'],
+    'RJ': ['Rio de Janeiro', 'São Gonçalo', 'Duque de Caxias', 'Nova Iguaçu', 'Niterói', 'Campos dos Goytacazes'],
+    'RN': ['Natal', 'Mossoró', 'Parnamirim', 'São Gonçalo do Amarante', 'Macaíba'],
+    'RS': ['Porto Alegre', 'Caxias do Sul', 'Pelotas', 'Canoas', 'Santa Maria', 'Gravataí'],
+    'RO': ['Porto Velho', 'Ji-Paraná', 'Ariquemes', 'Vilhena', 'Cacoal'],
+    'RR': ['Boa Vista', 'Rorainópolis', 'Caracaraí', 'Alto Alegre'],
+    'SC': ['Florianópolis', 'Joinville', 'Blumenau', 'São José', 'Criciúma', 'Chapecó'],
+    'SP': ['São Paulo', 'Guarulhos', 'Campinas', 'São Bernardo do Campo', 'Santo André', 'Osasco', 'Ribeirão Preto', 'Sorocaba'],
+    'SE': ['Aracaju', 'Nossa Senhora do Socorro', 'Lagarto', 'Itabaiana'],
+    'TO': ['Palmas', 'Araguaína', 'Gurupi', 'Porto Nacional', 'Paraíso do Tocantins']
+  };
 
   const form = useForm<EscolaFormData>({
     resolver: zodResolver(escolaSchema),
@@ -43,6 +82,9 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
       status: true,
     },
   });
+
+  const selectedEstado = form.watch('estado');
+  const cidadesDisponiveis = selectedEstado ? cidadesPorEstado[selectedEstado] || [] : [];
 
   // Load existing data when editing
   useEffect(() => {
@@ -344,13 +386,31 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="cidade"
+                  name="estado"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Digite a cidade" {...field} />
-                      </FormControl>
+                      <FormLabel>Estado *</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Reset cidade when estado changes
+                          form.setValue('cidade', '');
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o Estado" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {estados.map((estado) => (
+                            <SelectItem key={estado} value={estado}>
+                              {estado}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -358,13 +418,28 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
 
                 <FormField
                   control={form.control}
-                  name="estado"
+                  name="cidade"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="SP" {...field} />
-                      </FormControl>
+                      <FormLabel>Cidade *</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!selectedEstado}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={!selectedEstado ? "Primeiro selecione o Estado" : "Selecione a Cidade"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {cidadesDisponiveis.map((cidade) => (
+                            <SelectItem key={cidade} value={cidade}>
+                              {cidade}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

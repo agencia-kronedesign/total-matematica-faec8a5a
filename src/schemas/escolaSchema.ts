@@ -12,8 +12,8 @@ export const escolaSchema = z.object({
   telefone: z.string().optional(),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   endereco: z.string().optional(),
-  cidade: z.string().optional(),
-  estado: z.string().optional(),
+  cidade: z.string().min(1, 'Cidade é obrigatória'),
+  estado: z.string().min(1, 'Estado é obrigatório'),
   observacoes: z.string().max(1000, 'Observações não podem exceder 1000 caracteres').optional(),
   status: z.boolean().default(true),
 }).refine((data) => {
