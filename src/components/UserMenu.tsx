@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,10 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, BookOpen, LayoutDashboard } from 'lucide-react';
+import { User, LogOut, Settings, BookOpen, LayoutDashboard, Shield } from 'lucide-react';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
+  const { isAdmin } = usePermissions();
   const navigate = useNavigate();
   
   const handleSignOut = async () => {
@@ -53,6 +55,14 @@ const UserMenu = () => {
             <span>Dashboard</span>
           </Link>
         </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem asChild>
+            <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+              <Shield className="h-4 w-4" />
+              <span>Painel Admin</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link to="/perfil" className="flex items-center gap-2 cursor-pointer">
             <User className="h-4 w-4" />

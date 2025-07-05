@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -13,6 +14,9 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Exercises from "./pages/Exercises";
 import ExerciseForm from "./pages/ExerciseForm";
+import AdminPage from "./pages/admin/AdminPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
 
 const queryClient = new QueryClient();
 
@@ -28,10 +32,45 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/entrar" element={<Login />} />
               <Route path="/cadastrar" element={<Register />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/exercicios" element={<Exercises />} />
-              <Route path="/exercicios/cadastrar" element={<ExerciseForm />} />
-              <Route path="/exercicios/editar/:id" element={<ExerciseForm />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/exercicios" element={
+                <ProtectedRoute>
+                  <Exercises />
+                </ProtectedRoute>
+              } />
+              <Route path="/exercicios/cadastrar" element={
+                <ProtectedRoute>
+                  <ExerciseForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/exercicios/editar/:id" element={
+                <ProtectedRoute>
+                  <ExerciseForm />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin Routes */}
+              <Route 
+                path="/admin" 
+                element={
+                  <AdminPage>
+                    <AdminDashboard />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/usuarios" 
+                element={
+                  <AdminPage>
+                    <UserManagement />
+                  </AdminPage>
+                } 
+              />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

@@ -1,6 +1,7 @@
 import React from 'react';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Sidebar,
@@ -16,6 +17,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import {
   BarChart2,
@@ -31,11 +33,16 @@ import {
   Settings,
   AlertTriangle,
   Plus,
-  ListFilter
+  ListFilter,
+  Users,
+  Shield,
+  School,
+  Database
 } from 'lucide-react';
 
 const DashboardSidebar = () => {
   const { user, signOut } = useAuth();
+  const { isAdmin, canManageUsers, canManageSystem } = usePermissions();
   const location = useLocation();
   
   const userName = user?.user_metadata?.nome || 'Aluno';
@@ -60,6 +67,14 @@ const DashboardSidebar = () => {
     { title: "Tarefas", icon: List, path: "/tarefas", badge: "NOVA" },
     { title: "Exercício do dia", icon: BarChart2, path: "/exercicio-do-dia" },
     { title: "Exercícios Feitos", icon: FileText, path: "/exercicios-feitos" },
+  ];
+
+  const adminItems = [
+    { title: "Painel Admin", icon: Shield, path: "/admin" },
+    { title: "Usuários", icon: Users, path: "/admin/usuarios" },
+    { title: "Escolas", icon: School, path: "/admin/escolas" },
+    { title: "Relatórios Admin", icon: Database, path: "/admin/relatorios" },
+    { title: "Configurações", icon: Settings, path: "/admin/configuracoes" },
   ];
 
   const supportItems = [
@@ -150,6 +165,32 @@ const DashboardSidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        
+        {/* Admin Section */}
+        {isAdmin && (
+          <>
+            <SidebarSeparator />
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-red-600 font-semibold">
+                Administração
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {adminItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton isActive={isActive(item.path)} asChild>
+                        <Link to={item.path}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
         
         <SidebarGroup>
           <SidebarGroupContent>
