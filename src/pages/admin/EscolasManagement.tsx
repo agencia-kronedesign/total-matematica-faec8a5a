@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useEscolas } from '@/hooks/useEscolas';
@@ -13,11 +14,14 @@ import { usePermissions } from '@/hooks/usePermissions';
 
 export default function EscolasManagement() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [cidadeFilter, setCidadeFilter] = useState('');
+  const [estadoFilter, setEstadoFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingEscola, setEditingEscola] = useState<any>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const { toast } = useToast();
   const { canManageSystem } = usePermissions();
-  const { escolas, loading, deleteEscola, refreshEscolas } = useEscolas();
+  const { escolas, loading, deleteEscola, toggleStatus, refreshEscolas } = useEscolas();
 
   // Redirect if not admin
   if (!canManageSystem()) {
@@ -31,11 +35,21 @@ export default function EscolasManagement() {
     );
   }
 
-  const filteredEscolas = escolas?.filter(escola => 
-    escola.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    escola.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    escola.cnpj?.includes(searchTerm)
-  ) || [];
+  const filteredEscolas = escolas?.filter(escola => {
+    const matchesSearch = !searchTerm || (
+      escola.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      escola.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      escola.cnpj?.includes(searchTerm)
+    );
+    
+    const matchesCidade = !cidadeFilter || 
+      escola.cidade?.toLowerCase().includes(cidadeFilter.toLowerCase());
+    
+    const matchesEstado = !estadoFilter || 
+      escola.estado?.toLowerCase().includes(estadoFilter.toLowerCase());
+    
+    return matchesSearch && matchesCidade && matchesEstado;
+  }) || [];
 
   const handleEdit = (escola: any) => {
     setEditingEscola(escola);
@@ -55,6 +69,25 @@ export default function EscolasManagement() {
         description: "Não foi possível excluir a escola.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      setUpdatingStatus(id);
+      await toggleStatus(id, currentStatus);
+      toast({
+        title: "Status atualizado",
+        description: `Escola ${!currentStatus ? 'ativada' : 'desativada'} com sucesso.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar status",
+        description: "Não foi possível atualizar o status da escola.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -91,14 +124,34 @@ export default function EscolasManagement() {
       <Card>
         <CardHeader>
           <CardTitle>Escolas Cadastradas</CardTitle>
-          <div className="flex items-center space-x-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por razão social, nome fantasia ou CNPJ..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
+          <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-4">
+            <div className="flex items-center space-x-2 flex-1">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por razão social, nome fantasia ou CNPJ..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+            <div className="flex items-center space-x-2 flex-1">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Filtrar por cidade..."
+                value={cidadeFilter}
+                onChange={(e) => setCidadeFilter(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+            <div className="flex items-center space-x-2 flex-1">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Filtrar por estado..."
+                value={estadoFilter}
+                onChange={(e) => setEstadoFilter(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -113,8 +166,9 @@ export default function EscolasManagement() {
                   <TableRow>
                     <TableHead>Razão Social</TableHead>
                     <TableHead>Nome Fantasia</TableHead>
-                    <TableHead>CNPJ</TableHead>
-                    <TableHead>Cidade/Estado</TableHead>
+                    <TableHead className="hidden md:table-cell">CNPJ</TableHead>
+                    <TableHead>Cidade</TableHead>
+                    <TableHead>Estado</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -122,41 +176,64 @@ export default function EscolasManagement() {
                 <TableBody>
                   {filteredEscolas.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        {searchTerm ? 'Nenhuma escola encontrada' : 'Nenhuma escola cadastrada'}
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        {searchTerm || cidadeFilter || estadoFilter ? 'Nenhuma escola encontrada' : 'Nenhuma escola cadastrada'}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredEscolas.map((escola) => (
                       <TableRow key={escola.id}>
                         <TableCell className="font-medium">
-                          {escola.razao_social}
-                        </TableCell>
-                        <TableCell>{escola.nome_fantasia}</TableCell>
-                        <TableCell>{escola.cnpj}</TableCell>
-                        <TableCell>
-                          {escola.cidade && escola.estado ? 
-                            `${escola.cidade}/${escola.estado}` : 
-                            escola.cidade || escola.estado || '-'
-                          }
+                          <div className="min-w-[150px]">
+                            {escola.razao_social}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={escola.status ? 'default' : 'secondary'}>
-                            {escola.status ? 'Ativa' : 'Inativa'}
-                          </Badge>
+                          <div className="min-w-[120px]">
+                            {escola.nome_fantasia || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="min-w-[140px]">
+                            {escola.cnpj || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="min-w-[100px]">
+                            {escola.cidade || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="min-w-[80px]">
+                            {escola.estado || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 min-w-[120px]">
+                            <Switch
+                              checked={escola.status}
+                              onCheckedChange={() => handleToggleStatus(escola.id, escola.status)}
+                              disabled={updatingStatus === escola.id}
+                              className="transition-opacity duration-200"
+                            />
+                            <span className="text-sm font-medium">
+                              {escola.status ? 'Ativa' : 'Inativa'}
+                            </span>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2 min-w-[100px]">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleEdit(escola)}
+                              title="Editar escola"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" title="Excluir escola">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>

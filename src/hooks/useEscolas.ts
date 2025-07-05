@@ -104,6 +104,18 @@ export function useEscolas() {
     await fetchEscolas();
   };
 
+  const toggleStatus = async (id: string, currentStatus: boolean) => {
+    if (!isAdmin) throw new Error('Unauthorized');
+
+    const { error } = await supabase
+      .from('escolas')
+      .update({ status: !currentStatus })
+      .eq('id', id);
+
+    if (error) throw error;
+    await fetchEscolas();
+  };
+
   const refreshEscolas = () => {
     fetchEscolas();
   };
@@ -118,6 +130,7 @@ export function useEscolas() {
     createEscola,
     updateEscola,
     deleteEscola,
+    toggleStatus,
     refreshEscolas,
   };
 }
