@@ -197,6 +197,7 @@ export type Database = {
       }
       escolas: {
         Row: {
+          cep: string | null
           cidade: string | null
           cnpj: string | null
           coordenador_email: string | null
@@ -210,10 +211,16 @@ export type Database = {
           estado: string | null
           horario_funcionamento: string | null
           id: string
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
+          isento_estadual: boolean | null
+          isento_municipal: boolean | null
           logotipo_url: string | null
           niveis_ensino: string[] | null
-          nome: string
+          nome_fantasia: string | null
+          observacoes: string | null
           pais: string | null
+          razao_social: string
           redes_sociais: Json | null
           site: string | null
           status: boolean | null
@@ -222,6 +229,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cep?: string | null
           cidade?: string | null
           cnpj?: string | null
           coordenador_email?: string | null
@@ -235,10 +243,16 @@ export type Database = {
           estado?: string | null
           horario_funcionamento?: string | null
           id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          isento_estadual?: boolean | null
+          isento_municipal?: boolean | null
           logotipo_url?: string | null
           niveis_ensino?: string[] | null
-          nome: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
           pais?: string | null
+          razao_social: string
           redes_sociais?: Json | null
           site?: string | null
           status?: boolean | null
@@ -247,6 +261,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cep?: string | null
           cidade?: string | null
           cnpj?: string | null
           coordenador_email?: string | null
@@ -260,10 +275,16 @@ export type Database = {
           estado?: string | null
           horario_funcionamento?: string | null
           id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          isento_estadual?: boolean | null
+          isento_municipal?: boolean | null
           logotipo_url?: string | null
           niveis_ensino?: string[] | null
-          nome?: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
           pais?: string | null
+          razao_social?: string
           redes_sociais?: Json | null
           site?: string | null
           status?: boolean | null

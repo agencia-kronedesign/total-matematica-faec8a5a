@@ -17,6 +17,7 @@ import ExerciseForm from "./pages/ExerciseForm";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
+import EscolasManagement from "./pages/admin/EscolasManagement";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,14 @@ const App = () => (
                 element={
                   <AdminPage>
                     <UserManagement />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/escolas" 
+                element={
+                  <AdminPage>
+                    <EscolasManagement />
                   </AdminPage>
                 } 
               />
