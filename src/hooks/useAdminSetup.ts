@@ -29,7 +29,10 @@ export const useAdminSetup = () => {
 
         // Verificar se a chave de setup está presente e é válida
         const setupKey = searchParams.get('setup');
+        console.log('Setup key from URL:', setupKey);
+        console.log('Expected key:', ADMIN_SETUP_KEY);
         const hasValidKey = setupKey === ADMIN_SETUP_KEY;
+        console.log('Has valid key:', hasValidKey);
 
         // Contar quantos administradores existem
         const { count, error } = await supabase
