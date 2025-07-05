@@ -898,7 +898,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["user_type"]
+      }
     }
     Enums: {
       acerto_nivel_type:
