@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, UserCheck, UserX, Shield } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
 interface Usuario {
   id: string;
@@ -80,6 +82,38 @@ const UserManagement = () => {
       });
     }
   };
+
+  const updateUserType = async (userId: string, newType: Database['public']['Enums']['user_type']) => {
+    try {
+      const { error } = await supabase
+        .from('usuarios')
+        .update({ tipo_usuario: newType })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tipo de usuário atualizado",
+        description: `Usuário agora é ${getUserTypeLabel(newType)}`,
+      });
+
+      fetchUsuarios();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar tipo de usuário",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const userTypes: Database['public']['Enums']['user_type'][] = [
+    'admin',
+    'professor', 
+    'coordenador',
+    'aluno',
+    'responsavel'
+  ];
 
   const getUserTypeColor = (tipo: string) => {
     switch (tipo) {
@@ -186,9 +220,28 @@ const UserManagement = () => {
                   <TableCell className="font-medium">{usuario.nome}</TableCell>
                   <TableCell>{usuario.email}</TableCell>
                   <TableCell>
-                    <Badge className={getUserTypeColor(usuario.tipo_usuario)}>
-                      {getUserTypeLabel(usuario.tipo_usuario)}
-                    </Badge>
+                    <Select
+                      value={usuario.tipo_usuario}
+                      onValueChange={(value) => updateUserType(usuario.id, value as Database['public']['Enums']['user_type'])}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue>
+                          <Badge className={getUserTypeColor(usuario.tipo_usuario)}>
+                            {getUserTypeLabel(usuario.tipo_usuario)}
+                          </Badge>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            <div className="flex items-center gap-2">
+                              {type === 'admin' && <Shield className="w-4 h-4" />}
+                              {getUserTypeLabel(type)}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <Badge variant={usuario.ativo ? "default" : "secondary"}>
