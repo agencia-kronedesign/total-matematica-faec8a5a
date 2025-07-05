@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import React from 'react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
-import { useEscolas } from '@/hooks/useEscolas';
-import { useCidades } from '@/hooks/useCidades';
-import { escolaSchema, type EscolaFormData } from '@/schemas/escolaSchema';
+import { Form } from '@/components/ui/form';
+import { useEscolaForm } from '@/hooks/useEscolaForm';
+import { BasicInfoSection } from './escola-form/BasicInfoSection';
+import { InscriptionsSection } from './escola-form/InscriptionsSection';
+import { ContactAddressSection } from './escola-form/ContactAddressSection';
+import { ObservationsSection } from './escola-form/ObservationsSection';
 
 interface EscolaFormProps {
   escola?: any;
@@ -20,111 +14,16 @@ interface EscolaFormProps {
 }
 
 export function EscolaForm({ escola, onClose }: EscolaFormProps) {
-  const { toast } = useToast();
-  const { createEscola, updateEscola } = useEscolas();
-  const [loading, setLoading] = useState(false);
-  const [observacoesCount, setObservacoesCount] = useState(0);
-
-  // Brazilian states
-  const estados = [
-    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-    'MG', 'MS', 'MT', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-  ];
-
-
-  const form = useForm<EscolaFormData>({
-    resolver: zodResolver(escolaSchema),
-    defaultValues: {
-      razao_social: '',
-      nome_fantasia: '',
-      cnpj: '',
-      inscricao_municipal: '',
-      inscricao_estadual: '',
-      isento_municipal: false,
-      isento_estadual: false,
-      cep: '',
-      telefone: '',
-      email: '',
-      endereco: '',
-      cidade: '',
-      estado: '',
-      observacoes: '',
-      status: true,
-    },
-  });
-
-  const selectedEstado = form.watch('estado');
-  const { data: cidadesDisponiveis = [], isLoading: isLoadingCidades } = useCidades(selectedEstado);
-
-  // Load existing data when editing
-  useEffect(() => {
-    if (escola) {
-      form.reset({
-        razao_social: escola.razao_social || '',
-        nome_fantasia: escola.nome_fantasia || '',
-        cnpj: escola.cnpj || '',
-        inscricao_municipal: escola.inscricao_municipal || '',
-        inscricao_estadual: escola.inscricao_estadual || '',
-        isento_municipal: escola.isento_municipal || false,
-        isento_estadual: escola.isento_estadual || false,
-        cep: escola.cep || '',
-        telefone: escola.telefone || '',
-        email: escola.email || '',
-        endereco: escola.endereco || '',
-        cidade: escola.cidade || '',
-        estado: escola.estado || '',
-        observacoes: escola.observacoes || '',
-        status: escola.status ?? true,
-      });
-      setObservacoesCount(escola.observacoes?.length || 0);
-    }
-  }, [escola, form]);
-
-  // Watch observacoes field for character count
-  const observacoes = form.watch('observacoes');
-  useEffect(() => {
-    setObservacoesCount(observacoes?.length || 0);
-  }, [observacoes]);
-
-  // Format CEP
-  const formatCEP = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 8) {
-      return numbers.replace(/(\d{5})(\d{3})/, '$1-$2');
-    }
-    return value;
-  };
-
-  const onSubmit = async (data: EscolaFormData) => {
-    try {
-      setLoading(true);
-      
-      if (escola) {
-        await updateEscola(escola.id, data);
-        toast({
-          title: "Escola atualizada",
-          description: "A escola foi atualizada com sucesso.",
-        });
-      } else {
-        await createEscola(data);
-        toast({
-          title: "Escola cadastrada",
-          description: "A escola foi cadastrada com sucesso.",
-        });
-      }
-      
-      onClose();
-    } catch (error) {
-      toast({
-        title: "Erro ao salvar",
-        description: "Não foi possível salvar a escola. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    form,
+    loading,
+    observacoesCount,
+    selectedEstado,
+    cidadesDisponiveis,
+    isLoadingCidades,
+    formatCEP,
+    onSubmit,
+  } = useEscolaForm({ escola, onClose });
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -144,326 +43,21 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="razao_social"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Razão Social *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Digite a razão social" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="nome_fantasia"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome Fantasia *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Digite o nome fantasia" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="cnpj"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CNPJ</FormLabel>
-                      <FormControl>
-                        <Input placeholder="00.000.000/0000-00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="cep"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEP *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="00000-000" 
-                          {...field}
-                          onChange={(e) => {
-                            const formatted = formatCEP(e.target.value);
-                            field.onChange(formatted);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Inscrições</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-end gap-4">
-                  <div className="flex-1">
-                    <FormField
-                      control={form.control}
-                      name="inscricao_municipal"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Inscrição Municipal</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Digite a inscrição municipal" 
-                              {...field}
-                              disabled={form.watch('isento_municipal')}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="isento_municipal"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 pb-2">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="text-sm font-normal">
-                          Isento
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="flex items-end gap-4">
-                  <div className="flex-1">
-                    <FormField
-                      control={form.control}
-                      name="inscricao_estadual"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Inscrição Estadual</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Digite a inscrição estadual" 
-                              {...field}
-                              disabled={form.watch('isento_estadual')}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="isento_estadual"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 pb-2">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="text-sm font-normal">
-                          Isento
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Contato e Endereço</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="telefone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(00) 0000-0000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-mail</FormLabel>
-                      <FormControl>
-                        <Input placeholder="escola@exemplo.com" type="email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="endereco"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endereço</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Rua, número, bairro" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="estado"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado *</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          // Reset cidade when estado changes
-                          form.setValue('cidade', '');
-                        }}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o Estado" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {estados.map((estado) => (
-                            <SelectItem key={estado} value={estado}>
-                              {estado}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="cidade"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade *</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!selectedEstado || isLoadingCidades}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue 
-                              placeholder={
-                                !selectedEstado 
-                                  ? "Primeiro selecione o Estado" 
-                                  : isLoadingCidades 
-                                    ? "Carregando cidades..." 
-                                    : "Selecione a Cidade"
-                              } 
-                            />
-                            {isLoadingCidades && (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            )}
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {cidadesDisponiveis.length === 0 && !isLoadingCidades && selectedEstado && (
-                            <SelectItem value="" disabled>
-                              Nenhuma cidade disponível
-                            </SelectItem>
-                          )}
-                          {cidadesDisponiveis.map((cidade) => (
-                            <SelectItem key={cidade} value={cidade}>
-                              {cidade}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Observações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="observacoes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observações</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Digite observações adicionais (máximo 1000 caracteres)"
-                        className="min-h-24"
-                        {...field}
-                      />
-                    </FormControl>
-                    <div className="flex justify-between items-center text-sm text-muted-foreground">
-                      <FormMessage />
-                      <span className={observacoesCount > 1000 ? 'text-destructive' : ''}>
-                        {observacoesCount}/1000 caracteres
-                      </span>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+          <BasicInfoSection form={form} formatCEP={formatCEP} />
+          
+          <InscriptionsSection form={form} />
+          
+          <ContactAddressSection 
+            form={form}
+            selectedEstado={selectedEstado}
+            cidadesDisponiveis={cidadesDisponiveis}
+            isLoadingCidades={isLoadingCidades}
+          />
+          
+          <ObservationsSection 
+            form={form}
+            observacoesCount={observacoesCount}
+          />
 
           <div className="flex justify-end gap-4">
             <Button type="button" variant="outline" onClick={onClose}>
