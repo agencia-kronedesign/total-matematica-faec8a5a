@@ -1,10 +1,11 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import UserRegistrationForm from '@/components/auth/UserRegistrationForm';
 
 const UserRegistration = () => {
   const { user, loading, isAdmin } = useAuth();
+  const { id } = useParams();
 
   // Redirect se não estiver logado ou se não for admin
   if (!loading && (!user || !isAdmin)) {
@@ -22,7 +23,7 @@ const UserRegistration = () => {
     );
   }
 
-  return <UserRegistrationForm />;
+  return <UserRegistrationForm userId={id} />;
 };
 
 export default UserRegistration;

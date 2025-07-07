@@ -88,6 +88,14 @@ const App = () => (
                   </AdminPage>
                 } 
               />
+              <Route 
+                path="/admin/usuarios/editar/:id" 
+                element={
+                  <AdminPage>
+                    <UserRegistration />
+                  </AdminPage>
+                } 
+              />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

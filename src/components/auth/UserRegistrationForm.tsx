@@ -11,18 +11,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUserRegistration } from '@/hooks/useUserRegistration';
+import { useUserEdit } from '@/hooks/useUserEdit';
 import { UserFormData, UserType, USER_TYPE_LABELS } from '@/types/user';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Eye, EyeOff, RefreshCw } from 'lucide-react';
 import Logo from '@/components/Logo';
+import { useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-const userRegistrationSchema = z.object({
+const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   // Dados pessoais básicos
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   email: z.string().email('Email inválido'),
-  senha: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-  confirmarSenha: z.string(),
+  senha: isEditMode ? z.string().optional() : z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  confirmarSenha: z.string().optional(),
   tipo_usuario: z.enum(['admin', 'direcao', 'coordenador', 'professor', 'aluno', 'responsavel']),
   ativo: z.boolean().default(true),
   
@@ -64,18 +68,34 @@ const userRegistrationSchema = z.object({
   
   // Segurança
   captcha: z.string().min(1, 'Captcha é obrigatório'),
-}).refine((data) => data.senha === data.confirmarSenha, {
+}).refine((data) => {
+  if (!isEditMode && data.senha !== data.confirmarSenha) {
+    return false;
+  }
+  if (isEditMode && data.senha && data.senha !== data.confirmarSenha) {
+    return false;
+  }
+  return true;
+}, {
   message: "Senhas não coincidem",
   path: ["confirmarSenha"],
 });
 
-const UserRegistrationForm = () => {
+interface UserRegistrationFormProps {
+  userId?: string;
+}
+
+const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('dados-pessoais');
   const { registerUser, generatePassword, loading } = useUserRegistration();
+  const { userData, loading: loadingUser } = useUserEdit(userId);
+  const { toast } = useToast();
+  
+  const isEditMode = !!userId;
   
   const form = useForm<UserFormData>({
-    resolver: zodResolver(userRegistrationSchema),
+    resolver: zodResolver(createUserRegistrationSchema(isEditMode)),
     defaultValues: {
       ativo: true,
       permissao_relatorios: false,
@@ -90,6 +110,13 @@ const UserRegistrationForm = () => {
     },
   });
 
+  // Preencher formulário quando os dados do usuário chegarem
+  useEffect(() => {
+    if (userData && isEditMode) {
+      form.reset(userData);
+    }
+  }, [userData, isEditMode, form]);
+
   const watchedUserType = form.watch('tipo_usuario');
 
   const handleGeneratePassword = () => {
@@ -100,10 +127,101 @@ const UserRegistrationForm = () => {
 
   const onSubmit = async (data: UserFormData) => {
     console.log('[UserRegistrationForm] Submitting form data:', data);
-    const result = await registerUser(data);
-    if (result.success) {
-      form.reset();
-      setActiveTab('dados-pessoais');
+    
+    if (isEditMode) {
+      // Lógica de atualização
+      const result = await updateUser(userId!, data);
+      if (result.success) {
+        // Não resetar o form na edição
+      }
+    } else {
+      // Lógica de cadastro
+      const result = await registerUser(data);
+      if (result.success) {
+        form.reset();
+        setActiveTab('dados-pessoais');
+      }
+    }
+  };
+
+  const updateUser = async (id: string, data: UserFormData) => {
+    try {
+      console.log('[UserRegistrationForm] Atualizando usuário:', id);
+
+      // Preparar dados para atualização
+      const updateData: any = {
+        nome: data.nome,
+        email: data.email,
+        tipo_usuario: data.tipo_usuario,
+        cargo: data.cargo,
+        telefone_fixo: data.telefone_fixo,
+        telefone_mobile: data.telefone_mobile,
+        cpf: data.cpf,
+        rg: data.rg,
+        endereco: data.endereco,
+        cidade: data.cidade,
+        estado: data.estado,
+        cep: data.cep,
+        data_nascimento: data.data_nascimento,
+        numero_matricula: data.numero_matricula,
+        numero_chamada: data.numero_chamada,
+        turma: data.turma,
+        nome_responsavel: data.nome_responsavel,
+        email_responsavel: data.email_responsavel,
+        permissao_relatorios: data.permissao_relatorios,
+        ativo: data.ativo,
+      };
+
+      // Atualizar usuário
+      const { error: userError } = await supabase
+        .from('usuarios')
+        .update(updateData)
+        .eq('id', id);
+
+      if (userError) throw userError;
+
+      // Atualizar preferências
+      const { error: preferencesError } = await supabase
+        .from('preferencias_usuario')
+        .update({
+          notificacao_email: data.notificacao_email,
+          notificacao_site: data.notificacao_site,
+          notificacao_push: data.notificacao_push,
+          aceite_notificacoes: data.aceite_notificacoes,
+        })
+        .eq('usuario_id', id);
+
+      if (preferencesError) {
+        console.error('[UserRegistrationForm] Erro ao atualizar preferências:', preferencesError);
+      }
+
+      // Atualizar consentimento
+      const { error: consentError } = await supabase
+        .from('consentimento_usuario')
+        .update({
+          termos_uso: data.termos_uso,
+          politica_privacidade: data.politica_privacidade,
+        })
+        .eq('usuario_id', id);
+
+      if (consentError) {
+        console.error('[UserRegistrationForm] Erro ao atualizar consentimento:', consentError);
+      }
+
+      toast({
+        title: "Usuário atualizado com sucesso!",
+        description: `Os dados de ${data.nome} foram atualizados.`,
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('[UserRegistrationForm] Erro na atualização:', error);
+      toast({
+        title: "Erro na atualização",
+        description: error.message,
+        variant: "destructive",
+      });
+      return { success: false, error: error.message };
     }
   };
 
@@ -111,14 +229,30 @@ const UserRegistrationForm = () => {
   const isStudentType = (type: UserType) => type === 'aluno';
   const isParentType = (type: UserType) => type === 'responsavel';
 
+  if (loadingUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-totalBlue mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Carregando dados do usuário...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-4xl">
         <CardHeader className="space-y-1 flex flex-col items-center">
           <Logo />
-          <CardTitle className="text-2xl mt-4">Cadastro Completo de Usuário</CardTitle>
+          <CardTitle className="text-2xl mt-4">
+            {isEditMode ? 'Editar Usuário' : 'Cadastro Completo de Usuário'}
+          </CardTitle>
           <CardDescription>
-            Preencha todos os campos necessários para criar uma conta no sistema
+            {isEditMode 
+              ? 'Atualize os dados do usuário conforme necessário'
+              : 'Preencha todos os campos necessários para criar uma conta no sistema'
+            }
           </CardDescription>
         </CardHeader>
         
@@ -403,15 +537,15 @@ const UserRegistrationForm = () => {
                       control={form.control}
                       name="senha"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Senha *</FormLabel>
+                         <FormItem>
+                           <FormLabel>Senha {isEditMode ? '' : '*'}</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="Digite a senha"
-                                {...field}
-                              />
+                               <Input
+                                 type={showPassword ? "text" : "password"}
+                                 placeholder={isEditMode ? "Deixe em branco para manter a senha atual" : "Digite a senha"}
+                                 {...field}
+                               />
                               <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
                                 <Button
                                   type="button"
@@ -441,14 +575,14 @@ const UserRegistrationForm = () => {
                       control={form.control}
                       name="confirmarSenha"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirmar Senha *</FormLabel>
+                         <FormItem>
+                           <FormLabel>Confirmar Senha {isEditMode ? '' : '*'}</FormLabel>
                           <FormControl>
-                            <Input
-                              type={showPassword ? "text" : "password"}
-                              placeholder="Confirme a senha"
-                              {...field}
-                            />
+                             <Input
+                               type={showPassword ? "text" : "password"}
+                               placeholder={isEditMode ? "Confirme apenas se alterou a senha" : "Confirme a senha"}
+                               {...field}
+                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -685,8 +819,8 @@ const UserRegistrationForm = () => {
                 </Button>
 
                 {activeTab === 'consentimento' ? (
-                  <Button type="submit" disabled={loading} className="bg-totalBlue">
-                    {loading ? 'Cadastrando...' : 'Cadastrar Usuário'}
+                  <Button type="submit" disabled={loading || loadingUser} className="bg-totalBlue">
+                    {loading ? (isEditMode ? 'Atualizando...' : 'Cadastrando...') : (isEditMode ? 'Atualizar Usuário' : 'Cadastrar Usuário')}
                   </Button>
                 ) : (
                   <Button

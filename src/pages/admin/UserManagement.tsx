@@ -277,9 +277,11 @@ const UserManagement = () => {
                   </TableCell>
                   <TableCell>
                      <div className="flex items-center space-x-2">
-                       <Button size="sm" variant="outline">
-                         <Edit className="w-4 h-4" />
-                       </Button>
+                       <Link to={`/admin/usuarios/editar/${usuario.id}`}>
+                         <Button size="sm" variant="outline">
+                           <Edit className="w-4 h-4" />
+                         </Button>
+                       </Link>
                        <Button
                          size="sm"
                          variant="outline"
