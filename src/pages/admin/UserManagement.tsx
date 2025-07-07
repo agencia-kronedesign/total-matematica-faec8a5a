@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX, Shield, Download, Upload } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import CreateAdminUser from '@/components/admin/CreateAdminUser';
 
 interface Usuario {
   id: string;
@@ -184,6 +185,11 @@ const UserManagement = () => {
             Novo Usuário
           </Button>
         </div>
+      </div>
+
+      {/* Create Admin User */}
+      <div className="flex justify-center">
+        <CreateAdminUser />
       </div>
 
       {/* Search and Filters */}
