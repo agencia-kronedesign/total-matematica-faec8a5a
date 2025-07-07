@@ -32,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('🔍 Buscando perfil para usuário:', userId);
       const { data, error } = await supabase
         .from('usuarios')
         .select('*')
@@ -39,19 +40,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
       
       if (error) {
-        console.error('Erro ao buscar perfil:', error);
+        console.error('❌ Erro ao buscar perfil:', error);
         return;
       }
       
       // Handle case where no profile exists
       if (!data) {
-        console.warn('Perfil não encontrado para o usuário:', userId);
+        console.warn('⚠️ Perfil não encontrado para o usuário:', userId);
         return;
       }
       
+      console.log('✅ Perfil carregado:', data);
       setUserProfile(data);
     } catch (error) {
-      console.error('Erro ao buscar perfil:', error);
+      console.error('💥 Erro ao buscar perfil:', error);
     }
   };
 

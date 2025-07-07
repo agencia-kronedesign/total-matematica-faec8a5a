@@ -41,11 +41,31 @@ import {
 } from 'lucide-react';
 
 const DashboardSidebar = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, userProfile, userType } = useAuth();
   const { isAdmin, canManageUsers, canManageSystem } = usePermissions();
   const location = useLocation();
   
-  const userName = user?.user_metadata?.nome || 'Aluno';
+  const getUserTypeLabel = (tipo: string) => {
+    switch (tipo) {
+      case 'admin':
+        return 'Administrador';
+      case 'direcao':
+        return 'Direção';
+      case 'coordenador':
+        return 'Coordenador';
+      case 'professor':
+        return 'Professor';
+      case 'aluno':
+        return 'Aluno';
+      case 'responsavel':
+        return 'Responsável';
+      default:
+        return tipo;
+    }
+  };
+  
+  const userName = userProfile?.nome || user?.user_metadata?.nome || 'Usuário';
+  const userTypeLabel = userType ? getUserTypeLabel(userType) : 'Carregando...';
   
   const isActive = (path: string) => location.pathname === path;
   
@@ -96,7 +116,7 @@ const DashboardSidebar = () => {
           </div>
           <div className="flex flex-col">
             <span className="font-medium">{userName}</span>
-            <span className="text-xs text-muted-foreground">Aluno</span>
+            <span className="text-xs text-muted-foreground">{userTypeLabel}</span>
           </div>
         </div>
         <div className="mt-4 rounded-md bg-gray-100 p-2">
