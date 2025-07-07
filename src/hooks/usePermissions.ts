@@ -13,9 +13,15 @@ export const usePermissions = () => {
     return userProfile.tipo_usuario === requiredRole;
   };
 
-  const canManageUsers = () => hasPermission(['admin', 'coordenador']);
-  const canManageContent = () => hasPermission(['admin', 'professor', 'coordenador']);
-  const canViewReports = () => hasPermission(['admin', 'professor', 'coordenador']);
+  // Permissões específicas por nível hierárquico
+  const canManageUsers = () => hasPermission(['admin', 'direcao', 'coordenador']);
+  const canDeleteStudents = () => hasPermission(['admin', 'direcao']); // DIREÇÃO pode descadastrar alunos
+  const canImportData = () => hasPermission(['admin', 'direcao']); // DIREÇÃO pode importar dados em massa
+  const canControlSubordinateSecretaries = () => hasPermission(['admin', 'direcao']); // DIREÇÃO controla secretarias
+  const canGenerateInternalReports = () => hasPermission(['admin', 'direcao']); // DIREÇÃO gera relatórios internos
+  
+  const canManageContent = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
+  const canViewReports = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
   const canManageSystem = () => hasPermission('admin');
 
   return {
@@ -24,6 +30,10 @@ export const usePermissions = () => {
     userType,
     hasPermission,
     canManageUsers,
+    canDeleteStudents,
+    canImportData,
+    canControlSubordinateSecretaries,
+    canGenerateInternalReports,
     canManageContent,
     canViewReports,
     canManageSystem,

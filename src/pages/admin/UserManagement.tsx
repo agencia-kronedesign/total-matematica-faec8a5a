@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, Edit, Trash2, UserCheck, UserX, Shield } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, UserCheck, UserX, Shield, Download, Upload } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 interface Usuario {
@@ -25,6 +26,7 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { canDeleteStudents, canImportData, canControlSubordinateSecretaries } = usePermissions();
 
   useEffect(() => {
     fetchUsuarios();
@@ -109,8 +111,9 @@ const UserManagement = () => {
 
   const userTypes: Database['public']['Enums']['user_type'][] = [
     'admin',
-    'professor', 
-    'coordenador',
+    'direcao',
+    'coordenador', 
+    'professor',
     'aluno',
     'responsavel'
   ];
@@ -119,10 +122,12 @@ const UserManagement = () => {
     switch (tipo) {
       case 'admin':
         return 'bg-red-100 text-red-800';
-      case 'professor':
-        return 'bg-blue-100 text-blue-800';
+      case 'direcao':
+        return 'bg-orange-100 text-orange-800';
       case 'coordenador':
         return 'bg-purple-100 text-purple-800';
+      case 'professor':
+        return 'bg-blue-100 text-blue-800';
       case 'aluno':
         return 'bg-green-100 text-green-800';
       default:
@@ -134,10 +139,12 @@ const UserManagement = () => {
     switch (tipo) {
       case 'admin':
         return 'Administrador';
-      case 'professor':
-        return 'Professor';
+      case 'direcao':
+        return 'Direção';
       case 'coordenador':
         return 'Coordenador';
+      case 'professor':
+        return 'Professor';
       case 'aluno':
         return 'Aluno';
       case 'responsavel':
@@ -165,10 +172,18 @@ const UserManagement = () => {
             Gerencie todos os usuários do sistema
           </p>
         </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Usuário
-        </Button>
+        <div className="flex gap-2">
+          {canImportData() && (
+            <Button variant="outline">
+              <Upload className="w-4 h-4 mr-2" />
+              Importar Dados
+            </Button>
+          )}
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Usuário
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -252,22 +267,32 @@ const UserManagement = () => {
                     {new Date(usuario.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button size="sm" variant="outline">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => toggleUserStatus(usuario.id, usuario.ativo)}
-                      >
-                        {usuario.ativo ? (
-                          <UserX className="w-4 h-4" />
-                        ) : (
-                          <UserCheck className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
+                     <div className="flex items-center space-x-2">
+                       <Button size="sm" variant="outline">
+                         <Edit className="w-4 h-4" />
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => toggleUserStatus(usuario.id, usuario.ativo)}
+                       >
+                         {usuario.ativo ? (
+                           <UserX className="w-4 h-4" />
+                         ) : (
+                           <UserCheck className="w-4 h-4" />
+                         )}
+                       </Button>
+                       {/* Botão de descadastro apenas para alunos se o usuário tem permissão */}
+                       {canDeleteStudents() && usuario.tipo_usuario === 'aluno' && (
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           className="text-destructive hover:text-destructive"
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </Button>
+                       )}
+                     </div>
                   </TableCell>
                 </TableRow>
               ))}
