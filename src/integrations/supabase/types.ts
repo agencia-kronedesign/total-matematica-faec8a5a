@@ -200,6 +200,50 @@ export type Database = {
         }
         Relationships: []
       }
+      consentimento_usuario: {
+        Row: {
+          created_at: string | null
+          data_consentimento: string | null
+          id: string
+          ip_consentimento: string | null
+          navegador_consentimento: string | null
+          politica_privacidade: boolean | null
+          termos_uso: boolean | null
+          updated_at: string | null
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_consentimento?: string | null
+          id?: string
+          ip_consentimento?: string | null
+          navegador_consentimento?: string | null
+          politica_privacidade?: boolean | null
+          termos_uso?: boolean | null
+          updated_at?: string | null
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_consentimento?: string | null
+          id?: string
+          ip_consentimento?: string | null
+          navegador_consentimento?: string | null
+          politica_privacidade?: boolean | null
+          termos_uso?: boolean | null
+          updated_at?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consentimento_usuario_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       escolas: {
         Row: {
           cep: string | null
@@ -347,28 +391,37 @@ export type Database = {
         Row: {
           created_at: string
           data_login: string
+          dispositivo: string | null
           id: string
           ip: string | null
+          localizacao: string | null
           navegador: string | null
           sucesso: boolean | null
+          tipo_login: string | null
           usuario_id: string | null
         }
         Insert: {
           created_at?: string
           data_login?: string
+          dispositivo?: string | null
           id?: string
           ip?: string | null
+          localizacao?: string | null
           navegador?: string | null
           sucesso?: boolean | null
+          tipo_login?: string | null
           usuario_id?: string | null
         }
         Update: {
           created_at?: string
           data_login?: string
+          dispositivo?: string | null
           id?: string
           ip?: string | null
+          localizacao?: string | null
           navegador?: string | null
           sucesso?: boolean | null
+          tipo_login?: string | null
           usuario_id?: string | null
         }
         Relationships: [
@@ -544,6 +597,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      preferencias_usuario: {
+        Row: {
+          aceite_notificacoes: boolean | null
+          created_at: string | null
+          id: string
+          notificacao_email: boolean | null
+          notificacao_push: boolean | null
+          notificacao_site: boolean | null
+          updated_at: string | null
+          usuario_id: string
+        }
+        Insert: {
+          aceite_notificacoes?: boolean | null
+          created_at?: string | null
+          id?: string
+          notificacao_email?: boolean | null
+          notificacao_push?: boolean | null
+          notificacao_site?: boolean | null
+          updated_at?: string | null
+          usuario_id: string
+        }
+        Update: {
+          aceite_notificacoes?: boolean | null
+          created_at?: string | null
+          id?: string
+          notificacao_email?: boolean | null
+          notificacao_push?: boolean | null
+          notificacao_site?: boolean | null
+          updated_at?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preferencias_usuario_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       responsaveis: {
         Row: {
@@ -798,6 +892,7 @@ export type Database = {
       usuarios: {
         Row: {
           ativo: boolean | null
+          cargo: string | null
           cep: string | null
           cidade: string | null
           cpf: string | null
@@ -805,21 +900,29 @@ export type Database = {
           data_criacao: string
           data_nascimento: string | null
           email: string
+          email_responsavel: string | null
           endereco: string | null
           estado: string | null
           foto_url: string | null
           id: string
           nome: string
+          nome_responsavel: string | null
+          numero_chamada: number | null
           numero_matricula: string | null
           perfil_acesso_id: string | null
+          permissao_relatorios: boolean | null
           rg: string | null
           telefone: string | null
+          telefone_fixo: string | null
+          telefone_mobile: string | null
           tipo_usuario: Database["public"]["Enums"]["user_type"]
+          turma: string | null
           ultima_atividade: string | null
           updated_at: string
         }
         Insert: {
           ativo?: boolean | null
+          cargo?: string | null
           cep?: string | null
           cidade?: string | null
           cpf?: string | null
@@ -827,21 +930,29 @@ export type Database = {
           data_criacao?: string
           data_nascimento?: string | null
           email: string
+          email_responsavel?: string | null
           endereco?: string | null
           estado?: string | null
           foto_url?: string | null
           id: string
           nome: string
+          nome_responsavel?: string | null
+          numero_chamada?: number | null
           numero_matricula?: string | null
           perfil_acesso_id?: string | null
+          permissao_relatorios?: boolean | null
           rg?: string | null
           telefone?: string | null
+          telefone_fixo?: string | null
+          telefone_mobile?: string | null
           tipo_usuario: Database["public"]["Enums"]["user_type"]
+          turma?: string | null
           ultima_atividade?: string | null
           updated_at?: string
         }
         Update: {
           ativo?: boolean | null
+          cargo?: string | null
           cep?: string | null
           cidade?: string | null
           cpf?: string | null
@@ -849,16 +960,23 @@ export type Database = {
           data_criacao?: string
           data_nascimento?: string | null
           email?: string
+          email_responsavel?: string | null
           endereco?: string | null
           estado?: string | null
           foto_url?: string | null
           id?: string
           nome?: string
+          nome_responsavel?: string | null
+          numero_chamada?: number | null
           numero_matricula?: string | null
           perfil_acesso_id?: string | null
+          permissao_relatorios?: boolean | null
           rg?: string | null
           telefone?: string | null
+          telefone_fixo?: string | null
+          telefone_mobile?: string | null
           tipo_usuario?: Database["public"]["Enums"]["user_type"]
+          turma?: string | null
           ultima_atividade?: string | null
           updated_at?: string
         }

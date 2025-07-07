@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX, Shield, Download, Upload } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 import CreateAdminUser from '@/components/admin/CreateAdminUser';
 
@@ -180,10 +181,12 @@ const UserManagement = () => {
               Importar Dados
             </Button>
           )}
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Usuário
-          </Button>
+          <Link to="/admin/usuarios/cadastrar">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Usuário
+            </Button>
+          </Link>
         </div>
       </div>
 

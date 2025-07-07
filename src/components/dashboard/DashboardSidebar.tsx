@@ -92,6 +92,7 @@ const DashboardSidebar = () => {
   const adminItems = [
     { title: "Painel Admin", icon: Shield, path: "/admin" },
     { title: "Usuários", icon: Users, path: "/admin/usuarios" },
+    { title: "Cadastrar Usuário", icon: Plus, path: "/admin/usuarios/cadastrar" },
     { title: "Escolas", icon: School, path: "/admin/escolas" },
     { title: "Relatórios Admin", icon: Database, path: "/admin/relatorios" },
     { title: "Configurações", icon: Settings, path: "/admin/configuracoes" },

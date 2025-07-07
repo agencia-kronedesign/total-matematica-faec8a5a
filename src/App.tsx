@@ -18,6 +18,7 @@ import AdminPage from "./pages/admin/AdminPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import EscolasManagement from "./pages/admin/EscolasManagement";
+import UserRegistration from "./pages/UserRegistration";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,14 @@ const App = () => (
                 element={
                   <AdminPage>
                     <EscolasManagement />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/usuarios/cadastrar" 
+                element={
+                  <AdminPage>
+                    <UserRegistration />
                   </AdminPage>
                 } 
               />
