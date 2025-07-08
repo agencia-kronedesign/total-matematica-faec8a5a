@@ -8,13 +8,18 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen">Carregando...</div>;
   }
 
   if (!user) {
+    return <Navigate to="/entrar" />;
+  }
+
+  // Verificar se o usuário está ativo
+  if (userProfile && userProfile.ativo === false) {
     return <Navigate to="/entrar" />;
   }
 

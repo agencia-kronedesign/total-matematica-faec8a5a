@@ -51,6 +51,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       console.log('✅ Perfil carregado:', data);
+      
+      // Verificar se o usuário está ativo
+      if (data.ativo === false) {
+        console.log('🚫 Usuário inativo detectado, fazendo logout...');
+        toast({
+          title: "Acesso negado",
+          description: "Sua conta foi desativada. Entre em contato com o administrador.",
+          variant: "destructive",
+        });
+        await signOut();
+        return;
+      }
+      
       setUserProfile(data);
     } catch (error) {
       console.error('💥 Erro ao buscar perfil:', error);
@@ -91,6 +104,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Verificar periodicamente se o usuário ainda está ativo (a cada 5 minutos)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const checkUserStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('usuarios')
+          .select('ativo')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Erro ao verificar status do usuário:', error);
+          return;
+        }
+
+        if (data && data.ativo === false) {
+          console.log('🚫 Usuário foi desativado, fazendo logout...');
+          toast({
+            title: "Sessão encerrada",
+            description: "Sua conta foi desativada. Entre em contato com o administrador.",
+            variant: "destructive",
+          });
+          await signOut();
+        }
+      } catch (error) {
+        console.error('Erro na verificação periódica de status:', error);
+      }
+    };
+
+    // Verificar imediatamente e depois a cada 5 minutos
+    checkUserStatus();
+    const interval = setInterval(checkUserStatus, 5 * 60 * 1000); // 5 minutos
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const signUp = async (email: string, password: string, nome: string) => {
     try {
