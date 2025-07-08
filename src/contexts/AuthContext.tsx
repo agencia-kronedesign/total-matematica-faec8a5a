@@ -4,19 +4,9 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserStatusVerification } from '@/hooks/useUserStatusVerification';
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  userProfile: any | null;
-  isAdmin: boolean;
-  isProfessor: boolean;
-  userType: string | null;
-  signUp: (email: string, password: string, nome: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-}
+import { useAuthService } from '@/hooks/useAuthService';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { AuthContextType } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -24,9 +14,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<any | null>(null);
   const { toast } = useToast();
   const { verifyUserStatus, forceLogout } = useUserStatusVerification();
+  const { signUp: authSignUp, signIn: authSignIn, signOut: authSignOut } = useAuthService();
+  const { userProfile, fetchUserProfile, clearUserProfile } = useUserProfile();
 
   const isAdmin = userProfile?.tipo_usuario === 'admin';
   const isProfessor = userProfile?.tipo_usuario === 'professor';
@@ -34,25 +25,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      console.log('🚪 Iniciando logout...');
       setLoading(true);
       
       // Limpar dados locais primeiro
       setUser(null);
       setSession(null);
-      setUserProfile(null);
+      clearUserProfile();
       
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('❌ Erro no logout:', error);
-        throw error;
-      }
-      
-      console.log('✅ Logout realizado com sucesso');
-      toast({
-        title: "Logout realizado com sucesso",
-        description: "Até logo!",
-      });
+      await authSignOut();
     } catch (error: any) {
       console.error('💥 Erro completo no logout:', error);
       toast({
@@ -62,48 +42,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      console.log('🔍 Buscando perfil para usuário:', userId);
-      
-      // VERIFICAÇÃO CRÍTICA: Verificar se usuário está ativo ANTES de carregar perfil
-      const isActive = await verifyUserStatus(userId);
-      if (!isActive) {
-        console.log('🚫 Usuário inativo detectado durante busca de perfil, bloqueando acesso...');
-        await forceLogout('Sua conta foi desativada. Entre em contato com o administrador.');
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error('❌ Erro ao buscar perfil:', error);
-        return;
-      }
-      
-      if (!data) {
-        console.warn('⚠️ Perfil não encontrado para o usuário:', userId);
-        return;
-      }
-      
-      // VERIFICAÇÃO DUPLA: Confirmar que o perfil carregado está ativo
-      if (data.ativo === false) {
-        console.log('🚫 Perfil carregado está inativo, fazendo logout...');
-        await forceLogout('Sua conta foi desativada. Entre em contato com o administrador.');
-        return;
-      }
-      
-      console.log('✅ Perfil ativo carregado:', data.email, data.ativo);
-      setUserProfile(data);
-    } catch (error) {
-      console.error('💥 Erro ao buscar perfil:', error);
     }
   };
 
@@ -120,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Buscar perfil do usuário após login e verificar se está ativo
           await fetchUserProfile(session.user.id);
         } else {
-          setUserProfile(null);
+          clearUserProfile();
         }
         
         setLoading(false);
@@ -166,22 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, nome: string) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            nome: nome,
-          },
-        },
-      });
-
-      if (error) throw error;
-      toast({
-        title: "Cadastro realizado com sucesso",
-        description: "Verifique seu email para confirmar o cadastro",
-      });
+      await authSignUp(email, password, nome);
     } catch (error: any) {
       toast({
         title: "Erro no cadastro",
@@ -196,16 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      console.log('🔐 Tentativa de login para:', email);
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-      
-      console.log('✅ Login realizado com sucesso:', email);
+      await authSignIn(email, password);
     } catch (error: any) {
       console.error('❌ Erro no login:', error);
       toast({
