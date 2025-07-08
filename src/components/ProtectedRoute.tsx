@@ -14,13 +14,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <div className="flex justify-center items-center h-screen">Carregando...</div>;
   }
 
+  // Verificar se o usuário está logado
   if (!user) {
-    return <Navigate to="/entrar" />;
+    console.log('🚫 ProtectedRoute: Usuário não logado, redirecionando...');
+    return <Navigate to="/entrar" replace />;
   }
 
-  // Verificar se o usuário está ativo
-  if (userProfile && userProfile.ativo === false) {
-    return <Navigate to="/entrar" />;
+  // Verificar se o perfil foi carregado e se o usuário está ativo
+  if (userProfile !== null && userProfile.ativo === false) {
+    console.log('🚫 ProtectedRoute: Usuário inativo detectado, redirecionando...');
+    return <Navigate to="/entrar" replace />;
+  }
+
+  // Se o perfil ainda está sendo carregado, mostrar loading
+  if (userProfile === null) {
+    return <div className="flex justify-center items-center h-screen">Verificando permissões...</div>;
   }
 
   return <>{children}</>;

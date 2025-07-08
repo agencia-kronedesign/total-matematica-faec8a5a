@@ -30,6 +30,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isProfessor = userProfile?.tipo_usuario === 'professor';
   const userType = userProfile?.tipo_usuario || null;
 
+  const signOut = async () => {
+    try {
+      console.log('🚪 Iniciando logout...');
+      setLoading(true);
+      
+      // Limpar dados locais primeiro
+      setUser(null);
+      setSession(null);
+      setUserProfile(null);
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('❌ Erro no logout:', error);
+        throw error;
+      }
+      
+      console.log('✅ Logout realizado com sucesso');
+      toast({
+        title: "Logout realizado com sucesso",
+        description: "Até logo!",
+      });
+    } catch (error: any) {
+      console.error('💥 Erro completo no logout:', error);
+      toast({
+        title: "Erro ao sair",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log('🔍 Buscando perfil para usuário:', userId);
@@ -44,7 +77,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      // Handle case where no profile exists
       if (!data) {
         console.warn('⚠️ Perfil não encontrado para o usuário:', userId);
         return;
@@ -52,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log('✅ Perfil carregado:', data);
       
-      // Verificar se o usuário está ativo
+      // Verificar se o usuário está ativo ANTES de definir o perfil
       if (data.ativo === false) {
         console.log('🚫 Usuário inativo detectado, fazendo logout...');
         toast({
@@ -60,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: "Sua conta foi desativada. Entre em contato com o administrador.",
           variant: "destructive",
         });
+        // Não definir o perfil e fazer logout imediatamente
         await signOut();
         return;
       }
@@ -73,15 +106,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Configurar o listener de alteração de estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log('🔄 Auth state changed:', event, session?.user?.email);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Buscar perfil do usuário após login
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
+          // Buscar perfil do usuário após login e verificar se está ativo
+          await fetchUserProfile(session.user.id);
         } else {
           setUserProfile(null);
         }
@@ -91,12 +124,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // Verificar sessão atual no carregamento inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('🔍 Verificando sessão inicial:', session?.user?.email);
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        await fetchUserProfile(session.user.id);
       }
       
       setLoading(false);
@@ -105,12 +140,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Verificar periodicamente se o usuário ainda está ativo (a cada 5 minutos)
+  // Verificar periodicamente se o usuário ainda está ativo (a cada 30 segundos)
   useEffect(() => {
     if (!user?.id) return;
 
     const checkUserStatus = async () => {
       try {
+        console.log('🔍 Verificando status do usuário:', user.email);
         const { data, error } = await supabase
           .from('usuarios')
           .select('ativo')
@@ -123,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (data && data.ativo === false) {
-          console.log('🚫 Usuário foi desativado, fazendo logout...');
+          console.log('🚫 Usuário foi desativado, fazendo logout imediato...');
           toast({
             title: "Sessão encerrada",
             description: "Sua conta foi desativada. Entre em contato com o administrador.",
@@ -136,12 +172,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    // Verificar imediatamente e depois a cada 5 minutos
+    // Verificar imediatamente e depois a cada 30 segundos
     checkUserStatus();
-    const interval = setInterval(checkUserStatus, 5 * 60 * 1000); // 5 minutos
+    const interval = setInterval(checkUserStatus, 30 * 1000); // 30 segundos
 
     return () => clearInterval(interval);
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   const signUp = async (email: string, password: string, nome: string) => {
     try {
@@ -182,50 +218,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) throw error;
-      toast({
-        title: "Login realizado com sucesso",
-        description: "Bem-vindo de volta!",
-      });
+      
+      // O toast de sucesso será mostrado após a verificação do perfil
+      console.log('✅ Login inicial realizado, aguardando verificação de perfil...');
     } catch (error: any) {
       toast({
         title: "Erro no login",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      console.log('🚪 Iniciando logout...');
-      setLoading(true);
-      
-      // Limpar dados locais primeiro
-      setUser(null);
-      setSession(null);
-      setUserProfile(null);
-      
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('❌ Erro no logout:', error);
-        throw error;
-      }
-      
-      console.log('✅ Logout realizado com sucesso');
-      toast({
-        title: "Logout realizado com sucesso",
-        description: "Até logo!",
-      });
-    } catch (error: any) {
-      console.error('💥 Erro completo no logout:', error);
-      toast({
-        title: "Erro ao sair",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
     }
   };
