@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUserStatusVerification } from '@/hooks/useUserStatusVerification';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any | null>(null);
   const { toast } = useToast();
+  const { verifyUserStatus, forceLogout } = useUserStatusVerification();
 
   const isAdmin = userProfile?.tipo_usuario === 'admin';
   const isProfessor = userProfile?.tipo_usuario === 'professor';
@@ -66,11 +68,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log('🔍 Buscando perfil para usuário:', userId);
+      
+      // VERIFICAÇÃO CRÍTICA: Verificar se usuário está ativo ANTES de carregar perfil
+      const isActive = await verifyUserStatus(userId);
+      if (!isActive) {
+        console.log('🚫 Usuário inativo detectado durante busca de perfil, bloqueando acesso...');
+        await forceLogout('Sua conta foi desativada. Entre em contato com o administrador.');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('usuarios')
         .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
       
       if (error) {
         console.error('❌ Erro ao buscar perfil:', error);
@@ -82,21 +93,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      console.log('✅ Perfil carregado:', data);
-      
-      // Verificar se o usuário está ativo ANTES de definir o perfil
+      // VERIFICAÇÃO DUPLA: Confirmar que o perfil carregado está ativo
       if (data.ativo === false) {
-        console.log('🚫 Usuário inativo detectado, fazendo logout...');
-        toast({
-          title: "Acesso negado",
-          description: "Sua conta foi desativada. Entre em contato com o administrador.",
-          variant: "destructive",
-        });
-        // Não definir o perfil e fazer logout imediatamente
-        await signOut();
+        console.log('🚫 Perfil carregado está inativo, fazendo logout...');
+        await forceLogout('Sua conta foi desativada. Entre em contato com o administrador.');
         return;
       }
       
+      console.log('✅ Perfil ativo carregado:', data.email, data.ativo);
       setUserProfile(data);
     } catch (error) {
       console.error('💥 Erro ao buscar perfil:', error);
@@ -140,44 +144,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Verificar periodicamente se o usuário ainda está ativo (a cada 30 segundos)
+  // Verificação periódica mais frequente (a cada 10 segundos)
   useEffect(() => {
     if (!user?.id) return;
 
     const checkUserStatus = async () => {
-      try {
-        console.log('🔍 Verificando status do usuário:', user.email);
-        const { data, error } = await supabase
-          .from('usuarios')
-          .select('ativo')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Erro ao verificar status do usuário:', error);
-          return;
-        }
-
-        if (data && data.ativo === false) {
-          console.log('🚫 Usuário foi desativado, fazendo logout imediato...');
-          toast({
-            title: "Sessão encerrada",
-            description: "Sua conta foi desativada. Entre em contato com o administrador.",
-            variant: "destructive",
-          });
-          await signOut();
-        }
-      } catch (error) {
-        console.error('Erro na verificação periódica de status:', error);
+      const isActive = await verifyUserStatus(user.id);
+      if (!isActive) {
+        console.log('🚫 Verificação periódica: usuário inativo detectado, fazendo logout...');
+        await forceLogout('Sua conta foi desativada. Entre em contato com o administrador.');
       }
     };
 
-    // Verificar imediatamente e depois a cada 30 segundos
+    // Verificar imediatamente e depois a cada 10 segundos
     checkUserStatus();
-    const interval = setInterval(checkUserStatus, 30 * 1000); // 30 segundos
+    const interval = setInterval(checkUserStatus, 10 * 1000); // 10 segundos
 
     return () => clearInterval(interval);
-  }, [user?.id, user?.email]);
+  }, [user?.id, verifyUserStatus, forceLogout]);
 
   const signUp = async (email: string, password: string, nome: string) => {
     try {
@@ -212,6 +196,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log('🔐 Tentativa de login para:', email);
+      
+      // VERIFICAÇÃO CRÍTICA: Verificar se o usuário está ativo ANTES do login
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('id, ativo, nome')
+        .eq('email', email)
+        .single();
+
+      if (userError) {
+        console.error('❌ Erro ao verificar usuário antes do login:', userError);
+        throw new Error('Erro ao verificar credenciais');
+      }
+
+      if (!userData) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      if (userData.ativo === false) {
+        console.log('🚫 Login bloqueado: usuário inativo:', email);
+        throw new Error('Sua conta foi desativada. Entre em contato com o administrador.');
+      }
+
+      console.log('✅ Usuário verificado como ativo, prosseguindo com login...');
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -219,9 +228,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
       
-      // O toast de sucesso será mostrado após a verificação do perfil
-      console.log('✅ Login inicial realizado, aguardando verificação de perfil...');
+      console.log('✅ Login realizado com sucesso para usuário ativo:', email);
     } catch (error: any) {
+      console.error('❌ Erro no login:', error);
       toast({
         title: "Erro no login",
         description: error.message,
