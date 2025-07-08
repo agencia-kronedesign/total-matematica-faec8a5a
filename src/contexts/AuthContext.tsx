@@ -198,29 +198,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       console.log('🔐 Tentativa de login para:', email);
       
-      // VERIFICAÇÃO CRÍTICA: Verificar se o usuário está ativo ANTES do login
-      const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .select('id, ativo, nome')
-        .eq('email', email)
-        .single();
-
-      if (userError) {
-        console.error('❌ Erro ao verificar usuário antes do login:', userError);
-        throw new Error('Erro ao verificar credenciais');
-      }
-
-      if (!userData) {
-        throw new Error('Usuário não encontrado');
-      }
-
-      if (userData.ativo === false) {
-        console.log('🚫 Login bloqueado: usuário inativo:', email);
-        throw new Error('Sua conta foi desativada. Entre em contato com o administrador.');
-      }
-
-      console.log('✅ Usuário verificado como ativo, prosseguindo com login...');
-
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -228,7 +205,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
       
-      console.log('✅ Login realizado com sucesso para usuário ativo:', email);
+      console.log('✅ Login realizado com sucesso:', email);
     } catch (error: any) {
       console.error('❌ Erro no login:', error);
       toast({
