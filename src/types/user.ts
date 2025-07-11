@@ -71,6 +71,10 @@ export interface UserFormData extends Omit<UserRegistrationData, 'preferencias' 
   termos_uso: boolean;
   politica_privacidade: boolean;
   captcha: string;
+  
+  // Segundo responsável
+  nome_responsavel2?: string;
+  email_responsavel2?: string;
 }
 
 export const USER_TYPE_LABELS: Record<UserType, string> = {

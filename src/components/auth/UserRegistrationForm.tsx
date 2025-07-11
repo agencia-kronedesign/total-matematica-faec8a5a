@@ -15,11 +15,15 @@ import { useUserEdit } from '@/hooks/useUserEdit';
 import { UserFormData, UserType, USER_TYPE_LABELS } from '@/types/user';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, MapPin } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { FormattedInput } from '@/components/ui/formatted-input';
+import { useCEP } from '@/hooks/useCEP';
+import { useFormProgressTracker } from '@/hooks/useFormProgressTracker';
+import { Progress } from '@/components/ui/progress';
 
 const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   // Dados pessoais básicos
@@ -33,7 +37,7 @@ const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   // Dados pessoais complementares
   telefone_mobile: z.string().optional(),
   telefone_fixo: z.string().optional(),
-  cpf: z.string().optional(),
+  cpf: z.string().optional(), // CPF não é mais obrigatório
   rg: z.string().optional(),
   data_nascimento: z.string().optional(),
   
@@ -53,6 +57,10 @@ const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   nome_responsavel: z.string().optional(),
   email_responsavel: z.string().email().optional().or(z.literal('')),
   
+  // Segundo responsável
+  nome_responsavel2: z.string().optional(),
+  email_responsavel2: z.string().email().optional().or(z.literal('')),
+  
   // Permissões
   permissao_relatorios: z.boolean().default(false),
   
@@ -68,17 +76,61 @@ const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   
   // Segurança
   captcha: z.string().min(1, 'Captcha é obrigatório'),
-}).refine((data) => {
+}).superRefine((data, ctx) => {
+  // Validação de senhas
   if (!isEditMode && data.senha !== data.confirmarSenha) {
-    return false;
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Senhas não coincidem",
+      path: ["confirmarSenha"],
+    });
   }
   if (isEditMode && data.senha && data.senha !== data.confirmarSenha) {
-    return false;
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Senhas não coincidem",
+      path: ["confirmarSenha"],
+    });
   }
-  return true;
-}, {
-  message: "Senhas não coincidem",
-  path: ["confirmarSenha"],
+  
+  // Validações específicas para alunos
+  if (data.tipo_usuario === 'aluno') {
+    if (!data.numero_matricula) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Número de matrícula é obrigatório para alunos',
+        path: ['numero_matricula']
+      });
+    }
+    if (!data.numero_chamada) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Número de chamada é obrigatório para alunos',
+        path: ['numero_chamada']
+      });
+    }
+    if (!data.turma) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Turma é obrigatória para alunos',
+        path: ['turma']
+      });
+    }
+    if (!data.nome_responsavel) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Nome do responsável é obrigatório para alunos',
+        path: ['nome_responsavel']
+      });
+    }
+    if (!data.email_responsavel) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Email do responsável é obrigatório para alunos',
+        path: ['email_responsavel']
+      });
+    }
+  }
 });
 
 interface UserRegistrationFormProps {
@@ -91,6 +143,7 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
   const { registerUser, generatePassword, loading } = useUserRegistration();
   const { userData, loading: loadingUser } = useUserEdit(userId);
   const { toast } = useToast();
+  const { fetchAddressByCEP, loading: cepLoading } = useCEP();
   
   const isEditMode = !!userId;
   
@@ -118,11 +171,31 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
   }, [userData, isEditMode, form]);
 
   const watchedUserType = form.watch('tipo_usuario');
+  
+  const formSteps = ['dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
+  const { progressPercentage, getStepStatus } = useFormProgressTracker(
+    formSteps,
+    activeTab,
+    form.formState.errors
+  );
 
   const handleGeneratePassword = () => {
     const newPassword = generatePassword();
     form.setValue('senha', newPassword);
     form.setValue('confirmarSenha', newPassword);
+  };
+
+  const handleCEPChange = async (cep: string) => {
+    if (cep && cep.replace(/\D/g, '').length === 8) {
+      const addressData = await fetchAddressByCEP(cep);
+      if (addressData) {
+        form.setValue('cidade', addressData.localidade);
+        form.setValue('estado', addressData.uf);
+        if (addressData.logradouro) {
+          form.setValue('endereco', addressData.logradouro);
+        }
+      }
+    }
   };
 
   const onSubmit = async (data: UserFormData) => {
@@ -259,13 +332,48 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {!isEditMode && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Progresso do Cadastro</span>
+                    <span>{progressPercentage}%</span>
+                  </div>
+                  <Progress value={progressPercentage} className="w-full" />
+                </div>
+              )}
+              
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid grid-cols-5 w-full">
-                  <TabsTrigger value="dados-pessoais">Dados Pessoais</TabsTrigger>
-                  <TabsTrigger value="acesso">Acesso</TabsTrigger>
-                  <TabsTrigger value="endereco">Endereço</TabsTrigger>
-                  <TabsTrigger value="preferencias">Preferências</TabsTrigger>
-                  <TabsTrigger value="consentimento">Consentimento</TabsTrigger>
+                  <TabsTrigger 
+                    value="dados-pessoais" 
+                    className={`${getStepStatus('dados-pessoais') === 'error' ? 'border-red-500 text-red-600' : ''} ${getStepStatus('dados-pessoais') === 'completed' ? 'border-green-500 text-green-600' : ''}`}
+                  >
+                    Dados Pessoais
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="acesso"
+                    className={`${getStepStatus('acesso') === 'error' ? 'border-red-500 text-red-600' : ''} ${getStepStatus('acesso') === 'completed' ? 'border-green-500 text-green-600' : ''}`}
+                  >
+                    Acesso
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="endereco"
+                    className={`${getStepStatus('endereco') === 'error' ? 'border-red-500 text-red-600' : ''} ${getStepStatus('endereco') === 'completed' ? 'border-green-500 text-green-600' : ''}`}
+                  >
+                    Endereço
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="preferencias"
+                    className={`${getStepStatus('preferencias') === 'error' ? 'border-red-500 text-red-600' : ''} ${getStepStatus('preferencias') === 'completed' ? 'border-green-500 text-green-600' : ''}`}
+                  >
+                    Preferências
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="consentimento"
+                    className={`${getStepStatus('consentimento') === 'error' ? 'border-red-500 text-red-600' : ''} ${getStepStatus('consentimento') === 'completed' ? 'border-green-500 text-green-600' : ''}`}
+                  >
+                    Consentimento
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* Dados Pessoais */}
@@ -306,7 +414,14 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                         <FormItem>
                           <FormLabel>Telefone Celular</FormLabel>
                           <FormControl>
-                            <Input placeholder="(11) 99999-9999" {...field} />
+                            <FormattedInput 
+                              formatter="phone" 
+                              placeholder="(11) 99999-9999" 
+                              {...field}
+                              onValueChange={(unformatted, formatted) => {
+                                field.onChange(formatted);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -320,7 +435,14 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                         <FormItem>
                           <FormLabel>Telefone Fixo</FormLabel>
                           <FormControl>
-                            <Input placeholder="(11) 3333-3333" {...field} />
+                            <FormattedInput 
+                              formatter="phone" 
+                              placeholder="(11) 3333-3333" 
+                              {...field}
+                              onValueChange={(unformatted, formatted) => {
+                                field.onChange(formatted);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -332,9 +454,16 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                       name="cpf"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>CPF {isStaffType(watchedUserType) ? '*' : ''}</FormLabel>
+                          <FormLabel>CPF</FormLabel>
                           <FormControl>
-                            <Input placeholder="000.000.000-00" {...field} />
+                            <FormattedInput 
+                              formatter="cpf" 
+                              placeholder="000.000.000-00" 
+                              {...field}
+                              onValueChange={(unformatted, formatted) => {
+                                field.onChange(formatted);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -348,7 +477,14 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                         <FormItem>
                           <FormLabel>RG</FormLabel>
                           <FormControl>
-                            <Input placeholder="00.000.000-0" {...field} />
+                            <FormattedInput 
+                              formatter="rg" 
+                              placeholder="00.000.000-0" 
+                              {...field}
+                              onValueChange={(unformatted, formatted) => {
+                                field.onChange(formatted);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -388,84 +524,120 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
 
                   {/* Campos específicos para alunos */}
                   {isStudentType(watchedUserType) && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg">
-                      <h3 className="text-lg font-semibold text-blue-900 col-span-full">Dados do Aluno</h3>
-                      
-                      <FormField
-                        control={form.control}
-                        name="numero_matricula"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Número de Matrícula *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="202512345" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg">
+                        <h3 className="text-lg font-semibold text-blue-900 col-span-full">Dados do Aluno</h3>
+                        
+                        <FormField
+                          control={form.control}
+                          name="numero_matricula"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Número de Matrícula *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="202512345" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                      <FormField
-                        control={form.control}
-                        name="numero_chamada"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Número de Chamada</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="7" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <FormField
+                          control={form.control}
+                          name="numero_chamada"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Número de Chamada *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  placeholder="7" 
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                      <FormField
-                        control={form.control}
-                        name="turma"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Turma/Série</FormLabel>
-                            <FormControl>
-                              <Input placeholder="7A" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <FormField
+                          control={form.control}
+                          name="turma"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Turma/Série *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="7A" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                      <FormField
-                        control={form.control}
-                        name="nome_responsavel"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome do Responsável</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Maria Silva" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <h4 className="text-md font-medium text-blue-800 col-span-full">Responsável Principal</h4>
+                        
+                        <FormField
+                          control={form.control}
+                          name="nome_responsavel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome do Responsável *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Maria Silva" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                      <FormField
-                        control={form.control}
-                        name="email_responsavel"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email do Responsável</FormLabel>
-                            <FormControl>
-                              <Input type="email" placeholder="maria@email.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                        <FormField
+                          control={form.control}
+                          name="email_responsavel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email do Responsável *</FormLabel>
+                              <FormControl>
+                                <Input type="email" placeholder="maria@email.com" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <h4 className="text-md font-medium text-blue-800 col-span-full mt-4">Segundo Responsável (Opcional)</h4>
+                        
+                        <FormField
+                          control={form.control}
+                          name="nome_responsavel2"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome do Segundo Responsável</FormLabel>
+                              <FormControl>
+                                <Input placeholder="João Silva" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="email_responsavel2"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email do Segundo Responsável</FormLabel>
+                              <FormControl>
+                                <Input type="email" placeholder="joao@email.com" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </>
                   )}
                 </TabsContent>
 
@@ -601,7 +773,22 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                         <FormItem>
                           <FormLabel>CEP</FormLabel>
                           <FormControl>
-                            <Input placeholder="00000-000" {...field} />
+                            <div className="relative">
+                              <FormattedInput 
+                                formatter="cep" 
+                                placeholder="00000-000" 
+                                {...field}
+                                onValueChange={(unformatted, formatted) => {
+                                  field.onChange(formatted);
+                                  handleCEPChange(formatted);
+                                }}
+                              />
+                              {cepLoading && (
+                                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                                  <MapPin className="h-4 w-4 animate-spin" />
+                                </div>
+                              )}
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -819,8 +1006,15 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                 </Button>
 
                 {activeTab === 'consentimento' ? (
-                  <Button type="submit" disabled={loading || loadingUser} className="bg-totalBlue">
-                    {loading ? (isEditMode ? 'Atualizando...' : 'Cadastrando...') : (isEditMode ? 'Atualizar Usuário' : 'Cadastrar Usuário')}
+                  <Button type="submit" disabled={loading || loadingUser} className="bg-totalBlue min-w-[200px]">
+                    {loading ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>{isEditMode ? 'Atualizando...' : 'Cadastrando...'}</span>
+                      </div>
+                    ) : (
+                      isEditMode ? 'Atualizar Usuário' : 'Cadastrar Usuário'
+                    )}
                   </Button>
                 ) : (
                   <Button
