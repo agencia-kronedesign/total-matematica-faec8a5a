@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +13,6 @@ import { useUserRegistration } from '@/hooks/useUserRegistration';
 import { useUserEdit } from '@/hooks/useUserEdit';
 import { UserFormData, UserType, USER_TYPE_LABELS } from '@/types/user';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
 import { Eye, EyeOff, RefreshCw, MapPin, Loader2 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useEffect } from 'react';
@@ -25,6 +23,12 @@ import { useCEP } from '@/hooks/useCEP';
 import { useCidades } from '@/hooks/useCidades';
 import { useFormProgressTracker } from '@/hooks/useFormProgressTracker';
 import { Progress } from '@/components/ui/progress';
+
+// Componentes especializados
+import UserTypeSelector from './user-fields/UserTypeSelector';
+import BasicPersonalFields from './user-fields/BasicPersonalFields';
+import StudentRegistrationFields from './user-fields/StudentRegistrationFields';
+import StaffRegistrationFields from './user-fields/StaffRegistrationFields';
 
 const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   // Dados pessoais básicos
@@ -38,7 +42,7 @@ const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   // Dados pessoais complementares
   telefone_mobile: z.string().optional(),
   telefone_fixo: z.string().optional(),
-  cpf: z.string().optional(), // CPF não é mais obrigatório
+  cpf: z.string().optional(),
   rg: z.string().optional(),
   data_nascimento: z.string().optional(),
   
@@ -48,11 +52,15 @@ const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   estado: z.string().optional(),
   cep: z.string().optional(),
   
-  // Dados institucionais
+  // Dados institucionais/profissionais
   cargo: z.string().optional(),
   numero_matricula: z.string().optional(),
   numero_chamada: z.number().optional(),
   turma: z.string().optional(),
+  area_atuacao: z.string().optional(),
+  formacao: z.string().optional(),
+  experiencia_anos: z.number().optional(),
+  formacao_gestao: z.string().optional(),
   
   // Responsável
   nome_responsavel: z.string().optional(),
@@ -132,6 +140,17 @@ const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
       });
     }
   }
+  
+  // Validações específicas para staff
+  if (['professor', 'coordenador', 'direcao', 'admin'].includes(data.tipo_usuario)) {
+    if (!data.cargo) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Cargo/Função é obrigatório para este tipo de usuário',
+        path: ['cargo']
+      });
+    }
+  }
 });
 
 interface UserRegistrationFormProps {
@@ -140,7 +159,7 @@ interface UserRegistrationFormProps {
 
 const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState('dados-pessoais');
+  const [activeTab, setActiveTab] = useState('tipo-usuario');
   const { registerUser, generatePassword, loading } = useUserRegistration();
   const { userData, loading: loadingUser } = useUserEdit(userId);
   const { toast } = useToast();
@@ -177,7 +196,7 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
   const selectedEstado = form.watch('estado');
   const { data: cidadesDisponiveis = [], isLoading: isLoadingCidades } = useCidades(selectedEstado);
   
-  const formSteps = ['dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
+  const formSteps = ['tipo-usuario', 'dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
   const { progressPercentage, getStepStatus } = useFormProgressTracker(
     formSteps,
     activeTab,
@@ -217,7 +236,7 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
       const result = await registerUser(data);
       if (result.success) {
         form.reset();
-        setActiveTab('dados-pessoais');
+        setActiveTab('tipo-usuario');
       }
     }
   };
@@ -348,12 +367,18 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
               )}
               
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-5 w-full">
+                <TabsList className="grid grid-cols-6 w-full text-xs">
+                  <TabsTrigger 
+                    value="tipo-usuario" 
+                    className={`${getStepStatus('tipo-usuario') === 'error' ? 'border-red-500 text-red-600' : ''} ${getStepStatus('tipo-usuario') === 'completed' ? 'border-green-500 text-green-600' : ''}`}
+                  >
+                    Tipo
+                  </TabsTrigger>
                   <TabsTrigger 
                     value="dados-pessoais" 
                     className={`${getStepStatus('dados-pessoais') === 'error' ? 'border-red-500 text-red-600' : ''} ${getStepStatus('dados-pessoais') === 'completed' ? 'border-green-500 text-green-600' : ''}`}
                   >
-                    Dados Pessoais
+                    Dados
                   </TabsTrigger>
                   <TabsTrigger 
                     value="acesso"
@@ -381,299 +406,28 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                   </TabsTrigger>
                 </TabsList>
 
+                {/* Tipo de Usuário */}
+                <TabsContent value="tipo-usuario" className="space-y-4">
+                  <UserTypeSelector form={form} />
+                </TabsContent>
+
                 {/* Dados Pessoais */}
                 <TabsContent value="dados-pessoais" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="nome"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome Completo *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Digite o nome completo" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <BasicPersonalFields form={form} />
 
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email *</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="Digite o email" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="telefone_mobile"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Telefone Celular</FormLabel>
-                          <FormControl>
-                            <FormattedInput 
-                              formatter="phone" 
-                              placeholder="(11) 99999-9999" 
-                              {...field}
-                              onValueChange={(unformatted, formatted) => {
-                                field.onChange(formatted);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="telefone_fixo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Telefone Fixo</FormLabel>
-                          <FormControl>
-                            <FormattedInput 
-                              formatter="phone" 
-                              placeholder="(11) 3333-3333" 
-                              {...field}
-                              onValueChange={(unformatted, formatted) => {
-                                field.onChange(formatted);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="cpf"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CPF</FormLabel>
-                          <FormControl>
-                            <FormattedInput 
-                              formatter="cpf" 
-                              placeholder="000.000.000-00" 
-                              {...field}
-                              onValueChange={(unformatted, formatted) => {
-                                field.onChange(formatted);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="rg"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>RG</FormLabel>
-                          <FormControl>
-                            <FormattedInput 
-                              formatter="rg" 
-                              placeholder="00.000.000-0" 
-                              {...field}
-                              onValueChange={(unformatted, formatted) => {
-                                field.onChange(formatted);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="data_nascimento"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Data de Nascimento</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {isStaffType(watchedUserType) && (
-                      <FormField
-                        control={form.control}
-                        name="cargo"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cargo/Função *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Ex: Professor de Matemática" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
-
-                  {/* Campos específicos para alunos */}
+                  {/* Campos específicos por tipo de usuário */}
                   {isStudentType(watchedUserType) && (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg">
-                        <h3 className="text-lg font-semibold text-blue-900 col-span-full">Dados do Aluno</h3>
-                        
-                        <FormField
-                          control={form.control}
-                          name="numero_matricula"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Número de Matrícula *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="202512345" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                    <StudentRegistrationFields form={form} />
+                  )}
 
-                        <FormField
-                          control={form.control}
-                          name="numero_chamada"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Número de Chamada *</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  placeholder="7" 
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="turma"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Turma/Série *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="7A" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <h4 className="text-md font-medium text-blue-800 col-span-full">Responsável Principal</h4>
-                        
-                        <FormField
-                          control={form.control}
-                          name="nome_responsavel"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nome do Responsável *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Maria Silva" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="email_responsavel"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email do Responsável *</FormLabel>
-                              <FormControl>
-                                <Input type="email" placeholder="maria@email.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <h4 className="text-md font-medium text-blue-800 col-span-full mt-4">Segundo Responsável (Opcional)</h4>
-                        
-                        <FormField
-                          control={form.control}
-                          name="nome_responsavel2"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nome do Segundo Responsável</FormLabel>
-                              <FormControl>
-                                <Input placeholder="João Silva" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="email_responsavel2"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email do Segundo Responsável</FormLabel>
-                              <FormControl>
-                                <Input type="email" placeholder="joao@email.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </>
+                  {isStaffType(watchedUserType) && (
+                    <StaffRegistrationFields form={form} userType={watchedUserType} />
                   )}
                 </TabsContent>
 
                 {/* Acesso */}
                 <TabsContent value="acesso" className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="tipo_usuario"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tipo de Usuário *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o tipo" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Object.entries(USER_TYPE_LABELS).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
                     <FormField
                       control={form.control}
                       name="ativo"
@@ -1050,13 +804,13 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    const tabs = ['dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
+                    const tabs = ['tipo-usuario', 'dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
                     const currentIndex = tabs.indexOf(activeTab);
                     if (currentIndex > 0) {
                       setActiveTab(tabs[currentIndex - 1]);
                     }
                   }}
-                  disabled={activeTab === 'dados-pessoais'}
+                  disabled={activeTab === 'tipo-usuario'}
                 >
                   Anterior
                 </Button>
@@ -1076,7 +830,7 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                   <Button
                     type="button"
                     onClick={() => {
-                      const tabs = ['dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
+                      const tabs = ['tipo-usuario', 'dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
                       const currentIndex = tabs.indexOf(activeTab);
                       if (currentIndex < tabs.length - 1) {
                         setActiveTab(tabs[currentIndex + 1]);
