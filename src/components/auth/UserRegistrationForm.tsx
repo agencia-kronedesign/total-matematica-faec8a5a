@@ -80,11 +80,11 @@ const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   aceite_notificacoes: z.boolean().default(true),
   
   // Consentimento
-  termos_uso: z.boolean().refine(val => val === true, 'Deve aceitar os termos de uso'),
-  politica_privacidade: z.boolean().refine(val => val === true, 'Deve aceitar a política de privacidade'),
+  termos_uso: isEditMode ? z.boolean().optional() : z.boolean().refine(val => val === true, 'Deve aceitar os termos de uso'),
+  politica_privacidade: isEditMode ? z.boolean().optional() : z.boolean().refine(val => val === true, 'Deve aceitar a política de privacidade'),
   
   // Segurança
-  captcha: z.string().min(1, 'Captcha é obrigatório'),
+  captcha: isEditMode ? z.string().optional() : z.string().min(1, 'Captcha é obrigatório'),
 }).superRefine((data, ctx) => {
   // Validação de senhas
   if (!isEditMode && data.senha !== data.confirmarSenha) {
@@ -151,6 +151,15 @@ const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
       });
     }
   }
+  
+  // Validação de captcha apenas para cadastro
+  if (!isEditMode && !data.captcha) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Captcha é obrigatório',
+      path: ['captcha']
+    });
+  }
 });
 
 interface UserRegistrationFormProps {
@@ -178,7 +187,7 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
       aceite_notificacoes: true,
       termos_uso: false,
       politica_privacidade: false,
-      captcha: '',
+      captcha: isEditMode ? 'ADMIN_EDIT' : '',
       tipo_usuario: 'aluno',
     },
   });
@@ -731,22 +740,24 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Termos e Consentimento</h3>
                     
-                    <FormField
-                      control={form.control}
-                      name="captcha"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Verificação de Segurança *</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center space-x-2">
-                              <Input placeholder="Digite o código: ABCD123" {...field} />
-                              <div className="bg-gray-200 p-2 rounded border">ABCD123</div>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {!isEditMode && (
+                      <FormField
+                        control={form.control}
+                        name="captcha"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Verificação de Segurança *</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center space-x-2">
+                                <Input placeholder="Digite o código: ABCD123" {...field} />
+                                <div className="bg-gray-200 p-2 rounded border">ABCD123</div>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <Alert>
                       <AlertDescription>
