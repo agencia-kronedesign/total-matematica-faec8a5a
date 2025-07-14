@@ -18,6 +18,7 @@ import AdminPage from "./pages/admin/AdminPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import EscolasManagement from "./pages/admin/EscolasManagement";
+import AtividadesManagement from "./pages/admin/AtividadesManagement";
 import UserRegistration from "./pages/UserRegistration";
 
 const queryClient = new QueryClient();
@@ -93,6 +94,14 @@ const App = () => (
                 element={
                   <AdminPage>
                     <UserRegistration />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/atividades" 
+                element={
+                  <AdminPage>
+                    <AtividadesManagement />
                   </AdminPage>
                 } 
               />

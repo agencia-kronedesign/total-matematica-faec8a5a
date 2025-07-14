@@ -37,7 +37,8 @@ import {
   Users,
   Shield,
   School,
-  Database
+  Database,
+  Calendar
 } from 'lucide-react';
 
 const DashboardSidebar = () => {
@@ -94,6 +95,7 @@ const DashboardSidebar = () => {
     { title: "Usuários", icon: Users, path: "/admin/usuarios" },
     { title: "Cadastrar Usuário", icon: Plus, path: "/admin/usuarios/cadastrar" },
     { title: "Escolas", icon: School, path: "/admin/escolas" },
+    { title: "Atividades", icon: Calendar, path: "/admin/atividades" },
     { title: "Relatórios Admin", icon: Database, path: "/admin/relatorios" },
     { title: "Configurações", icon: Settings, path: "/admin/configuracoes" },
   ];
