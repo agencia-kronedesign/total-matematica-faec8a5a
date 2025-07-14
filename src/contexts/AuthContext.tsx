@@ -69,8 +69,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Buscar perfil do usuário após login e verificar se está ativo
-          await fetchUserProfile(session.user.id);
+          // Só buscar perfil se ainda não tivermos ou se for um usuário diferente
+          if (!userProfile || userProfile.id !== session.user.id) {
+            await fetchUserProfile(session.user.id);
+          }
           // Login bem-sucedido, limpar authLoading
           setAuthLoading(false);
         } else {
