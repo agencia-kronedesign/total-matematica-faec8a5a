@@ -4,6 +4,7 @@ export interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  authLoading: boolean;
   userProfile: any | null;
   isAdmin: boolean;
   isProfessor: boolean;

@@ -20,7 +20,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [adminCreating, setAdminCreating] = useState(false);
   
-  const { signUp, user, loading } = useAuth();
+  const { signUp, user, loading, authLoading } = useAuth();
   const { toast } = useToast();
   const { canShowSetup, loading: setupLoading, setupMessage } = useSecureAdminSetup();
 
@@ -161,8 +161,8 @@ const Register = () => {
             
             {error && <p className="text-sm text-red-500">{error}</p>}
             
-            <Button type="submit" className="w-full bg-totalBlue" disabled={loading}>
-              {loading ? 'Processando...' : 'Cadastrar'}
+            <Button type="submit" className="w-full bg-totalBlue" disabled={authLoading}>
+              {authLoading ? 'Processando...' : 'Cadastrar'}
             </Button>
           </form>
           

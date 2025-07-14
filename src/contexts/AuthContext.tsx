@@ -13,7 +13,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Loading inicial da sessão
+  const [authLoading, setAuthLoading] = useState(false); // Loading de operações de auth
   const { toast } = useToast();
   const { verifyUserStatus, forceLogout } = useUserStatusVerification();
   const { signUp: authSignUp, signIn: authSignIn, signOut: authSignOut } = useAuthService();
@@ -25,7 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      setLoading(true);
+      setAuthLoading(true);
       
       // Limpar dados locais primeiro
       setUser(null);
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setAuthLoading(false);
     }
   };
 
@@ -103,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, nome: string) => {
     try {
-      setLoading(true);
+      setAuthLoading(true);
       await authSignUp(email, password, nome);
     } catch (error: any) {
       toast({
@@ -112,13 +113,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setAuthLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      setLoading(true);
+      setAuthLoading(true);
       await authSignIn(email, password);
     } catch (error: any) {
       console.error('❌ Erro no login:', error);
@@ -127,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: error.message,
         variant: "destructive",
       });
-      setLoading(false);
+      setAuthLoading(false);
     }
   };
 
@@ -135,6 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     session,
     loading,
+    authLoading,
     userProfile,
     isAdmin,
     isProfessor,

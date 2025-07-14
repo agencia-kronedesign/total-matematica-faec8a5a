@@ -11,7 +11,7 @@ import Logo from '@/components/Logo';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, user, loading } = useAuth();
+  const { signIn, user, loading, authLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +61,8 @@ const Login = () => {
                 Esqueceu a senha?
               </Link>
             </div>
-            <Button type="submit" className="w-full bg-totalBlue" disabled={loading}>
-              {loading ? 'Entrando...' : 'Entrar'}
+            <Button type="submit" className="w-full bg-totalBlue" disabled={authLoading}>
+              {authLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
         </CardContent>
