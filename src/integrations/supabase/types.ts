@@ -161,6 +161,50 @@ export type Database = {
           },
         ]
       }
+      atividades_sistema: {
+        Row: {
+          created_at: string | null
+          dados_extra: Json | null
+          data_atividade: string | null
+          descricao: string
+          id: string
+          ip_address: string | null
+          tipo_atividade: string
+          user_agent: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dados_extra?: Json | null
+          data_atividade?: string | null
+          descricao: string
+          id?: string
+          ip_address?: string | null
+          tipo_atividade: string
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dados_extra?: Json | null
+          data_atividade?: string | null
+          descricao?: string
+          id?: string
+          ip_address?: string | null
+          tipo_atividade?: string
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_sistema_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categorias: {
         Row: {
           ativo: boolean | null
@@ -197,6 +241,39 @@ export type Database = {
           nome?: string
           ordem?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      configuracoes_sistema: {
+        Row: {
+          categoria: string | null
+          chave: string
+          created_at: string | null
+          descricao: string | null
+          id: string
+          tipo: string | null
+          updated_at: string | null
+          valor: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          chave: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          tipo?: string | null
+          updated_at?: string | null
+          valor?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          chave?: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          tipo?: string | null
+          updated_at?: string | null
+          valor?: string | null
         }
         Relationships: []
       }
@@ -243,6 +320,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      dashboard_metricas: {
+        Row: {
+          created_at: string | null
+          data_atualizacao: string | null
+          exercicios_resolvidos_mes: number
+          id: string
+          total_atividades: number
+          total_escolas: number
+          total_exercicios: number
+          total_usuarios: number
+          updated_at: string | null
+          usuarios_ativos_mes: number
+        }
+        Insert: {
+          created_at?: string | null
+          data_atualizacao?: string | null
+          exercicios_resolvidos_mes?: number
+          id?: string
+          total_atividades?: number
+          total_escolas?: number
+          total_exercicios?: number
+          total_usuarios?: number
+          updated_at?: string | null
+          usuarios_ativos_mes?: number
+        }
+        Update: {
+          created_at?: string | null
+          data_atualizacao?: string | null
+          exercicios_resolvidos_mes?: number
+          id?: string
+          total_atividades?: number
+          total_escolas?: number
+          total_exercicios?: number
+          total_usuarios?: number
+          updated_at?: string | null
+          usuarios_ativos_mes?: number
+        }
+        Relationships: []
       }
       escolas: {
         Row: {
@@ -1042,6 +1158,10 @@ export type Database = {
       }
     }
     Functions: {
+      atualizar_metricas_dashboard: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_type"]
