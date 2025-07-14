@@ -28,20 +28,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setAuthLoading(true);
       
-      // Limpar dados locais primeiro
+      // Limpar dados locais primeiro para evitar estados inconsistentes
       setUser(null);
       setSession(null);
       clearUserProfile();
       
+      // Fazer logout no Supabase (isso limpa automaticamente o storage)
       await authSignOut();
+      
+      // Forçar limpeza completa do estado de autenticação
+      // Aguardar um pouco para garantir que o estado seja limpo
+      setTimeout(() => {
+        setAuthLoading(false);
+      }, 100);
+      
     } catch (error: any) {
       console.error('💥 Erro completo no logout:', error);
+      
+      // Mesmo com erro, limpar o estado local
+      setUser(null);
+      setSession(null);
+      clearUserProfile();
+      
       toast({
         title: "Erro ao sair",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setAuthLoading(false);
     }
   };
@@ -58,8 +71,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           // Buscar perfil do usuário após login e verificar se está ativo
           await fetchUserProfile(session.user.id);
+          // Login bem-sucedido, limpar authLoading
+          setAuthLoading(false);
         } else {
           clearUserProfile();
+          // Logout ou sessão limpa, garantir que authLoading seja resetado
+          setAuthLoading(false);
         }
         
         setLoading(false);
@@ -120,7 +137,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     try {
       setAuthLoading(true);
+      
+      // Limpar qualquer estado anterior antes de tentar login
+      setUser(null);
+      setSession(null);
+      clearUserProfile();
+      
       await authSignIn(email, password);
+      
+      // O loading será limpo automaticamente pelo onAuthStateChange quando o login for bem-sucedido
     } catch (error: any) {
       console.error('❌ Erro no login:', error);
       toast({

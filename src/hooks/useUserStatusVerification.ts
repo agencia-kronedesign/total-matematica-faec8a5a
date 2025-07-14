@@ -36,11 +36,7 @@ export const useUserStatusVerification = () => {
     try {
       console.log(`🚪 Forçando logout: ${reason}`);
       
-      // Limpar dados locais primeiro
-      localStorage.clear();
-      sessionStorage.clear();
-      
-      // Fazer logout no Supabase
+      // Fazer logout no Supabase (ele cuida da limpeza do storage)
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('❌ Erro no logout forçado:', error);
@@ -52,12 +48,17 @@ export const useUserStatusVerification = () => {
         variant: "destructive",
       });
       
-      // Redirecionar para login
-      window.location.href = '/entrar';
+      // Aguardar um pouco antes de redirecionar para garantir limpeza
+      setTimeout(() => {
+        window.location.href = '/entrar';
+      }, 500);
+      
     } catch (error) {
       console.error('💥 Erro no logout forçado:', error);
       // Mesmo com erro, redirecionar
-      window.location.href = '/entrar';
+      setTimeout(() => {
+        window.location.href = '/entrar';
+      }, 500);
     }
   }, [toast]);
 
