@@ -19,6 +19,8 @@ import AdminPage from "./pages/admin/AdminPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import EscolasManagement from "./pages/admin/EscolasManagement";
+import TurmasManagement from "./pages/admin/TurmasManagement";
+import MatriculasManagement from "./pages/admin/MatriculasManagement";
 import AtividadesManagement from "./pages/admin/AtividadesManagement";
 import UserRegistration from "./pages/UserRegistration";
 import StudentActivities from "./pages/StudentActivities";
@@ -97,6 +99,22 @@ const App = () => (
                 element={
                   <AdminPage>
                     <EscolasManagement />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/turmas" 
+                element={
+                  <AdminPage>
+                    <TurmasManagement />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/matriculas" 
+                element={
+                  <AdminPage>
+                    <MatriculasManagement />
                   </AdminPage>
                 } 
               />
