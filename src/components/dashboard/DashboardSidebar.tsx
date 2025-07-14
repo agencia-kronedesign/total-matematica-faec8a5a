@@ -43,7 +43,7 @@ import {
 
 const DashboardSidebar = () => {
   const { user, signOut, userProfile, userType } = useAuth();
-  const { isAdmin, canManageUsers, canManageSystem } = usePermissions();
+  const { isAdmin, canManageUsers, canManageSystem, canCreateExercises, canManageCategories, isStudent } = usePermissions();
   const location = useLocation();
   
   const getUserTypeLabel = (tipo: string) => {
@@ -70,25 +70,50 @@ const DashboardSidebar = () => {
   
   const isActive = (path: string) => location.pathname === path;
   
-  const menuItems = [
-    { title: "Informações", icon: Info, path: "/informacoes", badge: 6 },
-    { title: "Relatórios", icon: FileText, path: "/relatorios" },
-    { title: "Mensagens", icon: MessageSquare, path: "/mensagens", badge: 14 },
-    {
-      title: "Exercícios",
-      icon: Book,
-      path: "/exercicios",
-      subItems: [
-        { title: "Todos os Exercícios", path: "/exercicios" },
-        { title: "Novo Exercício", path: "/exercicios/cadastrar" },
-        { title: "Gerenciar Categorias", path: "/exercicios/cadastrar?tab=lista-categorias" }
-      ]
-    },
-    { title: "Atividades em Classe", icon: BookOpen, path: "/atividades" },
-    { title: "Tarefas", icon: List, path: "/tarefas", badge: "NOVA" },
-    { title: "Exercício do dia", icon: BarChart2, path: "/exercicio-do-dia" },
-    { title: "Exercícios Feitos", icon: FileText, path: "/exercicios-feitos" },
-  ];
+  // Menu items baseado nas permissões do usuário
+  const getMenuItems = () => {
+    const baseItems = [];
+    
+    if (isStudent()) {
+      // Menu para alunos - apenas visualização e resolução
+      return [
+        { title: "Minhas Atividades", icon: BookOpen, path: "/atividades" },
+        { title: "Exercícios Feitos", icon: FileText, path: "/exercicios-feitos" },
+        { title: "Exercício do dia", icon: BarChart2, path: "/exercicio-do-dia" },
+      ];
+    }
+    
+    // Menu para professores, coordenadores e admins
+    const exerciseSubItems = [
+      { title: "Todos os Exercícios", path: "/exercicios" },
+    ];
+    
+    if (canCreateExercises()) {
+      exerciseSubItems.push({ title: "Novo Exercício", path: "/exercicios/cadastrar" });
+    }
+    
+    if (canManageCategories()) {
+      exerciseSubItems.push({ title: "Gerenciar Categorias", path: "/exercicios/cadastrar?tab=lista-categorias" });
+    }
+    
+    return [
+      { title: "Informações", icon: Info, path: "/informacoes", badge: 6 },
+      { title: "Relatórios", icon: FileText, path: "/relatorios" },
+      { title: "Mensagens", icon: MessageSquare, path: "/mensagens", badge: 14 },
+      {
+        title: "Exercícios",
+        icon: Book,
+        path: "/exercicios",
+        subItems: exerciseSubItems
+      },
+      { title: "Atividades em Classe", icon: BookOpen, path: "/atividades" },
+      { title: "Tarefas", icon: List, path: "/tarefas", badge: "NOVA" },
+      { title: "Exercício do dia", icon: BarChart2, path: "/exercicio-do-dia" },
+      { title: "Exercícios Feitos", icon: FileText, path: "/exercicios-feitos" },
+    ];
+  };
+  
+  const menuItems = getMenuItems();
 
   const adminItems = [
     { title: "Painel Admin", icon: Shield, path: "/admin" },

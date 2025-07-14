@@ -23,6 +23,13 @@ export const usePermissions = () => {
   const canManageContent = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
   const canViewReports = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
   const canManageSystem = () => hasPermission('admin');
+  
+  // Controle específico para criação de exercícios
+  const canCreateExercises = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
+  const canManageCategories = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
+  
+  // Verificar se é aluno
+  const isStudent = () => hasPermission('aluno');
 
   return {
     isAdmin,
@@ -37,5 +44,8 @@ export const usePermissions = () => {
     canManageContent,
     canViewReports,
     canManageSystem,
+    canCreateExercises,
+    canManageCategories,
+    isStudent,
   };
 };

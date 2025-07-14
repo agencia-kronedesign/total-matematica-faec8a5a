@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
+import TeacherRoute from "@/components/TeacherRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -49,12 +50,16 @@ const App = () => (
               } />
               <Route path="/exercicios/cadastrar" element={
                 <ProtectedRoute>
-                  <ExerciseForm />
+                  <TeacherRoute>
+                    <ExerciseForm />
+                  </TeacherRoute>
                 </ProtectedRoute>
               } />
               <Route path="/exercicios/editar/:id" element={
                 <ProtectedRoute>
-                  <ExerciseForm />
+                  <TeacherRoute>
+                    <ExerciseForm />
+                  </TeacherRoute>
                 </ProtectedRoute>
               } />
               
