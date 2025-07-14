@@ -15,8 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const AtividadesManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTurma, setSelectedTurma] = useState<string>('');
-  const [selectedTipo, setSelectedTipo] = useState<string>('');
+  const [selectedTurma, setSelectedTurma] = useState('all');
+  const [selectedTipo, setSelectedTipo] = useState('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingAtividade, setEditingAtividade] = useState<any>(null);
   const [viewingAtividade, setViewingAtividade] = useState<any>(null);
@@ -28,8 +28,8 @@ const AtividadesManagement = () => {
   const filteredAtividades = atividades?.filter(atividade => {
     const matchesSearch = atividade.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          atividade.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTurma = !selectedTurma || atividade.turma_id === selectedTurma;
-    const matchesTipo = !selectedTipo || atividade.tipo === selectedTipo;
+    const matchesTurma = selectedTurma === 'all' || atividade.turma_id === selectedTurma;
+    const matchesTipo = selectedTipo === 'all' || atividade.tipo === selectedTipo;
     
     return matchesSearch && matchesTurma && matchesTipo;
   });
@@ -123,7 +123,7 @@ const AtividadesManagement = () => {
                 <SelectValue placeholder="Todas as turmas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as turmas</SelectItem>
+                <SelectItem value="all">Todas as turmas</SelectItem>
                 {turmas?.map(turma => (
                   <SelectItem key={turma.id} value={turma.id}>
                     {turma.nome} - {turma.ano_letivo}
@@ -137,13 +137,21 @@ const AtividadesManagement = () => {
                 <SelectValue placeholder="Todos os tipos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os tipos</SelectItem>
+                <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="casa">Para Casa</SelectItem>
                 <SelectItem value="aula">Em Aula</SelectItem>
               </SelectContent>
             </Select>
 
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedTurma('all');
+                setSelectedTipo('all');
+              }}
+            >
               <Filter className="h-4 w-4" />
               Limpar Filtros
             </Button>
@@ -257,11 +265,11 @@ const AtividadesManagement = () => {
             <Book className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhuma atividade encontrada</h3>
             <p className="text-muted-foreground mb-4">
-              {searchTerm || selectedTurma || selectedTipo 
+              {searchTerm || (selectedTurma !== 'all') || (selectedTipo !== 'all')
                 ? 'Tente ajustar os filtros para encontrar atividades.'
                 : 'Comece criando sua primeira atividade.'}
             </p>
-            {!searchTerm && !selectedTurma && !selectedTipo && (
+            {!searchTerm && selectedTurma === 'all' && selectedTipo === 'all' && (
               <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Primeira Atividade
