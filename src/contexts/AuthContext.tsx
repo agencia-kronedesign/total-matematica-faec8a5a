@@ -60,9 +60,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Configurar o listener de alteração de estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         console.log('🔄 Auth state changed:', event, session?.user?.email);
         
         setSession(session);
@@ -73,8 +77,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (!userProfile || userProfile.id !== session.user.id) {
             // Usar setTimeout para evitar chamadas síncronas que causam loops
             setTimeout(() => {
-              fetchUserProfile(session.user.id);
-            }, 0);
+              if (mounted) {
+                fetchUserProfile(session.user.id);
+              }
+            }, 100);
           }
           setAuthLoading(false);
         } else {
@@ -88,6 +94,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Verificar sessão atual no carregamento inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       console.log('🔍 Verificando sessão inicial:', session?.user?.email);
       
       setSession(session);
@@ -95,15 +103,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (session?.user) {
         setTimeout(() => {
-          fetchUserProfile(session.user.id);
-        }, 0);
+          if (mounted) {
+            fetchUserProfile(session.user.id);
+          }
+        }, 100);
       }
       
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, [fetchUserProfile, clearUserProfile, userProfile]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Verificação periódica menos frequente (a cada 30 segundos)
   useEffect(() => {

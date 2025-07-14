@@ -4,7 +4,7 @@ import { useUserStatusVerification } from '@/hooks/useUserStatusVerification';
 
 export const useUserProfile = () => {
   const [userProfile, setUserProfile] = useState<any | null>(null);
-  const { verifyUserStatus, forceLogout } = useUserStatusVerification();
+  const { forceLogout } = useUserStatusVerification();
   const fetchingRef = useRef(false);
 
   const fetchUserProfile = useCallback(async (userId: string) => {
@@ -15,6 +15,7 @@ export const useUserProfile = () => {
     }
 
     fetchingRef.current = true;
+    
     try {
       console.log('🔍 Buscando perfil para usuário:', userId);
       
@@ -48,7 +49,7 @@ export const useUserProfile = () => {
     } finally {
       fetchingRef.current = false;
     }
-  }, [verifyUserStatus, forceLogout]);
+  }, [forceLogout]);
 
   const clearUserProfile = useCallback(() => {
     setUserProfile(null);
