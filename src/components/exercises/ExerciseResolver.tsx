@@ -64,20 +64,42 @@ export function ExerciseResolver({
     const expectedResult = SafeMathEvaluator.evaluate(formula, input);
     const userAnswer = answer;
     
-    // Calcula as margens de erro
-    const lowerBound = expectedResult * (1 - margin/100);
-    const upperBound = expectedResult * (1 + margin/100);
-    const absoluteDiff = Math.abs(userAnswer - expectedResult);
-
-    if (userAnswer === expectedResult) {
+    // Implementa a lógica exata do PHP
+    // 1. Verifica se está 100% correto
+    if (expectedResult === userAnswer) {
       return 'PARABÉNS! 100% CORRETO!';
-    } else if (userAnswer >= lowerBound && userAnswer <= upperBound) {
-      return 'PARABÉNS! VOCÊ ACERTOU!';
-    } else if (Math.abs(Math.abs(userAnswer) - Math.abs(expectedResult)) <= Math.abs(expectedResult * 0.1)) {
-      return 'Pode-se dizer que está "MEIO CERTO"! Não desista, continue tentando!';
-    } else {
-      return 'NÃO FOI DESSA VEZ! Continue tentando, VOCÊ CONSEGUE!';
     }
+    
+    // 2. Verifica se está correto com margem (inferior)
+    const marginLowerBound = Math.abs(expectedResult - (expectedResult * (1 - (margin / 100))));
+    if (Math.abs(userAnswer - expectedResult) <= marginLowerBound) {
+      return 'PARABÉNS! VOCÊ ACERTOU!';
+    }
+    
+    // 3. Verifica se está correto com margem (superior)
+    const marginUpperBound = Math.abs(expectedResult * (1 + (margin / 100)) - expectedResult);
+    if (Math.abs(userAnswer - expectedResult) <= marginUpperBound) {
+      return 'PARABÉNS! VOCÊ ACERTOU!';
+    }
+    
+    // 4. Verifica se está "meio certo" (inferior)
+    const halfRightLowerBound = Math.abs(expectedResult - (expectedResult * 1.1));
+    const marginLowerCheck = Math.abs(expectedResult - expectedResult * (1 - (margin / 100)));
+    if (Math.abs(Math.abs(userAnswer) - Math.abs(expectedResult)) <= halfRightLowerBound && 
+        Math.abs(userAnswer - expectedResult) >= marginLowerCheck) {
+      return 'Pode-se dizer que está "MEIO CERTO"! Não desista, continue tentando!';
+    }
+    
+    // 5. Verifica se está "meio certo" (superior)
+    const halfRightUpperBound = Math.abs(expectedResult * 1.1 - expectedResult);
+    const marginUpperCheck = Math.abs(expectedResult * (1 + (margin / 100)) - expectedResult);
+    if (Math.abs(Math.abs(userAnswer) - Math.abs(expectedResult)) <= halfRightUpperBound && 
+        Math.abs(userAnswer - expectedResult) >= marginUpperCheck) {
+      return 'Pode-se dizer que está "MEIO CERTO"! Não desista, continue tentando!';
+    }
+    
+    // 6. Caso contrário, está incorreto
+    return 'NÃO FOI DESSA VEZ! Continue tentando, VOCÊ CONSEGUE!';
   };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {

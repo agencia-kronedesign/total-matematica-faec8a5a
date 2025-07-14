@@ -46,7 +46,7 @@ export class SafeMathEvaluator {
     }
 
     try {
-      // Replace 'n' with the actual value
+      // Replace 'n' with the actual value (mimicking PHP str_replace)
       const sanitizedFormula = formula.replace(/\bn\b/g, n.toString());
       
       // Validate the sanitized formula doesn't contain dangerous patterns
@@ -62,7 +62,8 @@ export class SafeMathEvaluator {
         throw new Error('Formula evaluation did not produce a valid number');
       }
 
-      return result;
+      // Return the result with proper precision to match PHP behavior
+      return parseFloat(result.toString());
     } catch (error) {
       throw new Error(`Formula evaluation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
