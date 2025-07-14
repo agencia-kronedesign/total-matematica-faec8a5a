@@ -9,10 +9,10 @@ interface AdminRouteProps {
 }
 
 const AdminRoute: React.FC<AdminRouteProps> = ({ children, requiredRole = 'admin' }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, userProfile } = useAuth();
   const { hasPermission } = usePermissions();
 
-  if (loading) {
+  if (loading || (user && !userProfile)) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>

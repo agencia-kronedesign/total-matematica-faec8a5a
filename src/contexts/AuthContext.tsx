@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Configurar o listener de alteração de estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('🔄 Auth state changed:', event, session?.user?.email);
         
         setSession(session);
@@ -71,13 +71,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           // Só buscar perfil se ainda não tivermos ou se for um usuário diferente
           if (!userProfile || userProfile.id !== session.user.id) {
-            await fetchUserProfile(session.user.id);
+            // Usar setTimeout para evitar chamadas síncronas que causam loops
+            setTimeout(() => {
+              fetchUserProfile(session.user.id);
+            }, 0);
           }
-          // Login bem-sucedido, limpar authLoading
           setAuthLoading(false);
         } else {
           clearUserProfile();
-          // Logout ou sessão limpa, garantir que authLoading seja resetado
           setAuthLoading(false);
         }
         
@@ -86,40 +87,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // Verificar sessão atual no carregamento inicial
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('🔍 Verificando sessão inicial:', session?.user?.email);
       
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await fetchUserProfile(session.user.id);
+        setTimeout(() => {
+          fetchUserProfile(session.user.id);
+        }, 0);
       }
       
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [fetchUserProfile, clearUserProfile, userProfile]);
 
-  // Verificação periódica mais frequente (a cada 10 segundos)
+  // Verificação periódica menos frequente (a cada 30 segundos)
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !userProfile) return;
+
+    let isChecking = false;
 
     const checkUserStatus = async () => {
-      const isActive = await verifyUserStatus(user.id);
-      if (!isActive) {
-        console.log('🚫 Verificação periódica: usuário inativo detectado, fazendo logout...');
-        await forceLogout('Sua conta foi desativada. Entre em contato com o administrador.');
+      if (isChecking) return;
+      isChecking = true;
+      
+      try {
+        const isActive = await verifyUserStatus(user.id);
+        if (!isActive) {
+          console.log('🚫 Verificação periódica: usuário inativo detectado, fazendo logout...');
+          await forceLogout('Sua conta foi desativada. Entre em contato com o administrador.');
+        }
+      } finally {
+        isChecking = false;
       }
     };
 
-    // Verificar imediatamente e depois a cada 10 segundos
-    checkUserStatus();
-    const interval = setInterval(checkUserStatus, 10 * 1000); // 10 segundos
+    // Verificar apenas a cada 30 segundos para reduzir overhead
+    const interval = setInterval(checkUserStatus, 30 * 1000);
 
     return () => clearInterval(interval);
-  }, [user?.id, verifyUserStatus, forceLogout]);
+  }, [user?.id, userProfile, verifyUserStatus, forceLogout]);
 
   const signUp = async (email: string, password: string, nome: string) => {
     try {

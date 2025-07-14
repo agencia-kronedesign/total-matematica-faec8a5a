@@ -1,23 +1,23 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserStatusVerification } from '@/hooks/useUserStatusVerification';
 
 export const useUserProfile = () => {
   const [userProfile, setUserProfile] = useState<any | null>(null);
   const { verifyUserStatus, forceLogout } = useUserStatusVerification();
+  const fetchingRef = useRef(false);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    // Evitar múltiplas chamadas simultâneas
+    if (fetchingRef.current) {
+      console.log('🔄 Fetch já em andamento, ignorando...');
+      return;
+    }
+
+    fetchingRef.current = true;
     try {
       console.log('🔍 Buscando perfil para usuário:', userId);
       
-      // VERIFICAÇÃO CRÍTICA: Verificar se usuário está ativo ANTES de carregar perfil
-      const isActive = await verifyUserStatus(userId);
-      if (!isActive) {
-        console.log('🚫 Usuário inativo detectado durante busca de perfil, bloqueando acesso...');
-        await forceLogout('Sua conta foi desativada. Entre em contato com o administrador.');
-        return;
-      }
-
       const { data, error } = await supabase
         .from('usuarios')
         .select('*')
@@ -34,7 +34,7 @@ export const useUserProfile = () => {
         return;
       }
       
-      // VERIFICAÇÃO DUPLA: Confirmar que o perfil carregado está ativo
+      // Verificar se usuário está ativo apenas uma vez
       if (data.ativo === false) {
         console.log('🚫 Perfil carregado está inativo, fazendo logout...');
         await forceLogout('Sua conta foi desativada. Entre em contato com o administrador.');
@@ -45,12 +45,15 @@ export const useUserProfile = () => {
       setUserProfile(data);
     } catch (error) {
       console.error('💥 Erro ao buscar perfil:', error);
+    } finally {
+      fetchingRef.current = false;
     }
-  };
+  }, [verifyUserStatus, forceLogout]);
 
-  const clearUserProfile = () => {
+  const clearUserProfile = useCallback(() => {
     setUserProfile(null);
-  };
+    fetchingRef.current = false;
+  }, []);
 
   return { userProfile, fetchUserProfile, clearUserProfile };
 };
