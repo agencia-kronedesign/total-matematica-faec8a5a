@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { SafeMathEvaluator } from '@/utils/safeMathEvaluator';
+import { useExerciseSubmission } from '@/hooks/useExerciseSubmission';
 
 const formSchema = z.object({
   input: z.coerce.number()
@@ -34,6 +35,7 @@ interface ExerciseResolverProps {
   formula: string;
   marginError: number;
   imageUrl?: string;
+  atividadeId?: string;
 }
 
 export function ExerciseResolver({ 
@@ -43,9 +45,11 @@ export function ExerciseResolver({
   order, 
   formula, 
   marginError,
-  imageUrl 
+  imageUrl,
+  atividadeId
 }: ExerciseResolverProps) {
   const [result, setResult] = useState<string | null>(null);
+  const { submitExercise, isSubmitting } = useExerciseSubmission();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -102,14 +106,33 @@ export function ExerciseResolver({
     return 'NÃO FOI DESSA VEZ! Continue tentando, VOCÊ CONSEGUE!';
   };
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      const expectedResult = SafeMathEvaluator.evaluate(formula, values.input);
       const result = calculateResult(formula, values.input, values.answer, marginError);
       setResult(result);
-      if (result.includes('PARABÉNS')) {
-        toast.success(result);
+
+      // Salvar resposta no banco de dados
+      const submissionResult = await submitExercise({
+        exerciseId,
+        atividadeId,
+        numeroN: values.input,
+        respostaDigitada: values.answer.toString(),
+        resultadoCalculado: expectedResult,
+        margemAplicada: marginError,
+        resultMessage: result
+      });
+
+      if (submissionResult.success) {
+        if (result.includes('PARABÉNS')) {
+          toast.success(result);
+        } else if (result.includes('MEIO CERTO')) {
+          toast.warning(result);
+        } else {
+          toast.error(result);
+        }
       } else {
-        toast.error(result);
+        toast.error('Erro ao salvar resposta: ' + submissionResult.error);
       }
     } catch (error) {
       console.error('Erro ao calcular resultado:', error);
@@ -174,8 +197,8 @@ export function ExerciseResolver({
               )}
             />
 
-            <Button type="submit" className="w-full">
-              Enviar
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? 'Enviando...' : 'Enviar'}
             </Button>
 
             {result && (
