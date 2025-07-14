@@ -15,13 +15,14 @@ import { useUserEdit } from '@/hooks/useUserEdit';
 import { UserFormData, UserType, USER_TYPE_LABELS } from '@/types/user';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { Eye, EyeOff, RefreshCw, MapPin } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, MapPin, Loader2 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { FormattedInput } from '@/components/ui/formatted-input';
 import { useCEP } from '@/hooks/useCEP';
+import { useCidades } from '@/hooks/useCidades';
 import { useFormProgressTracker } from '@/hooks/useFormProgressTracker';
 import { Progress } from '@/components/ui/progress';
 
@@ -171,6 +172,10 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
   }, [userData, isEditMode, form]);
 
   const watchedUserType = form.watch('tipo_usuario');
+  
+  // Estado e cidades
+  const selectedEstado = form.watch('estado');
+  const { data: cidadesDisponiveis = [], isLoading: isLoadingCidades } = useCidades(selectedEstado);
   
   const formSteps = ['dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
   const { progressPercentage, getStepStatus } = useFormProgressTracker(
@@ -811,13 +816,33 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
 
                     <FormField
                       control={form.control}
-                      name="cidade"
+                      name="estado"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Cidade</FormLabel>
-                          <FormControl>
-                            <Input placeholder="São Paulo" {...field} />
-                          </FormControl>
+                          <FormLabel>Estado</FormLabel>
+                          <Select 
+                            value={field.value} 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // Limpa a cidade quando o estado muda
+                              form.setValue('cidade', '');
+                            }}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o Estado" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+                                'MG', 'MS', 'MT', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+                                'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map((estado) => (
+                                <SelectItem key={estado} value={estado}>
+                                  {estado}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -825,13 +850,44 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
 
                     <FormField
                       control={form.control}
-                      name="estado"
+                      name="cidade"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Estado</FormLabel>
-                          <FormControl>
-                            <Input placeholder="SP" {...field} />
-                          </FormControl>
+                          <FormLabel>Cidade</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={!selectedEstado || isLoadingCidades}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue 
+                                  placeholder={
+                                    !selectedEstado 
+                                      ? "Primeiro selecione o Estado" 
+                                      : isLoadingCidades 
+                                        ? "Carregando cidades..." 
+                                        : "Selecione a Cidade"
+                                  } 
+                                />
+                                {isLoadingCidades && (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                )}
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {cidadesDisponiveis.length === 0 && !isLoadingCidades && selectedEstado && (
+                                <SelectItem value="" disabled>
+                                  Nenhuma cidade disponível
+                                </SelectItem>
+                              )}
+                              {cidadesDisponiveis.map((cidade) => (
+                                <SelectItem key={cidade} value={cidade}>
+                                  {cidade}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
