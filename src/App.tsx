@@ -20,6 +20,8 @@ import UserManagement from "./pages/admin/UserManagement";
 import EscolasManagement from "./pages/admin/EscolasManagement";
 import AtividadesManagement from "./pages/admin/AtividadesManagement";
 import UserRegistration from "./pages/UserRegistration";
+import StudentActivities from "./pages/StudentActivities";
+import ActivityExercises from "./pages/ActivityExercises";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +55,18 @@ const App = () => (
               <Route path="/exercicios/editar/:id" element={
                 <ProtectedRoute>
                   <ExerciseForm />
+                </ProtectedRoute>
+              } />
+              
+              {/* Student Routes */}
+              <Route path="/atividades" element={
+                <ProtectedRoute>
+                  <StudentActivities />
+                </ProtectedRoute>
+              } />
+              <Route path="/atividades/:atividadeId" element={
+                <ProtectedRoute>
+                  <ActivityExercises />
                 </ProtectedRoute>
               } />
               

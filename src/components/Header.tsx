@@ -4,9 +4,11 @@ import { Menu, X } from 'lucide-react';
 import Logo from './Logo';
 import { Link } from 'react-router-dom';
 import UserMenu from './UserMenu';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 bg-white z-50 shadow-sm">
@@ -17,10 +19,18 @@ const Header = () => {
         <div className="hidden md:flex items-center gap-6">
           <nav className="flex items-center gap-6 mr-4">
             <Link to="/" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">HOME</Link>
+            {user && (
+              <>
+                <Link to="/dashboard" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">DASHBOARD</Link>
+                <Link to="/atividades" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">ATIVIDADES</Link>
+              </>
+            )}
             <Link to="/quem-somos" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">QUEM SOMOS</Link>
             <Link to="/faq" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">FAQ</Link>
             <Link to="/contato" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">CONTATO</Link>
-            <Link to="/teste" className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors">FAÇA UM TESTE</Link>
+            {!user && (
+              <Link to="/teste" className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors">FAÇA UM TESTE</Link>
+            )}
           </nav>
           <UserMenu />
         </div>
@@ -36,10 +46,18 @@ const Header = () => {
         <div className="md:hidden bg-white py-4 px-4 shadow-md">
           <nav className="flex flex-col space-y-3">
             <Link to="/" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">HOME</Link>
+            {user && (
+              <>
+                <Link to="/dashboard" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">DASHBOARD</Link>
+                <Link to="/atividades" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">ATIVIDADES</Link>
+              </>
+            )}
             <Link to="/quem-somos" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">QUEM SOMOS</Link>
             <Link to="/faq" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">FAQ</Link>
             <Link to="/contato" className="font-semibold text-totalBlue hover:text-opacity-80 transition-colors">CONTATO</Link>
-            <Link to="/teste" className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md text-center hover:bg-opacity-90 transition-colors">FAÇA UM TESTE</Link>
+            {!user && (
+              <Link to="/teste" className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md text-center hover:bg-opacity-90 transition-colors">FAÇA UM TESTE</Link>
+            )}
             <div className="pt-2">
               <UserMenu />
             </div>
