@@ -122,11 +122,39 @@ export const useUserRegistration = () => {
         throw new Error('Erro ao criar usuário');
       }
 
-      // Aguardar um pouco para o trigger handle_new_user funcionar
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Aguardar o trigger handle_new_user criar o registro inicial
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Verificar se o usuário foi criado na tabela usuarios
+      let attempts = 0;
+      let userExists = false;
+      while (attempts < 5 && !userExists) {
+        const { data: checkUser } = await supabase
+          .from('usuarios')
+          .select('id')
+          .eq('id', authData.user.id)
+          .maybeSingle();
+        
+        if (checkUser) {
+          userExists = true;
+        } else {
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      if (!userExists) {
+        console.error('[UserRegistration] Usuário não foi criado na tabela usuarios');
+        throw new Error('Erro na criação do usuário - tente novamente');
+      }
+
+      console.log('[UserRegistration] Atualizando dados do usuário:', { 
+        id: authData.user.id, 
+        tipo_usuario: formData.tipo_usuario 
+      });
 
       // Atualizar dados completos do usuário
-      const { error: updateError } = await supabase
+      const { error: updateError, data: updateData } = await supabase
         .from('usuarios')
         .update({
           nome: formData.nome,
@@ -149,11 +177,29 @@ export const useUserRegistration = () => {
           permissao_relatorios: formData.permissao_relatorios,
           ativo: formData.ativo,
         })
-        .eq('id', authData.user.id);
+        .eq('id', authData.user.id)
+        .select();
 
       if (updateError) {
         console.error('[UserRegistration] Erro ao atualizar dados:', updateError);
         throw updateError;
+      }
+
+      console.log('[UserRegistration] Dados atualizados com sucesso:', updateData);
+
+      // Verificar se o tipo foi realmente atualizado
+      const { data: verifyUser } = await supabase
+        .from('usuarios')
+        .select('tipo_usuario')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (verifyUser?.tipo_usuario !== formData.tipo_usuario) {
+        console.error('[UserRegistration] Tipo de usuário não foi atualizado corretamente:', {
+          esperado: formData.tipo_usuario,
+          atual: verifyUser?.tipo_usuario
+        });
+        throw new Error(`Erro: usuário foi criado como ${verifyUser?.tipo_usuario} em vez de ${formData.tipo_usuario}`);
       }
 
       // Atualizar preferências
