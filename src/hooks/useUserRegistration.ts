@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserFormData, UserRegistrationData } from '@/types/user';
 
 export const useUserRegistration = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   const generatePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
@@ -103,27 +105,59 @@ export const useUserRegistration = () => {
         }
       }
 
-      // Criar usuário no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: senha,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
+      let authData;
+
+      // Se for admin, usar Edge Function para não afetar a sessão atual
+      if (isAdmin) {
+        console.log('[UserRegistration] Admin detectado - usando Edge Function');
+        
+        const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('admin-create-user', {
+          body: {
+            email: formData.email,
+            password: senha,
             nome: formData.nome,
             tipo_usuario: formData.tipo_usuario,
           },
-        },
-      });
+        });
 
-      if (authError) throw authError;
+        if (edgeFunctionError) throw edgeFunctionError;
+        
+        if (!edgeFunctionData?.user) {
+          throw new Error('Erro ao criar usuário via Edge Function');
+        }
 
-      if (!authData.user) {
-        throw new Error('Erro ao criar usuário');
+        authData = { user: edgeFunctionData.user };
+        
+        // Para criação via Edge Function, aguardar menos tempo pois o usuário já foi criado
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+      } else {
+        console.log('[UserRegistration] Cadastro público - usando signUp normal');
+        
+        // Cadastro público - usar signUp normal que loga automaticamente
+        const { data: signUpData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: senha,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              nome: formData.nome,
+              tipo_usuario: formData.tipo_usuario,
+            },
+          },
+        });
+
+        if (authError) throw authError;
+
+        if (!signUpData.user) {
+          throw new Error('Erro ao criar usuário');
+        }
+
+        authData = signUpData;
+        
+        // Aguardar o trigger handle_new_user criar o registro inicial
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
-
-      // Aguardar o trigger handle_new_user criar o registro inicial
-      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Verificar se o usuário foi criado na tabela usuarios
       let attempts = 0;
@@ -153,39 +187,72 @@ export const useUserRegistration = () => {
         tipo_usuario: formData.tipo_usuario 
       });
 
-      // Atualizar dados completos do usuário
-      const { error: updateError, data: updateData } = await supabase
-        .from('usuarios')
-        .update({
-          nome: formData.nome,
-          tipo_usuario: formData.tipo_usuario,
-          cargo: formData.cargo,
-          telefone_fixo: formData.telefone_fixo?.replace(/\D/g, '') || null,
-          telefone_mobile: formData.telefone_mobile?.replace(/\D/g, '') || null,
-          cpf: formData.cpf?.replace(/\D/g, '') || null,
-          rg: formData.rg?.replace(/\D/g, '') || null,
-          endereco: formData.endereco,
-          cidade: formData.cidade,
-          estado: formData.estado,
-          cep: formData.cep?.replace(/\D/g, '') || null,
-          data_nascimento: formData.data_nascimento,
-          numero_matricula: formData.numero_matricula,
-          numero_chamada: formData.numero_chamada,
-          turma: formData.turma,
-          nome_responsavel: formData.nome_responsavel,
-          email_responsavel: formData.email_responsavel,
-          permissao_relatorios: formData.permissao_relatorios,
-          ativo: formData.ativo,
-        })
-        .eq('id', authData.user.id)
-        .select();
+      // Atualizar dados completos do usuário (se não foi criado via Edge Function)
+      if (!isAdmin) {
+        const { error: updateError, data: updateData } = await supabase
+          .from('usuarios')
+          .update({
+            nome: formData.nome,
+            tipo_usuario: formData.tipo_usuario,
+            cargo: formData.cargo,
+            telefone_fixo: formData.telefone_fixo?.replace(/\D/g, '') || null,
+            telefone_mobile: formData.telefone_mobile?.replace(/\D/g, '') || null,
+            cpf: formData.cpf?.replace(/\D/g, '') || null,
+            rg: formData.rg?.replace(/\D/g, '') || null,
+            endereco: formData.endereco,
+            cidade: formData.cidade,
+            estado: formData.estado,
+            cep: formData.cep?.replace(/\D/g, '') || null,
+            data_nascimento: formData.data_nascimento,
+            numero_matricula: formData.numero_matricula,
+            numero_chamada: formData.numero_chamada,
+            turma: formData.turma,
+            nome_responsavel: formData.nome_responsavel,
+            email_responsavel: formData.email_responsavel,
+            permissao_relatorios: formData.permissao_relatorios,
+            ativo: formData.ativo,
+          })
+          .eq('id', authData.user.id)
+          .select();
 
-      if (updateError) {
-        console.error('[UserRegistration] Erro ao atualizar dados:', updateError);
-        throw updateError;
+        if (updateError) {
+          console.error('[UserRegistration] Erro ao atualizar dados:', updateError);
+          throw updateError;
+        }
+
+        console.log('[UserRegistration] Dados atualizados com sucesso:', updateData);
+
+        // Atualizar preferências
+        const { error: preferencesError } = await supabase
+          .from('preferencias_usuario')
+          .update({
+            notificacao_email: formData.notificacao_email,
+            notificacao_site: formData.notificacao_site,
+            notificacao_push: formData.notificacao_push,
+            aceite_notificacoes: formData.aceite_notificacoes,
+          })
+          .eq('usuario_id', authData.user.id);
+
+        if (preferencesError) {
+          console.error('[UserRegistration] Erro ao atualizar preferências:', preferencesError);
+        }
+
+        // Atualizar consentimento
+        const { error: consentError } = await supabase
+          .from('consentimento_usuario')
+          .update({
+            termos_uso: formData.termos_uso,
+            politica_privacidade: formData.politica_privacidade,
+            data_consentimento: new Date().toISOString(),
+            ip_consentimento: 'N/A', // TODO: Capturar IP real
+            navegador_consentimento: navigator.userAgent,
+          })
+          .eq('usuario_id', authData.user.id);
+
+        if (consentError) {
+          console.error('[UserRegistration] Erro ao atualizar consentimento:', consentError);
+        }
       }
-
-      console.log('[UserRegistration] Dados atualizados com sucesso:', updateData);
 
       // Verificar se o tipo foi realmente atualizado
       const { data: verifyUser } = await supabase
@@ -200,37 +267,6 @@ export const useUserRegistration = () => {
           atual: verifyUser?.tipo_usuario
         });
         throw new Error(`Erro: usuário foi criado como ${verifyUser?.tipo_usuario} em vez de ${formData.tipo_usuario}`);
-      }
-
-      // Atualizar preferências
-      const { error: preferencesError } = await supabase
-        .from('preferencias_usuario')
-        .update({
-          notificacao_email: formData.notificacao_email,
-          notificacao_site: formData.notificacao_site,
-          notificacao_push: formData.notificacao_push,
-          aceite_notificacoes: formData.aceite_notificacoes,
-        })
-        .eq('usuario_id', authData.user.id);
-
-      if (preferencesError) {
-        console.error('[UserRegistration] Erro ao atualizar preferências:', preferencesError);
-      }
-
-      // Atualizar consentimento
-      const { error: consentError } = await supabase
-        .from('consentimento_usuario')
-        .update({
-          termos_uso: formData.termos_uso,
-          politica_privacidade: formData.politica_privacidade,
-          data_consentimento: new Date().toISOString(),
-          ip_consentimento: 'N/A', // TODO: Capturar IP real
-          navegador_consentimento: navigator.userAgent,
-        })
-        .eq('usuario_id', authData.user.id);
-
-      if (consentError) {
-        console.error('[UserRegistration] Erro ao atualizar consentimento:', consentError);
       }
 
       console.log('[UserRegistration] Usuário cadastrado com sucesso:', authData.user.id);
