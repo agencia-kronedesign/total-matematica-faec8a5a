@@ -67,7 +67,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (event, session) => {
         if (!mounted) return;
         
-        console.log('🔄 Auth state changed:', event, session?.user?.email);
+        console.log('🔄 [AuthContext] Auth state changed:', {
+          event,
+          newUserEmail: session?.user?.email,
+          newUserId: session?.user?.id,
+          previousUserEmail: user?.email,
+          previousUserId: user?.id,
+          sessionChanged: session?.user?.id !== user?.id,
+          timestamp: new Date().toISOString()
+        });
+        
+        // DETECTAR TROCA INESPERADA DE USUÁRIO
+        if (user && session?.user && user.id !== session.user.id) {
+          console.warn('⚠️ [AuthContext] DETECÇÃO DE TROCA DE USUÁRIO INESPERADA!', {
+            from: { id: user.id, email: user.email },
+            to: { id: session.user.id, email: session.user.email },
+            event: event,
+            currentPath: window.location.pathname
+          });
+          
+          // Se estamos em rota admin e não é logout intencional
+          if (window.location.pathname.startsWith('/admin') && event !== 'SIGNED_OUT') {
+            console.error('❌ [AuthContext] Troca de usuário não autorizada em área admin!');
+            
+            // Potencial implementação de restauração de sessão aqui
+            // Por enquanto, apenas loggar para debug
+          }
+        }
         
         setSession(session);
         setUser(session?.user ?? null);
@@ -75,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           // Só buscar perfil se ainda não tivermos ou se for um usuário diferente
           if (!userProfile || userProfile.id !== session.user.id) {
+            console.log('[AuthContext] Buscando perfil para usuário:', session.user.id);
             // Usar setTimeout para evitar chamadas síncronas que causam loops
             setTimeout(() => {
               if (mounted) {
@@ -84,6 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
           setAuthLoading(false);
         } else {
+          console.log('[AuthContext] Limpando perfil do usuário');
           clearUserProfile();
           setAuthLoading(false);
         }

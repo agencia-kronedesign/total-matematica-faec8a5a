@@ -7,7 +7,7 @@ import { UserFormData, UserRegistrationData } from '@/types/user';
 export const useUserRegistration = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const generatePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
@@ -59,7 +59,13 @@ export const useUserRegistration = () => {
   const registerUser = async (formData: UserFormData): Promise<{ success: boolean; user?: any; error?: string }> => {
     try {
       setLoading(true);
-      console.log('[UserRegistration] Iniciando cadastro de usuário:', { email: formData.email, tipo: formData.tipo_usuario });
+      console.log('[UserRegistration] ===== INÍCIO DO CADASTRO =====');
+      console.log('[UserRegistration] Dados do formulário:', { 
+        email: formData.email, 
+        tipo: formData.tipo_usuario,
+        isAdmin: isAdmin,
+        currentPath: window.location.pathname
+      });
 
       // Validações
       if (!validateEmail(formData.email)) {
@@ -107,9 +113,28 @@ export const useUserRegistration = () => {
 
       let authData;
 
-      // Se for admin, usar Edge Function para não afetar a sessão atual
-      if (isAdmin) {
-        console.log('[UserRegistration] Admin detectado - usando Edge Function');
+      // FORÇAR Edge Function se estiver em rota administrativa
+      const isAdminRoute = window.location.pathname.startsWith('/admin') || 
+                          window.location.pathname.includes('cadastro-usuario');
+      
+      const shouldUseEdgeFunction = isAdmin || isAdminRoute;
+      
+      console.log('[UserRegistration] Decisão de método:', {
+        isAdmin,
+        isAdminRoute,
+        shouldUseEdgeFunction,
+        currentPath: window.location.pathname
+      });
+
+      if (shouldUseEdgeFunction) {
+        console.log('[UserRegistration] ✅ USANDO EDGE FUNCTION - Preservando sessão admin');
+        
+        // Salvar sessão atual como backup
+        const currentSession = await supabase.auth.getSession();
+        console.log('[UserRegistration] Sessão atual salva:', {
+          userId: currentSession.data.session?.user?.id,
+          email: currentSession.data.session?.user?.email
+        });
         
         const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('admin-create-user', {
           body: {
@@ -120,19 +145,31 @@ export const useUserRegistration = () => {
           },
         });
 
-        if (edgeFunctionError) throw edgeFunctionError;
+        if (edgeFunctionError) {
+          console.error('[UserRegistration] ❌ Erro na Edge Function:', edgeFunctionError);
+          throw edgeFunctionError;
+        }
         
         if (!edgeFunctionData?.user) {
+          console.error('[UserRegistration] ❌ Edge Function não retornou usuário');
           throw new Error('Erro ao criar usuário via Edge Function');
         }
 
+        console.log('[UserRegistration] ✅ Usuário criado via Edge Function:', edgeFunctionData.user.id);
         authData = { user: edgeFunctionData.user };
         
-        // Para criação via Edge Function, aguardar menos tempo pois o usuário já foi criado
+        // Verificar se sessão ainda está válida após Edge Function
+        const sessionAfterEdge = await supabase.auth.getSession();
+        console.log('[UserRegistration] Sessão após Edge Function:', {
+          still_logged: !!sessionAfterEdge.data.session,
+          same_user: sessionAfterEdge.data.session?.user?.id === currentSession.data.session?.user?.id
+        });
+        
+        // Para criação via Edge Function, aguardar menos tempo
         await new Promise(resolve => setTimeout(resolve, 1000));
         
       } else {
-        console.log('[UserRegistration] Cadastro público - usando signUp normal');
+        console.log('[UserRegistration] ⚠️  USANDO SIGNUP NORMAL - Pode afetar sessão');
         
         // Cadastro público - usar signUp normal que loga automaticamente
         const { data: signUpData, error: authError } = await supabase.auth.signUp({
@@ -269,12 +306,38 @@ export const useUserRegistration = () => {
         throw new Error(`Erro: usuário foi criado como ${verifyUser?.tipo_usuario} em vez de ${formData.tipo_usuario}`);
       }
 
-      console.log('[UserRegistration] Usuário cadastrado com sucesso:', authData.user.id);
+      console.log('[UserRegistration] ===== USUÁRIO CADASTRADO COM SUCESSO =====');
+      console.log('[UserRegistration] Detalhes:', {
+        usuarioCriado: authData.user.id,
+        email: formData.email,
+        tipo: formData.tipo_usuario,
+        metodoUsado: shouldUseEdgeFunction ? 'Edge Function' : 'signUp',
+        isAdmin: isAdmin,
+        isAdminRoute: isAdminRoute
+      });
+
+      // Verificar sessão final para admins
+      if (shouldUseEdgeFunction) {
+        const finalSession = await supabase.auth.getSession();
+        console.log('[UserRegistration] Verificação final da sessão admin:', {
+          sessionExists: !!finalSession.data.session,
+          currentUser: finalSession.data.session?.user?.email,
+          isStillAdmin: finalSession.data.session?.user?.id === user?.id
+        });
+      }
 
       toast({
         title: "Usuário cadastrado com sucesso!",
         description: `Email: ${formData.email} | Senha: ${senha}`,
       });
+
+      // Redirecionamento automático para admins
+      if (shouldUseEdgeFunction && window.location.pathname.startsWith('/admin')) {
+        console.log('[UserRegistration] Redirecionando admin para lista de usuários');
+        setTimeout(() => {
+          window.location.href = '/admin/usuarios';
+        }, 1500);
+      }
 
       return { success: true, user: authData.user };
     } catch (error: any) {
