@@ -15,39 +15,35 @@ const CreateAdminUser = () => {
   const createAdminUser = async () => {
     setLoading(true);
     try {
-      // Primeiro, criar o usuário na auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            nome: nome,
-          },
-        },
+      // Usar Edge Function para criar usuário sem afetar sessão atual
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email,
+          password,
+          nome,
+          tipo_usuario: 'admin'
+        }
       });
 
-      if (authError) throw authError;
+      if (error) throw error;
 
-      if (authData.user) {
-        // Depois, atualizar o tipo de usuário para admin
-        const { error: updateError } = await supabase
-          .from('usuarios')
-          .update({ tipo_usuario: 'admin' })
-          .eq('id', authData.user.id);
+      if (data?.error) throw new Error(data.error);
 
-        if (updateError) throw updateError;
+      toast({
+        title: "Usuário admin criado com sucesso",
+        description: `${email} foi criado como administrador`,
+      });
 
-        toast({
-          title: "Usuário admin criado com sucesso",
-          description: `${email} foi criado como administrador`,
-        });
-      }
+      // Limpar formulário após sucesso
+      setEmail('totalmatematica.com.br@gmail.com');
+      setPassword('12345678');
+      setNome('Total Matemática Admin');
+
     } catch (error: any) {
       console.error('Erro ao criar usuário admin:', error);
       toast({
         title: "Erro ao criar usuário admin",
-        description: error.message,
+        description: error.message || 'Erro desconhecido',
         variant: "destructive",
       });
     } finally {
