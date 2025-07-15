@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ const CreateAdminUser = () => {
   const [nome, setNome] = useState('Total Matemática Admin');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const createAdminUser = async () => {
     setLoading(true);
@@ -38,6 +40,11 @@ const CreateAdminUser = () => {
       setEmail('totalmatematica.com.br@gmail.com');
       setPassword('12345678');
       setNome('Total Matemática Admin');
+
+      // Redirecionar para página de gerenciamento de usuários após sucesso
+      setTimeout(() => {
+        navigate('/admin/usuarios');
+      }, 1500);
 
     } catch (error: any) {
       console.error('Erro ao criar usuário admin:', error);
