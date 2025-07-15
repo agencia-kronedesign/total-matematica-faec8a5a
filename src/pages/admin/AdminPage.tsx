@@ -11,7 +11,7 @@ interface AdminPageProps {
 const AdminPage: React.FC<AdminPageProps> = ({ children }) => {
   return (
     <ProtectedRoute>
-      <AdminRoute>
+      <AdminRoute requiredRole={['admin', 'direcao', 'coordenador']}>
         <SidebarProvider defaultOpen={true}>
           <div className="flex min-h-screen w-full">
             <DashboardSidebar />
