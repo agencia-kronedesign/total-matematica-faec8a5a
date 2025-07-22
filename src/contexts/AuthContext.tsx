@@ -13,8 +13,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true); // Loading inicial da sessão
-  const [authLoading, setAuthLoading] = useState(false); // Loading de operações de auth
+  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
   const { toast } = useToast();
   const { verifyUserStatus, forceLogout } = useUserStatusVerification();
   const { signUp: authSignUp, signIn: authSignIn, signOut: authSignOut } = useAuthService();
@@ -24,20 +24,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isProfessor = userProfile?.tipo_usuario === 'professor';
   const userType = userProfile?.tipo_usuario || null;
 
+  // Verificar se sessão expirou no carregamento inicial
+  const checkSessionExpiry = async () => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('❌ Erro ao verificar sessão:', error);
+      return false;
+    }
+    
+    if (!session) {
+      return false;
+    }
+    
+    // Verificar se o token expirou
+    const now = Math.floor(Date.now() / 1000);
+    if (session.expires_at && session.expires_at < now) {
+      console.log('🚫 Sessão expirada detectada, fazendo logout...');
+      await supabase.auth.signOut();
+      
+      // Limpar dados de sessão local
+      localStorage.removeItem('lastActivity');
+      localStorage.removeItem('sessionStartTime');
+      
+      toast({
+        title: "Sessão expirada",
+        description: "Por favor, faça login novamente.",
+        variant: "destructive",
+      });
+      
+      return false;
+    }
+    
+    return true;
+  };
+
   const signOut = async () => {
     try {
       setAuthLoading(true);
       
-      // Limpar dados locais primeiro para evitar estados inconsistentes
+      // Limpar dados de sessão local
+      localStorage.removeItem('lastActivity');
+      localStorage.removeItem('sessionStartTime');
+      
+      // Limpar dados locais primeiro
       setUser(null);
       setSession(null);
       clearUserProfile();
       
-      // Fazer logout no Supabase (isso limpa automaticamente o storage)
+      // Fazer logout no Supabase
       await authSignOut();
       
-      // Forçar limpeza completa do estado de autenticação
-      // Aguardar um pouco para garantir que o estado seja limpo
       setTimeout(() => {
         setAuthLoading(false);
       }, 100);
@@ -49,6 +86,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setSession(null);
       clearUserProfile();
+      localStorage.removeItem('lastActivity');
+      localStorage.removeItem('sessionStartTime');
       
       toast({
         title: "Erro ao sair",
@@ -62,88 +101,106 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
-    // Configurar o listener de alteração de estado de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
-        
-        console.log('🔄 [AuthContext] Auth state changed:', {
-          event,
-          newUserEmail: session?.user?.email,
-          newUserId: session?.user?.id,
-          previousUserEmail: user?.email,
-          previousUserId: user?.id,
-          sessionChanged: session?.user?.id !== user?.id,
-          timestamp: new Date().toISOString()
-        });
-        
-        // DETECTAR TROCA INESPERADA DE USUÁRIO
-        if (user && session?.user && user.id !== session.user.id) {
-          console.warn('⚠️ [AuthContext] DETECÇÃO DE TROCA DE USUÁRIO INESPERADA!', {
-            from: { id: user.id, email: user.email },
-            to: { id: session.user.id, email: session.user.email },
-            event: event,
-            currentPath: window.location.pathname
+    const initializeAuth = async () => {
+      // Verificar se sessão expirou antes de configurar listeners
+      const sessionValid = await checkSessionExpiry();
+      
+      if (!mounted) return;
+
+      // Configurar o listener de alteração de estado de autenticação
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          if (!mounted) return;
+          
+          console.log('🔄 [AuthContext] Auth state changed:', {
+            event,
+            newUserEmail: session?.user?.email,
+            newUserId: session?.user?.id,
+            previousUserEmail: user?.email,
+            previousUserId: user?.id,
+            sessionChanged: session?.user?.id !== user?.id,
+            timestamp: new Date().toISOString()
           });
           
-          // Se estamos em rota admin e não é logout intencional
-          if (window.location.pathname.startsWith('/admin') && event !== 'SIGNED_OUT') {
-            console.error('❌ [AuthContext] Troca de usuário não autorizada em área admin!');
+          // DETECTAR TROCA INESPERADA DE USUÁRIO
+          if (user && session?.user && user.id !== session.user.id) {
+            console.warn('⚠️ [AuthContext] DETECÇÃO DE TROCA DE USUÁRIO INESPERADA!', {
+              from: { id: user.id, email: user.email },
+              to: { id: session.user.id, email: session.user.email },
+              event: event,
+              currentPath: window.location.pathname
+            });
             
-            // Potencial implementação de restauração de sessão aqui
-            // Por enquanto, apenas loggar para debug
+            if (window.location.pathname.startsWith('/admin') && event !== 'SIGNED_OUT') {
+              console.error('❌ [AuthContext] Troca de usuário não autorizada em área admin!');
+            }
           }
+          
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            // Inicializar timestamp de atividade se não existir
+            if (!localStorage.getItem('lastActivity')) {
+              localStorage.setItem('lastActivity', Date.now().toString());
+            }
+            if (!localStorage.getItem('sessionStartTime')) {
+              localStorage.setItem('sessionStartTime', Date.now().toString());
+            }
+            
+            if (!userProfile || userProfile.id !== session.user.id) {
+              console.log('[AuthContext] Buscando perfil para usuário:', session.user.id);
+              setTimeout(() => {
+                if (mounted) {
+                  fetchUserProfile(session.user.id);
+                }
+              }, 100);
+            }
+            setAuthLoading(false);
+          } else {
+            console.log('[AuthContext] Limpando perfil do usuário');
+            clearUserProfile();
+            // Limpar dados de sessão local
+            localStorage.removeItem('lastActivity');
+            localStorage.removeItem('sessionStartTime');
+            setAuthLoading(false);
+          }
+          
+          setLoading(false);
         }
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Só buscar perfil se ainda não tivermos ou se for um usuário diferente
-          if (!userProfile || userProfile.id !== session.user.id) {
-            console.log('[AuthContext] Buscando perfil para usuário:', session.user.id);
-            // Usar setTimeout para evitar chamadas síncronas que causam loops
+      );
+
+      // Verificar sessão atual no carregamento inicial apenas se ainda for válida
+      if (sessionValid) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!mounted) return;
+          
+          console.log('🔍 Verificando sessão inicial:', session?.user?.email);
+          
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
             setTimeout(() => {
               if (mounted) {
                 fetchUserProfile(session.user.id);
               }
             }, 100);
           }
-          setAuthLoading(false);
-        } else {
-          console.log('[AuthContext] Limpando perfil do usuário');
-          clearUserProfile();
-          setAuthLoading(false);
-        }
-        
+          
+          setLoading(false);
+        });
+      } else {
         setLoading(false);
       }
-    );
 
-    // Verificar sessão atual no carregamento inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('🔍 Verificando sessão inicial:', session?.user?.email);
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        setTimeout(() => {
-          if (mounted) {
-            fetchUserProfile(session.user.id);
-          }
-        }, 100);
-      }
-      
-      setLoading(false);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
+      return () => {
+        mounted = false;
+        subscription.unsubscribe();
+      };
     };
+
+    initializeAuth();
   }, []);
 
   // Verificação periódica menos frequente (a cada 30 segundos)
@@ -167,7 +224,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    // Verificar apenas a cada 30 segundos para reduzir overhead
     const interval = setInterval(checkUserStatus, 30 * 1000);
 
     return () => clearInterval(interval);
@@ -196,10 +252,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setSession(null);
       clearUserProfile();
+      localStorage.removeItem('lastActivity');
+      localStorage.removeItem('sessionStartTime');
       
       await authSignIn(email, password);
       
-      // O loading será limpo automaticamente pelo onAuthStateChange quando o login for bem-sucedido
     } catch (error: any) {
       console.error('❌ Erro no login:', error);
       toast({
