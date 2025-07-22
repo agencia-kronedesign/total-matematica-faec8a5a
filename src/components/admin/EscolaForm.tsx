@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,6 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
     selectedEstado,
     cidadesDisponiveis,
     isLoadingCidades,
-    formatCEP,
     onSubmit,
   } = useEscolaForm({ escola, onClose });
 
@@ -43,7 +43,7 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <BasicInfoSection form={form} formatCEP={formatCEP} />
+          <BasicInfoSection form={form} formatCEP={() => ''} />
           
           <InscriptionsSection form={form} />
           

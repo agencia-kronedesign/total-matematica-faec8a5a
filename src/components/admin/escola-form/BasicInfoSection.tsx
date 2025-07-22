@@ -1,5 +1,7 @@
+
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { FormattedInput } from '@/components/ui/formatted-input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UseFormReturn } from 'react-hook-form';
 import { EscolaFormData } from '@/schemas/escolaSchema';
@@ -54,7 +56,14 @@ export function BasicInfoSection({ form, formatCEP }: BasicInfoSectionProps) {
               <FormItem>
                 <FormLabel>CNPJ</FormLabel>
                 <FormControl>
-                  <Input placeholder="00.000.000/0000-00" {...field} />
+                  <FormattedInput
+                    formatter="cnpj"
+                    placeholder="00.000.000/0000-00"
+                    onValueChange={(unformatted, formatted) => {
+                      field.onChange(unformatted);
+                    }}
+                    value={field.value}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -68,13 +77,13 @@ export function BasicInfoSection({ form, formatCEP }: BasicInfoSectionProps) {
               <FormItem>
                 <FormLabel>CEP *</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="00000-000" 
-                    {...field}
-                    onChange={(e) => {
-                      const formatted = formatCEP(e.target.value);
-                      field.onChange(formatted);
+                  <FormattedInput
+                    formatter="cep"
+                    placeholder="00000-000"
+                    onValueChange={(unformatted, formatted) => {
+                      field.onChange(unformatted);
                     }}
+                    value={field.value}
                   />
                 </FormControl>
                 <FormMessage />

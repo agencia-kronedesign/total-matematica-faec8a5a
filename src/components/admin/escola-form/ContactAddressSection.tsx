@@ -1,5 +1,7 @@
+
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { FormattedInput } from '@/components/ui/formatted-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -40,7 +42,14 @@ export function ContactAddressSection({
               <FormItem>
                 <FormLabel>Telefone</FormLabel>
                 <FormControl>
-                  <Input placeholder="(00) 0000-0000" {...field} />
+                  <FormattedInput
+                    formatter="phone"
+                    placeholder="(00) 00000-0000"
+                    onValueChange={(unformatted, formatted) => {
+                      field.onChange(unformatted);
+                    }}
+                    value={field.value}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

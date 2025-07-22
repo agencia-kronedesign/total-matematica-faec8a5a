@@ -1,15 +1,23 @@
+
 import { z } from 'zod';
+import { validateCNPJ, validatePhone, validateCEP } from '@/utils/formatters';
 
 export const escolaSchema = z.object({
   razao_social: z.string().min(1, 'Razão social é obrigatória'),
   nome_fantasia: z.string().min(1, 'Nome fantasia é obrigatório'),
-  cnpj: z.string().optional(),
+  cnpj: z.string().optional().refine((val) => validateCNPJ(val || ''), {
+    message: 'CNPJ inválido'
+  }),
   inscricao_municipal: z.string().optional(),
   inscricao_estadual: z.string().optional(),
   isento_municipal: z.boolean().default(false),
   isento_estadual: z.boolean().default(false),
-  cep: z.string().min(1, 'CEP é obrigatório'),
-  telefone: z.string().optional(),
+  cep: z.string().min(1, 'CEP é obrigatório').refine((val) => validateCEP(val), {
+    message: 'CEP inválido'
+  }),
+  telefone: z.string().optional().refine((val) => validatePhone(val || ''), {
+    message: 'Telefone inválido'
+  }),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   endereco: z.string().optional(),
   cidade: z.string().min(1, 'Cidade é obrigatória'),

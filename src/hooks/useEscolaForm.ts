@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,15 +72,6 @@ export function useEscolaForm({ escola, onClose }: UseEscolaFormProps) {
     setObservacoesCount(observacoes?.length || 0);
   }, [observacoes]);
 
-  // Format CEP
-  const formatCEP = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 8) {
-      return numbers.replace(/(\d{5})(\d{3})/, '$1-$2');
-    }
-    return value;
-  };
-
   const onSubmit = async (data: EscolaFormData) => {
     try {
       setLoading(true);
@@ -117,7 +109,6 @@ export function useEscolaForm({ escola, onClose }: UseEscolaFormProps) {
     selectedEstado,
     cidadesDisponiveis,
     isLoadingCidades,
-    formatCEP,
     onSubmit,
   };
 }

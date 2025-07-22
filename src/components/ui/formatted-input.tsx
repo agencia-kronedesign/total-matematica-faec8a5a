@@ -1,8 +1,9 @@
+
 import React, { forwardRef } from 'react';
 import { Input } from '@/components/ui/input';
-import { formatPhone, formatCPF, formatCEP, formatRG } from '@/utils/formatters';
+import { formatPhone, formatCPF, formatCEP, formatRG, formatCNPJ } from '@/utils/formatters';
 
-export type FormatterType = 'phone' | 'cpf' | 'cep' | 'rg';
+export type FormatterType = 'phone' | 'cpf' | 'cep' | 'rg' | 'cnpj';
 
 interface FormattedInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   formatter: FormatterType;
@@ -14,6 +15,7 @@ const formatters = {
   cpf: formatCPF,
   cep: formatCEP,
   rg: formatRG,
+  cnpj: formatCNPJ,
 };
 
 export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
