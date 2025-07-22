@@ -150,6 +150,7 @@ const BasicPersonalFields = ({ form }: BasicPersonalFieldsProps) => {
                 placeholder="DD/MM/AAAA" 
                 value={field.value ? dateFromISO(field.value) : ''}
                 onValueChange={handleDateChange}
+                onChange={field.onChange}
               />
             </FormControl>
             <FormMessage />
