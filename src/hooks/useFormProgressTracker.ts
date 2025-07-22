@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useMemo } from 'react';
 
 interface ProgressStep {
   name: string;
@@ -13,47 +14,54 @@ export const useFormProgressTracker = (
 ) => {
   const [progress, setProgress] = useState<ProgressStep[]>([]);
 
+  // Estabilizar a dependência formErrors usando useMemo
+  const stableFormErrors = useMemo(() => {
+    return JSON.stringify(formErrors);
+  }, [formErrors]);
+
+  // Memoizar o mapeamento de campos para evitar recálculos
+  const fieldStepMap = useMemo(() => ({
+    nome: 'dados-pessoais',
+    email: 'dados-pessoais',
+    telefone_mobile: 'dados-pessoais',
+    telefone_fixo: 'dados-pessoais',
+    cpf: 'dados-pessoais',
+    rg: 'dados-pessoais',
+    data_nascimento: 'dados-pessoais',
+    cargo: 'dados-pessoais',
+    numero_matricula: 'dados-pessoais',
+    numero_chamada: 'dados-pessoais',
+    turma: 'dados-pessoais',
+    nome_responsavel: 'dados-pessoais',
+    email_responsavel: 'dados-pessoais',
+    nome_responsavel2: 'dados-pessoais',
+    email_responsavel2: 'dados-pessoais',
+    tipo_usuario: 'acesso',
+    ativo: 'acesso',
+    permissao_relatorios: 'acesso',
+    senha: 'acesso',
+    confirmarSenha: 'acesso',
+    endereco: 'endereco',
+    cidade: 'endereco',
+    estado: 'endereco',
+    cep: 'endereco',
+    notificacao_email: 'preferencias',
+    notificacao_site: 'preferencias',
+    notificacao_push: 'preferencias',
+    aceite_notificacoes: 'preferencias',
+    termos_uso: 'consentimento',
+    politica_privacidade: 'consentimento',
+    captcha: 'consentimento'
+  }), []);
+
   useEffect(() => {
+    const parsedFormErrors = JSON.parse(stableFormErrors);
+    
     const updatedProgress = steps.map((step, index) => {
       const currentIndex = steps.indexOf(currentStep);
       const isCompleted = index < currentIndex;
-      const hasErrors = Object.keys(formErrors).some(errorField => {
-        // Mapear campos para as suas respectivas seções
-        const fieldStepMap: Record<string, string> = {
-          nome: 'dados-pessoais',
-          email: 'dados-pessoais',
-          telefone_mobile: 'dados-pessoais',
-          telefone_fixo: 'dados-pessoais',
-          cpf: 'dados-pessoais',
-          rg: 'dados-pessoais',
-          data_nascimento: 'dados-pessoais',
-          cargo: 'dados-pessoais',
-          numero_matricula: 'dados-pessoais',
-          numero_chamada: 'dados-pessoais',
-          turma: 'dados-pessoais',
-          nome_responsavel: 'dados-pessoais',
-          email_responsavel: 'dados-pessoais',
-          nome_responsavel2: 'dados-pessoais',
-          email_responsavel2: 'dados-pessoais',
-          tipo_usuario: 'acesso',
-          ativo: 'acesso',
-          permissao_relatorios: 'acesso',
-          senha: 'acesso',
-          confirmarSenha: 'acesso',
-          endereco: 'endereco',
-          cidade: 'endereco',
-          estado: 'endereco',
-          cep: 'endereco',
-          notificacao_email: 'preferencias',
-          notificacao_site: 'preferencias',
-          notificacao_push: 'preferencias',
-          aceite_notificacoes: 'preferencias',
-          termos_uso: 'consentimento',
-          politica_privacidade: 'consentimento',
-          captcha: 'consentimento'
-        };
-        
-        return fieldStepMap[errorField] === step;
+      const hasErrors = Object.keys(parsedFormErrors).some(errorField => {
+        return fieldStepMap[errorField as keyof typeof fieldStepMap] === step;
       });
 
       return {
@@ -64,7 +72,7 @@ export const useFormProgressTracker = (
     });
 
     setProgress(updatedProgress);
-  }, [steps, currentStep, formErrors]);
+  }, [steps, currentStep, stableFormErrors, fieldStepMap]);
 
   const getStepStatus = (stepName: string): 'completed' | 'current' | 'error' | 'pending' => {
     const step = progress.find(s => s.name === stepName);

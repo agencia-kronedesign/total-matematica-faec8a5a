@@ -1,5 +1,5 @@
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { formatPhone, formatCPF, formatCEP, formatRG, formatCNPJ, formatDate } from '@/utils/formatters';
 
@@ -21,12 +21,13 @@ const formatters = {
 
 export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
   ({ formatter, onValueChange, onChange, value, ...props }, ref) => {
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
       const formattedValue = formatters[formatter](rawValue);
       const unformattedValue = rawValue.replace(/\D/g, '');
       
-      // Chamar callbacks
+      // Chamar callbacks se existirem
       if (onValueChange) {
         onValueChange(unformattedValue, formattedValue);
       }
@@ -42,7 +43,7 @@ export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
         };
         onChange(newEvent as React.ChangeEvent<HTMLInputElement>);
       }
-    };
+    }, [formatter, onValueChange, onChange]);
 
     const displayValue = value ? formatters[formatter](String(value)) : '';
 

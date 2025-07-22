@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useCallback } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { FormattedInput } from '@/components/ui/formatted-input';
@@ -11,6 +12,18 @@ interface BasicPersonalFieldsProps {
 }
 
 const BasicPersonalFields = ({ form }: BasicPersonalFieldsProps) => {
+  // Callback otimizado para o campo de data
+  const handleDateChange = useCallback((unformatted: string, formatted: string) => {
+    // Só converter para ISO se a data estiver completa (8 dígitos)
+    if (unformatted.length === 8) {
+      const isoDate = dateToISO(formatted);
+      form.setValue('data_nascimento', isoDate);
+    } else {
+      // Para datas incompletas, armazenar o valor formatado temporariamente
+      form.setValue('data_nascimento', formatted);
+    }
+  }, [form]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FormField
@@ -136,16 +149,7 @@ const BasicPersonalFields = ({ form }: BasicPersonalFieldsProps) => {
                 formatter="date" 
                 placeholder="DD/MM/AAAA" 
                 value={field.value ? dateFromISO(field.value) : ''}
-                onValueChange={(unformatted, formatted) => {
-                  // Só converter para ISO se a data estiver completa (8 dígitos)
-                  if (unformatted.length === 8) {
-                    const isoDate = dateToISO(formatted);
-                    field.onChange(isoDate);
-                  } else {
-                    // Para datas incompletas, armazenar o valor formatado temporariamente
-                    field.onChange(formatted);
-                  }
-                }}
+                onValueChange={handleDateChange}
               />
             </FormControl>
             <FormMessage />
