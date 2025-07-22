@@ -66,7 +66,7 @@ const TurmaActions = ({ turma, onEdit, onDelete, onToggleStatus, isUpdating }: T
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </DropdownMenuItem>
-          {isAdmin() && (
+          {isAdmin && (
             <DropdownMenuItem 
               onClick={() => onDelete(turma)}
               className="text-destructive focus:text-destructive"
