@@ -640,7 +640,7 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                             </FormControl>
                             <SelectContent>
                               {cidadesDisponiveis.length === 0 && !isLoadingCidades && selectedEstado && (
-                                <SelectItem value="" disabled>
+                                <SelectItem value="no-cities" disabled>
                                   Nenhuma cidade disponível
                                 </SelectItem>
                               )}

@@ -198,7 +198,7 @@ export function ContactAddressSection({
                   </FormControl>
                   <SelectContent>
                     {cidadesDisponiveis.length === 0 && !isLoadingCidades && selectedEstado && (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="no-cities" disabled>
                         Nenhuma cidade disponível
                       </SelectItem>
                     )}

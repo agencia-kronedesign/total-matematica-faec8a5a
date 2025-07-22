@@ -40,8 +40,8 @@ const TurmasManagement = () => {
   const [customLevel, setCustomLevel] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredTurmas, setFilteredTurmas] = useState<Turma[]>([]);
-  const [selectedEscola, setSelectedEscola] = useState<string>('');
-  const [selectedAno, setSelectedAno] = useState<string>('');
+  const [selectedEscola, setSelectedEscola] = useState<string>('all');
+  const [selectedAno, setSelectedAno] = useState<string>('all');
   const [formData, setFormData] = useState({
     nome: '',
     escola_id: '',
@@ -119,8 +119,8 @@ const TurmasManagement = () => {
         (turma.nivel_ensino && turma.nivel_ensino.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (turma.turno && turma.turno.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      const matchesEscola = !selectedEscola || turma.escola_id === selectedEscola;
-      const matchesAno = !selectedAno || turma.ano_letivo.toString() === selectedAno;
+      const matchesEscola = !selectedEscola || selectedEscola === 'all' || turma.escola_id === selectedEscola;
+      const matchesAno = !selectedAno || selectedAno === 'all' || turma.ano_letivo.toString() === selectedAno;
 
       return matchesSearch && matchesEscola && matchesAno;
     });
@@ -260,8 +260,8 @@ const TurmasManagement = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setSelectedEscola('');
-    setSelectedAno('');
+    setSelectedEscola('all');
+    setSelectedAno('all');
   };
 
   const handleEdit = (turma: Turma) => {
@@ -504,7 +504,7 @@ const TurmasManagement = () => {
               <Button 
                 variant="outline" 
                 onClick={clearFilters}
-                disabled={!searchTerm && !selectedEscola && !selectedAno}
+                disabled={!searchTerm && (!selectedEscola || selectedEscola === 'all') && (!selectedAno || selectedAno === 'all')}
               >
                 Limpar Filtros
               </Button>
@@ -516,7 +516,7 @@ const TurmasManagement = () => {
                   <SelectValue placeholder="Filtrar por escola" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as escolas</SelectItem>
+                  <SelectItem value="all">Todas as escolas</SelectItem>
                   {escolas?.map((escola) => (
                     <SelectItem key={escola.id} value={escola.id}>
                       {escola.razao_social}
@@ -530,7 +530,7 @@ const TurmasManagement = () => {
                   <SelectValue placeholder="Filtrar por ano" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os anos</SelectItem>
+                  <SelectItem value="all">Todos os anos</SelectItem>
                   {anosLetivos.map((ano) => (
                     <SelectItem key={ano} value={ano.toString()}>
                       {ano}
