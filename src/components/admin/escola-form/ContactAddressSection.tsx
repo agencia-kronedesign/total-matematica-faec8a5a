@@ -40,7 +40,7 @@ export function ContactAddressSection({
             name="telefone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Telefone</FormLabel>
+                <FormLabel>Telefone Principal</FormLabel>
                 <FormControl>
                   <FormattedInput
                     formatter="phone"
@@ -58,18 +58,69 @@ export function ContactAddressSection({
 
           <FormField
             control={form.control}
-            name="email"
+            name="telefone_secundario"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>E-mail</FormLabel>
+                <FormLabel>Telefone Secundário</FormLabel>
                 <FormControl>
-                  <Input placeholder="escola@exemplo.com" type="email" {...field} />
+                  <FormattedInput
+                    formatter="phone"
+                    placeholder="(00) 88888-8888"
+                    onValueChange={(unformatted, formatted) => {
+                      field.onChange(unformatted);
+                    }}
+                    value={field.value}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>E-mail Principal</FormLabel>
+                <FormControl>
+                  <Input placeholder="contato@escola.com.br" type="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email_secundario"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>E-mail Secundário</FormLabel>
+                <FormControl>
+                  <Input placeholder="administrativo@escola.com.br" type="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="site"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Site da Escola</FormLabel>
+              <FormControl>
+                <Input placeholder="https://www.escola.com.br" type="url" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

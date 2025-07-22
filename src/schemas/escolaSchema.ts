@@ -18,7 +18,12 @@ export const escolaSchema = z.object({
   telefone: z.string().optional().refine((val) => validatePhone(val || ''), {
     message: 'Telefone inválido'
   }),
+  telefone_secundario: z.string().optional().refine((val) => validatePhone(val || ''), {
+    message: 'Telefone secundário inválido'
+  }),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+  email_secundario: z.string().email('E-mail secundário inválido').optional().or(z.literal('')),
+  site: z.string().url('URL inválida').optional().or(z.literal('')),
   endereco: z.string().optional(),
   cidade: z.string().min(1, 'Cidade é obrigatória'),
   estado: z.string().min(1, 'Estado é obrigatório'),

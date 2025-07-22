@@ -372,6 +372,7 @@ export type Database = {
           diretor_email: string | null
           diretor_nome: string | null
           email: string | null
+          email_secundario: string | null
           endereco: string | null
           estado: string | null
           horario_funcionamento: string | null
@@ -390,6 +391,7 @@ export type Database = {
           site: string | null
           status: boolean | null
           telefone: string | null
+          telefone_secundario: string | null
           tipo_escola: string | null
           updated_at: string
         }
@@ -404,6 +406,7 @@ export type Database = {
           diretor_email?: string | null
           diretor_nome?: string | null
           email?: string | null
+          email_secundario?: string | null
           endereco?: string | null
           estado?: string | null
           horario_funcionamento?: string | null
@@ -422,6 +425,7 @@ export type Database = {
           site?: string | null
           status?: boolean | null
           telefone?: string | null
+          telefone_secundario?: string | null
           tipo_escola?: string | null
           updated_at?: string
         }
@@ -436,6 +440,7 @@ export type Database = {
           diretor_email?: string | null
           diretor_nome?: string | null
           email?: string | null
+          email_secundario?: string | null
           endereco?: string | null
           estado?: string | null
           horario_funcionamento?: string | null
@@ -454,6 +459,7 @@ export type Database = {
           site?: string | null
           status?: boolean | null
           telefone?: string | null
+          telefone_secundario?: string | null
           tipo_escola?: string | null
           updated_at?: string
         }
