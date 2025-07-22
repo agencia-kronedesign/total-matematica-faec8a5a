@@ -24,10 +24,7 @@ export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
       const formattedValue = formatters[formatter](rawValue);
-      const unformattedValue = formatter === 'date' ? rawValue.replace(/\D/g, '') : rawValue.replace(/\D/g, '');
-      
-      // Atualizar o valor do input
-      e.target.value = formattedValue;
+      const unformattedValue = rawValue.replace(/\D/g, '');
       
       // Chamar callbacks
       if (onValueChange) {
@@ -35,7 +32,15 @@ export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
       }
       
       if (onChange) {
-        onChange(e);
+        // Criar um novo evento com o valor formatado
+        const newEvent = {
+          ...e,
+          target: {
+            ...e.target,
+            value: formattedValue
+          }
+        };
+        onChange(newEvent as React.ChangeEvent<HTMLInputElement>);
       }
     };
 

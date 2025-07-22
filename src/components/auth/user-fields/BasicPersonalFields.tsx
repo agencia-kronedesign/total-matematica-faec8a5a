@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -138,9 +137,14 @@ const BasicPersonalFields = ({ form }: BasicPersonalFieldsProps) => {
                 placeholder="DD/MM/AAAA" 
                 value={field.value ? dateFromISO(field.value) : ''}
                 onValueChange={(unformatted, formatted) => {
-                  // Converter DD/MM/AAAA para YYYY-MM-DD para o banco de dados
-                  const isoDate = dateToISO(formatted);
-                  field.onChange(isoDate);
+                  // Só converter para ISO se a data estiver completa (8 dígitos)
+                  if (unformatted.length === 8) {
+                    const isoDate = dateToISO(formatted);
+                    field.onChange(isoDate);
+                  } else {
+                    // Para datas incompletas, armazenar o valor formatado temporariamente
+                    field.onChange(formatted);
+                  }
                 }}
               />
             </FormControl>

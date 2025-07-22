@@ -1,4 +1,3 @@
-
 // Utilitários de formatação de dados
 
 // Formatação de telefone
@@ -85,6 +84,9 @@ export const dateToISO = (dateStr: string): string => {
 // Conversão de YYYY-MM-DD para DD/MM/AAAA
 export const dateFromISO = (isoDate: string): string => {
   if (!isoDate) return '';
+  
+  // Se já está no formato DD/MM/AAAA, retornar como está
+  if (isoDate.includes('/')) return isoDate;
   
   const [year, month, day] = isoDate.split('-');
   if (!year || !month || !day) return '';
