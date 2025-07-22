@@ -31,7 +31,8 @@ export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
     useEffect(() => {
       if (value !== undefined && formatter === 'date') {
         // Para datas, converter de ISO se necessário
-        const displayValue = value.includes('-') ? dateFromISO(String(value)) : String(value);
+        const stringValue = String(value);
+        const displayValue = stringValue.includes('-') ? dateFromISO(stringValue) : stringValue;
         setInternalValue(displayValue);
       } else if (value !== undefined) {
         setInternalValue(String(value));
