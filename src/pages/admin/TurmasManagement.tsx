@@ -1,15 +1,17 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, Users, School, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import TurmaActions from '@/components/admin/turmas/TurmaActions';
+import DeleteTurmaDialog from '@/components/admin/turmas/DeleteTurmaDialog';
 
 interface Turma {
   id: string;
@@ -23,9 +25,6 @@ interface Turma {
   escola?: {
     razao_social: string;
   };
-  _count?: {
-    matriculas: number;
-  };
 }
 
 interface Escola {
@@ -35,6 +34,9 @@ interface Escola {
 
 const TurmasManagement = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTurma, setEditingTurma] = useState<Turma | null>(null);
+  const [deletingTurma, setDeletingTurma] = useState<Turma | null>(null);
   const [showCustomLevel, setShowCustomLevel] = useState(false);
   const [customLevel, setCustomLevel] = useState('');
   const [formData, setFormData] = useState({
@@ -90,7 +92,6 @@ const TurmasManagement = () => {
 
       if (error) throw error;
       
-      // Contar matrículas por turma
       const counts: Record<string, number> = {};
       data.forEach(m => {
         counts[m.turma_id] = (counts[m.turma_id] || 0) + 1;
@@ -112,15 +113,7 @@ const TurmasManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['turmas'] });
       setIsCreateDialogOpen(false);
-      setFormData({
-        nome: '',
-        escola_id: '',
-        ano_letivo: new Date().getFullYear(),
-        turno: '',
-        nivel_ensino: ''
-      });
-      setShowCustomLevel(false);
-      setCustomLevel('');
+      resetForm();
       toast({
         title: "Turma criada",
         description: "A turma foi criada com sucesso."
@@ -134,6 +127,122 @@ const TurmasManagement = () => {
       });
     }
   });
+
+  // Atualizar turma
+  const updateTurmaMutation = useMutation({
+    mutationFn: async (data: typeof formData & { id: string }) => {
+      const { id, ...updateData } = data;
+      const { error } = await supabase
+        .from('turmas')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['turmas'] });
+      setIsEditDialogOpen(false);
+      setEditingTurma(null);
+      resetForm();
+      toast({
+        title: "Turma atualizada",
+        description: "A turma foi atualizada com sucesso."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar turma",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Alternar status da turma
+  const toggleStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: boolean }) => {
+      const { error } = await supabase
+        .from('turmas')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['turmas'] });
+      toast({
+        title: "Status atualizado",
+        description: "O status da turma foi atualizado com sucesso."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar status",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Deletar turma
+  const deleteTurmaMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('turmas')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['turmas'] });
+      queryClient.invalidateQueries({ queryKey: ['matriculas-count'] });
+      setDeletingTurma(null);
+      toast({
+        title: "Turma deletada",
+        description: "A turma foi deletada com sucesso."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao deletar turma",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const resetForm = () => {
+    setFormData({
+      nome: '',
+      escola_id: '',
+      ano_letivo: new Date().getFullYear(),
+      turno: '',
+      nivel_ensino: ''
+    });
+    setShowCustomLevel(false);
+    setCustomLevel('');
+  };
+
+  const handleEdit = (turma: Turma) => {
+    setEditingTurma(turma);
+    setFormData({
+      nome: turma.nome,
+      escola_id: turma.escola_id,
+      ano_letivo: turma.ano_letivo,
+      turno: turma.turno || '',
+      nivel_ensino: turma.nivel_ensino || ''
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (turma: Turma) => {
+    setDeletingTurma(turma);
+  };
+
+  const handleToggleStatus = (turma: Turma) => {
+    toggleStatusMutation.mutate({ id: turma.id, status: !turma.status });
+  };
 
   const handleNivelChange = (value: string) => {
     if (value === 'outros') {
@@ -171,7 +280,11 @@ const TurmasManagement = () => {
       return;
     }
     
-    createTurmaMutation.mutate(formData);
+    if (editingTurma) {
+      updateTurmaMutation.mutate({ ...formData, id: editingTurma.id });
+    } else {
+      createTurmaMutation.mutate(formData);
+    }
   };
 
   const formatNivelEnsino = (nivel: string | null) => {
@@ -191,6 +304,117 @@ const TurmasManagement = () => {
     return <div className="p-6">Carregando turmas...</div>;
   }
 
+  const TurmaDialog = ({ isOpen, onOpenChange, title, description }: {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    title: string;
+    description: string;
+  }) => (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="nome" className="text-right">Nome *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                className="col-span-3"
+                placeholder="Ex: 7º Ano A"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="escola" className="text-right">Escola *</Label>
+              <Select value={formData.escola_id} onValueChange={(value) => setFormData(prev => ({ ...prev, escola_id: value }))}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Selecione uma escola" />
+                </SelectTrigger>
+                <SelectContent>
+                  {escolas?.map((escola) => (
+                    <SelectItem key={escola.id} value={escola.id}>
+                      {escola.razao_social}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="ano_letivo" className="text-right">Ano Letivo</Label>
+              <Input
+                id="ano_letivo"
+                type="number"
+                value={formData.ano_letivo}
+                onChange={(e) => setFormData(prev => ({ ...prev, ano_letivo: parseInt(e.target.value) }))}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="turno" className="text-right">Turno</Label>
+              <Select value={formData.turno} onValueChange={(value) => setFormData(prev => ({ ...prev, turno: value }))}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Selecione o turno" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manhã">Manhã</SelectItem>
+                  <SelectItem value="tarde">Tarde</SelectItem>
+                  <SelectItem value="noite">Noite</SelectItem>
+                  <SelectItem value="integral">Integral</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="nivel_ensino" className="text-right">Nível</Label>
+              <div className="col-span-3 space-y-2">
+                <Select value={showCustomLevel ? 'outros' : formData.nivel_ensino} onValueChange={handleNivelChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o nível" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fundamental_1">Fundamental I</SelectItem>
+                    <SelectItem value="fundamental_2">Fundamental II</SelectItem>
+                    <SelectItem value="medio">Ensino Médio</SelectItem>
+                    <SelectItem value="superior">Superior</SelectItem>
+                    <SelectItem value="outros">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {showCustomLevel && (
+                  <Input
+                    placeholder="Digite o nível de ensino"
+                    value={customLevel}
+                    onChange={(e) => handleCustomLevelChange(e.target.value)}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              type="submit" 
+              disabled={createTurmaMutation.isPending || updateTurmaMutation.isPending}
+            >
+              {(createTurmaMutation.isPending || updateTurmaMutation.isPending) 
+                ? (editingTurma ? 'Atualizando...' : 'Criando...') 
+                : (editingTurma ? 'Atualizar Turma' : 'Criar Turma')
+              }
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -203,137 +427,66 @@ const TurmasManagement = () => {
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={resetForm}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Turma
             </Button>
           </DialogTrigger>
-          <DialogContent>
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>Criar Nova Turma</DialogTitle>
-                <DialogDescription>
-                  Preencha os dados da nova turma
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="nome" className="text-right">
-                    Nome *
-                  </Label>
-                  <Input
-                    id="nome"
-                    value={formData.nome}
-                    onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                    className="col-span-3"
-                    placeholder="Ex: 7º Ano A"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="escola" className="text-right">
-                    Escola *
-                  </Label>
-                  <Select value={formData.escola_id} onValueChange={(value) => setFormData(prev => ({ ...prev, escola_id: value }))}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione uma escola" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {escolas?.map((escola) => (
-                        <SelectItem key={escola.id} value={escola.id}>
-                          {escola.razao_social}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="ano_letivo" className="text-right">
-                    Ano Letivo
-                  </Label>
-                  <Input
-                    id="ano_letivo"
-                    type="number"
-                    value={formData.ano_letivo}
-                    onChange={(e) => setFormData(prev => ({ ...prev, ano_letivo: parseInt(e.target.value) }))}
-                    className="col-span-3"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="turno" className="text-right">
-                    Turno
-                  </Label>
-                  <Select value={formData.turno} onValueChange={(value) => setFormData(prev => ({ ...prev, turno: value }))}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione o turno" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="manhã">Manhã</SelectItem>
-                      <SelectItem value="tarde">Tarde</SelectItem>
-                      <SelectItem value="noite">Noite</SelectItem>
-                      <SelectItem value="integral">Integral</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="nivel_ensino" className="text-right">
-                    Nível
-                  </Label>
-                  <div className="col-span-3 space-y-2">
-                    <Select value={showCustomLevel ? 'outros' : formData.nivel_ensino} onValueChange={handleNivelChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o nível" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="fundamental_1">Fundamental I</SelectItem>
-                        <SelectItem value="fundamental_2">Fundamental II</SelectItem>
-                        <SelectItem value="medio">Ensino Médio</SelectItem>
-                        <SelectItem value="superior">Superior</SelectItem>
-                        <SelectItem value="outros">Outros</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    {showCustomLevel && (
-                      <Input
-                        placeholder="Digite o nível de ensino"
-                        value={customLevel}
-                        onChange={(e) => handleCustomLevelChange(e.target.value)}
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button type="submit" disabled={createTurmaMutation.isPending}>
-                  {createTurmaMutation.isPending ? 'Criando...' : 'Criar Turma'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
+          <TurmaDialog
+            isOpen={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            title="Criar Nova Turma"
+            description="Preencha os dados da nova turma"
+          />
         </Dialog>
       </div>
+
+      {/* Dialog de Edição */}
+      <TurmaDialog
+        isOpen={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) {
+            setEditingTurma(null);
+            resetForm();
+          }
+        }}
+        title="Editar Turma"
+        description="Atualize os dados da turma"
+      />
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <DeleteTurmaDialog
+        turma={deletingTurma}
+        isOpen={!!deletingTurma}
+        onClose={() => setDeletingTurma(null)}
+        onConfirm={() => deletingTurma && deleteTurmaMutation.mutate(deletingTurma.id)}
+        isDeleting={deleteTurmaMutation.isPending}
+        matriculasCount={deletingTurma ? (matriculasCount?.[deletingTurma.id] || 0) : 0}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {turmas?.map((turma) => (
           <Card key={turma.id}>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{turma.nome}</CardTitle>
-                <Badge variant={turma.status ? "default" : "secondary"}>
-                  {turma.status ? "Ativa" : "Inativa"}
-                </Badge>
-              </div>
-              <CardDescription>
-                <div className="flex items-center gap-2">
-                  <School className="h-4 w-4" />
-                  {turma.escola?.razao_social}
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-lg">{turma.nome}</CardTitle>
+                  <CardDescription>
+                    <div className="flex items-center gap-2">
+                      <School className="h-4 w-4" />
+                      {turma.escola?.razao_social}
+                    </div>
+                  </CardDescription>
                 </div>
-              </CardDescription>
+                <TurmaActions
+                  turma={turma}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onToggleStatus={handleToggleStatus}
+                  isUpdating={toggleStatusMutation.isPending}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
