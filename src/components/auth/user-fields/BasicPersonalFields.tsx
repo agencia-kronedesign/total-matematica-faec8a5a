@@ -1,11 +1,10 @@
-
 import React, { useCallback } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { FormattedInput } from '@/components/ui/formatted-input';
 import { UseFormReturn } from 'react-hook-form';
 import { UserFormData } from '@/types/user';
-import { dateFromISO, dateToISO } from '@/utils/formatters';
+import { dateToISO } from '@/utils/formatters';
 
 interface BasicPersonalFieldsProps {
   form: UseFormReturn<UserFormData>;
@@ -19,8 +18,8 @@ const BasicPersonalFields = ({ form }: BasicPersonalFieldsProps) => {
       const isoDate = dateToISO(formatted);
       form.setValue('data_nascimento', isoDate);
     } else {
-      // Para datas incompletas, armazenar o valor formatado temporariamente
-      form.setValue('data_nascimento', formatted);
+      // Para datas incompletas, limpar o campo
+      form.setValue('data_nascimento', '');
     }
   }, [form]);
 
@@ -148,9 +147,7 @@ const BasicPersonalFields = ({ form }: BasicPersonalFieldsProps) => {
               <FormattedInput 
                 formatter="date" 
                 placeholder="DD/MM/AAAA" 
-                value={field.value ? dateFromISO(field.value) : ''}
                 onValueChange={handleDateChange}
-                onChange={field.onChange}
               />
             </FormControl>
             <FormMessage />
