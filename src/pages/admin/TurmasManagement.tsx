@@ -35,6 +35,8 @@ interface Escola {
 
 const TurmasManagement = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showCustomLevel, setShowCustomLevel] = useState(false);
+  const [customLevel, setCustomLevel] = useState('');
   const [formData, setFormData] = useState({
     nome: '',
     escola_id: '',
@@ -117,6 +119,8 @@ const TurmasManagement = () => {
         turno: '',
         nivel_ensino: ''
       });
+      setShowCustomLevel(false);
+      setCustomLevel('');
       toast({
         title: "Turma criada",
         description: "A turma foi criada com sucesso."
@@ -131,6 +135,22 @@ const TurmasManagement = () => {
     }
   });
 
+  const handleNivelChange = (value: string) => {
+    if (value === 'outros') {
+      setShowCustomLevel(true);
+      setFormData(prev => ({ ...prev, nivel_ensino: '' }));
+    } else {
+      setShowCustomLevel(false);
+      setCustomLevel('');
+      setFormData(prev => ({ ...prev, nivel_ensino: value }));
+    }
+  };
+
+  const handleCustomLevelChange = (value: string) => {
+    setCustomLevel(value);
+    setFormData(prev => ({ ...prev, nivel_ensino: value }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nome || !formData.escola_id) {
@@ -141,7 +161,30 @@ const TurmasManagement = () => {
       });
       return;
     }
+    
+    if (showCustomLevel && !customLevel.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Por favor, especifique o nível de ensino.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     createTurmaMutation.mutate(formData);
+  };
+
+  const formatNivelEnsino = (nivel: string | null) => {
+    if (!nivel) return '';
+    
+    const formatMap: Record<string, string> = {
+      'fundamental_1': 'Fundamental I',
+      'fundamental_2': 'Fundamental II',
+      'medio': 'Ensino Médio',
+      'superior': 'Superior'
+    };
+    
+    return formatMap[nivel] || nivel;
   };
 
   if (isLoadingTurmas) {
@@ -240,16 +283,28 @@ const TurmasManagement = () => {
                   <Label htmlFor="nivel_ensino" className="text-right">
                     Nível
                   </Label>
-                  <Select value={formData.nivel_ensino} onValueChange={(value) => setFormData(prev => ({ ...prev, nivel_ensino: value }))}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione o nível" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fundamental_1">Fundamental I</SelectItem>
-                      <SelectItem value="fundamental_2">Fundamental II</SelectItem>
-                      <SelectItem value="medio">Ensino Médio</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="col-span-3 space-y-2">
+                    <Select value={showCustomLevel ? 'outros' : formData.nivel_ensino} onValueChange={handleNivelChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o nível" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fundamental_1">Fundamental I</SelectItem>
+                        <SelectItem value="fundamental_2">Fundamental II</SelectItem>
+                        <SelectItem value="medio">Ensino Médio</SelectItem>
+                        <SelectItem value="superior">Superior</SelectItem>
+                        <SelectItem value="outros">Outros</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    {showCustomLevel && (
+                      <Input
+                        placeholder="Digite o nível de ensino"
+                        value={customLevel}
+                        onChange={(e) => handleCustomLevelChange(e.target.value)}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -300,7 +355,7 @@ const TurmasManagement = () => {
                 {turma.nivel_ensino && (
                   <div className="flex items-center justify-between text-sm">
                     <span>Nível:</span>
-                    <span className="font-medium">{turma.nivel_ensino.replace('_', ' ')}</span>
+                    <span className="font-medium">{formatNivelEnsino(turma.nivel_ensino)}</span>
                   </div>
                 )}
                 
