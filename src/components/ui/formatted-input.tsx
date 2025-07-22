@@ -1,9 +1,9 @@
 
 import React, { forwardRef } from 'react';
 import { Input } from '@/components/ui/input';
-import { formatPhone, formatCPF, formatCEP, formatRG, formatCNPJ } from '@/utils/formatters';
+import { formatPhone, formatCPF, formatCEP, formatRG, formatCNPJ, formatDate } from '@/utils/formatters';
 
-export type FormatterType = 'phone' | 'cpf' | 'cep' | 'rg' | 'cnpj';
+export type FormatterType = 'phone' | 'cpf' | 'cep' | 'rg' | 'cnpj' | 'date';
 
 interface FormattedInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   formatter: FormatterType;
@@ -16,6 +16,7 @@ const formatters = {
   cep: formatCEP,
   rg: formatRG,
   cnpj: formatCNPJ,
+  date: formatDate,
 };
 
 export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
@@ -23,7 +24,7 @@ export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
       const formattedValue = formatters[formatter](rawValue);
-      const unformattedValue = rawValue.replace(/\D/g, '');
+      const unformattedValue = formatter === 'date' ? rawValue.replace(/\D/g, '') : rawValue.replace(/\D/g, '');
       
       // Atualizar o valor do input
       e.target.value = formattedValue;
@@ -46,6 +47,7 @@ export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
         ref={ref}
         value={displayValue}
         onChange={handleChange}
+        maxLength={formatter === 'date' ? 10 : props.maxLength}
       />
     );
   }

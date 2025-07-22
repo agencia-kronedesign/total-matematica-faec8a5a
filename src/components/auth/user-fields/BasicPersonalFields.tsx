@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { FormattedInput } from '@/components/ui/formatted-input';
 import { UseFormReturn } from 'react-hook-form';
 import { UserFormData } from '@/types/user';
+import { dateFromISO, dateToISO } from '@/utils/formatters';
 
 interface BasicPersonalFieldsProps {
   form: UseFormReturn<UserFormData>;
@@ -131,7 +133,16 @@ const BasicPersonalFields = ({ form }: BasicPersonalFieldsProps) => {
           <FormItem>
             <FormLabel>Data de Nascimento</FormLabel>
             <FormControl>
-              <Input type="date" {...field} />
+              <FormattedInput 
+                formatter="date" 
+                placeholder="DD/MM/AAAA" 
+                value={field.value ? dateFromISO(field.value) : ''}
+                onValueChange={(unformatted, formatted) => {
+                  // Converter DD/MM/AAAA para YYYY-MM-DD para o banco de dados
+                  const isoDate = dateToISO(formatted);
+                  field.onChange(isoDate);
+                }}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
