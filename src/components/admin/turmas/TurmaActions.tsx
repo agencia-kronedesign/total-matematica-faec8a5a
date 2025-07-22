@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -34,17 +34,21 @@ const TurmaActions = ({ turma, onEdit, onDelete, onToggleStatus, isUpdating }: T
 
   if (!canManageUsers()) {
     return (
-      <Badge variant={turma.status ? "default" : "secondary"}>
-        {turma.status ? "Ativa" : "Inativa"}
-      </Badge>
+      <StatusBadge 
+        isActive={turma.status} 
+        activeLabel="Ativa" 
+        inactiveLabel="Inativa" 
+      />
     );
   }
 
   return (
     <div className="flex items-center gap-2">
-      <Badge variant={turma.status ? "default" : "secondary"}>
-        {turma.status ? "Ativa" : "Inativa"}
-      </Badge>
+      <StatusBadge 
+        isActive={turma.status} 
+        activeLabel="Ativa" 
+        inactiveLabel="Inativa" 
+      />
       
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">Status:</span>

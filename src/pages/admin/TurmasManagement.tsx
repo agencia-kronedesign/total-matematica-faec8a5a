@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Plus, Users, School, Calendar } from 'lucide-react';
+import { Plus, Users, School, Calendar, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import TurmaActions from '@/components/admin/turmas/TurmaActions';
 import DeleteTurmaDialog from '@/components/admin/turmas/DeleteTurmaDialog';
@@ -39,6 +38,10 @@ const TurmasManagement = () => {
   const [deletingTurma, setDeletingTurma] = useState<Turma | null>(null);
   const [showCustomLevel, setShowCustomLevel] = useState(false);
   const [customLevel, setCustomLevel] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredTurmas, setFilteredTurmas] = useState<Turma[]>([]);
+  const [selectedEscola, setSelectedEscola] = useState<string>('');
+  const [selectedAno, setSelectedAno] = useState<string>('');
   const [formData, setFormData] = useState({
     nome: '',
     escola_id: '',
@@ -100,6 +103,37 @@ const TurmasManagement = () => {
       return counts;
     }
   });
+
+  // Filtrar turmas baseado na busca e filtros
+  useEffect(() => {
+    if (!turmas) {
+      setFilteredTurmas([]);
+      return;
+    }
+
+    let filtered = turmas.filter(turma => {
+      const matchesSearch = !searchTerm || 
+        turma.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        turma.escola?.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        turma.ano_letivo.toString().includes(searchTerm) ||
+        (turma.nivel_ensino && turma.nivel_ensino.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (turma.turno && turma.turno.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesEscola = !selectedEscola || turma.escola_id === selectedEscola;
+      const matchesAno = !selectedAno || turma.ano_letivo.toString() === selectedAno;
+
+      return matchesSearch && matchesEscola && matchesAno;
+    });
+
+    setFilteredTurmas(filtered);
+  }, [turmas, searchTerm, selectedEscola, selectedAno]);
+
+  // Obter anos letivos únicos para o filtro
+  const anosLetivos = React.useMemo(() => {
+    if (!turmas) return [];
+    const anos = [...new Set(turmas.map(t => t.ano_letivo))];
+    return anos.sort((a, b) => b - a);
+  }, [turmas]);
 
   // Criar turma
   const createTurmaMutation = useMutation({
@@ -222,6 +256,12 @@ const TurmasManagement = () => {
     });
     setShowCustomLevel(false);
     setCustomLevel('');
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedEscola('');
+    setSelectedAno('');
   };
 
   const handleEdit = (turma: Turma) => {
@@ -441,6 +481,68 @@ const TurmasManagement = () => {
         </Dialog>
       </div>
 
+      {/* Card de Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>
+            Pesquise e filtre turmas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Pesquisar por nome, escola, ano letivo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+                disabled={!searchTerm && !selectedEscola && !selectedAno}
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <Select value={selectedEscola} onValueChange={setSelectedEscola}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filtrar por escola" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas as escolas</SelectItem>
+                  {escolas?.map((escola) => (
+                    <SelectItem key={escola.id} value={escola.id}>
+                      {escola.razao_social}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedAno} onValueChange={setSelectedAno}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Filtrar por ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os anos</SelectItem>
+                  {anosLetivos.map((ano) => (
+                    <SelectItem key={ano} value={ano.toString()}>
+                      {ano}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Dialog de Edição */}
       <TurmaDialog
         isOpen={isEditDialogOpen}
@@ -465,83 +567,102 @@ const TurmasManagement = () => {
         matriculasCount={deletingTurma ? (matriculasCount?.[deletingTurma.id] || 0) : 0}
       />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {turmas?.map((turma) => (
-          <Card key={turma.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{turma.nome}</CardTitle>
-                  <CardDescription>
-                    <div className="flex items-center gap-2">
-                      <School className="h-4 w-4" />
-                      {turma.escola?.razao_social}
+      {/* Lista de Turmas */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Turmas ({filteredTurmas.length})</CardTitle>
+          <CardDescription>
+            Lista de turmas cadastradas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredTurmas?.map((turma) => (
+              <Card key={turma.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{turma.nome}</CardTitle>
+                      <CardDescription>
+                        <div className="flex items-center gap-2">
+                          <School className="h-4 w-4" />
+                          {turma.escola?.razao_social}
+                        </div>
+                      </CardDescription>
                     </div>
-                  </CardDescription>
-                </div>
-                <TurmaActions
-                  turma={turma}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onToggleStatus={handleToggleStatus}
-                  isUpdating={toggleStatusMutation.isPending}
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Ano Letivo:
-                  </span>
-                  <span className="font-medium">{turma.ano_letivo}</span>
-                </div>
-                
-                {turma.turno && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Turno:</span>
-                    <span className="font-medium capitalize">{turma.turno}</span>
+                    <TurmaActions
+                      turma={turma}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onToggleStatus={handleToggleStatus}
+                      isUpdating={toggleStatusMutation.isPending}
+                    />
                   </div>
-                )}
-                
-                {turma.nivel_ensino && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Nível:</span>
-                    <span className="font-medium">{formatNivelEnsino(turma.nivel_ensino)}</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Ano Letivo:
+                      </span>
+                      <span className="font-medium">{turma.ano_letivo}</span>
+                    </div>
+                    
+                    {turma.turno && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Turno:</span>
+                        <span className="font-medium capitalize">{turma.turno}</span>
+                      </div>
+                    )}
+                    
+                    {turma.nivel_ensino && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Nível:</span>
+                        <span className="font-medium">{formatNivelEnsino(turma.nivel_ensino)}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Alunos:
+                      </span>
+                      <span className="font-medium">
+                        {matriculasCount?.[turma.id] || 0}
+                      </span>
+                    </div>
                   </div>
-                )}
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Alunos:
-                  </span>
-                  <span className="font-medium">
-                    {matriculasCount?.[turma.id] || 0}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-      {turmas?.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <School className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhuma turma encontrada</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Comece criando sua primeira turma para organizar os alunos.
-            </p>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Primeira Turma
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          {filteredTurmas?.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <School className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                {searchTerm || selectedEscola || selectedAno 
+                  ? 'Nenhuma turma encontrada' 
+                  : 'Nenhuma turma cadastrada'
+                }
+              </h3>
+              <p className="text-muted-foreground text-center mb-4">
+                {searchTerm || selectedEscola || selectedAno
+                  ? 'Tente ajustar os filtros de busca.'
+                  : 'Comece criando sua primeira turma para organizar os alunos.'
+                }
+              </p>
+              {!searchTerm && !selectedEscola && !selectedAno && (
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Primeira Turma
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
