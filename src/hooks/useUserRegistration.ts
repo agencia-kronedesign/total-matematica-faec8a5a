@@ -328,7 +328,7 @@ export const useUserRegistration = () => {
 
       toast({
         title: "Usuário cadastrado com sucesso!",
-        description: `Email: ${formData.email} | Senha: ${senha}`,
+        description: `Email: ${formData.email}. A senha foi enviada por email.`,
       });
 
       // Redirecionamento automático para admins
