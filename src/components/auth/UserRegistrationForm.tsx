@@ -13,7 +13,7 @@ import { useUserRegistration } from '@/hooks/useUserRegistration';
 import { useUserEdit } from '@/hooks/useUserEdit';
 import { UserFormData, UserType, USER_TYPE_LABELS } from '@/types/user';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Eye, EyeOff, RefreshCw, MapPin, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, MapPin, Loader2, Key, AlertCircle } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -168,6 +168,7 @@ interface UserRegistrationFormProps {
 
 const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('tipo-usuario');
   const { registerUser, generatePassword, loading } = useUserRegistration();
   const { userData, loading: loadingUser } = useUserEdit(userId);
@@ -251,6 +252,7 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
   };
 
   const updateUser = async (id: string, data: UserFormData) => {
+    setIsUpdating(true);
     try {
       console.log('[UserRegistrationForm] Atualizando usuário:', id);
 
@@ -357,6 +359,8 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
         variant: "destructive",
       });
       return { success: false, error: error.message };
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -536,6 +540,12 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                             </div>
                           </FormControl>
                           <FormMessage />
+                          {isEditMode && form.watch('senha') && form.watch('senha').length >= 6 && (
+                            <div className="flex items-center gap-2 text-green-600 text-sm mt-1">
+                              <Key className="h-4 w-4" />
+                              <span>A senha será atualizada ao salvar</span>
+                            </div>
+                          )}
                         </FormItem>
                       )}
                     />
@@ -839,6 +849,16 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                 </TabsContent>
               </Tabs>
 
+              {/* Alerta de erros de validação */}
+              {Object.keys(form.formState.errors).length > 0 && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Existem campos com erros. Verifique todas as abas antes de salvar.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="flex justify-between pt-6">
                 <Button
                   type="button"
@@ -855,31 +875,56 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                   Anterior
                 </Button>
 
-                {activeTab === 'consentimento' ? (
-                  <Button type="submit" disabled={loading || loadingUser} className="bg-totalBlue min-w-[200px]">
-                    {loading ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>{isEditMode ? 'Atualizando...' : 'Cadastrando...'}</span>
-                      </div>
-                    ) : (
-                      isEditMode ? 'Atualizar Usuário' : 'Cadastrar Usuário'
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const tabs = ['tipo-usuario', 'dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
-                      const currentIndex = tabs.indexOf(activeTab);
-                      if (currentIndex < tabs.length - 1) {
-                        setActiveTab(tabs[currentIndex + 1]);
-                      }
-                    }}
-                  >
-                    Próximo
-                  </Button>
-                )}
+                <div className="flex space-x-2">
+                  {/* Botão salvar sempre visível em modo edição */}
+                  {isEditMode && (
+                    <Button 
+                      type="submit" 
+                      disabled={isUpdating || loadingUser} 
+                      className="bg-totalBlue min-w-[200px]"
+                    >
+                      {isUpdating ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Atualizando...</span>
+                        </div>
+                      ) : (
+                        'Atualizar Usuário'
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Botão próximo (não mostrar na última aba) */}
+                  {activeTab !== 'consentimento' && (
+                    <Button
+                      type="button"
+                      variant={isEditMode ? "outline" : "default"}
+                      onClick={() => {
+                        const tabs = ['tipo-usuario', 'dados-pessoais', 'acesso', 'endereco', 'preferencias', 'consentimento'];
+                        const currentIndex = tabs.indexOf(activeTab);
+                        if (currentIndex < tabs.length - 1) {
+                          setActiveTab(tabs[currentIndex + 1]);
+                        }
+                      }}
+                    >
+                      Próximo
+                    </Button>
+                  )}
+
+                  {/* Botão cadastrar apenas para novos usuários na última aba */}
+                  {!isEditMode && activeTab === 'consentimento' && (
+                    <Button type="submit" disabled={loading} className="bg-totalBlue min-w-[200px]">
+                      {loading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Cadastrando...</span>
+                        </div>
+                      ) : (
+                        'Cadastrar Usuário'
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
             </form>
           </Form>
