@@ -2,3 +2,12 @@ project_id = "bckalmbnlgukcjbvyzbe"
 
 [functions.keep-alive]
 verify_jwt = false
+
+[functions.admin-create-user]
+verify_jwt = false
+
+[functions.check-user-auth]
+verify_jwt = false
+
+[functions.validate-admin-setup]
+verify_jwt = false
