@@ -254,26 +254,32 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
     try {
       console.log('[UserRegistrationForm] Atualizando usuário:', id);
 
-      // Preparar dados para atualização
+      // Função auxiliar para sanitizar valores vazios para null
+      const sanitize = (value: any) => {
+        if (value === '' || value === undefined) return null;
+        return value;
+      };
+
+      // Preparar dados para atualização (convertendo strings vazias para null)
       const updateData: any = {
         nome: data.nome,
         email: data.email,
         tipo_usuario: data.tipo_usuario,
-        cargo: data.cargo,
-        telefone_fixo: data.telefone_fixo,
-        telefone_mobile: data.telefone_mobile,
-        cpf: data.cpf,
-        rg: data.rg,
-        endereco: data.endereco,
-        cidade: data.cidade,
-        estado: data.estado,
-        cep: data.cep,
-        data_nascimento: data.data_nascimento,
-        numero_matricula: data.numero_matricula,
-        numero_chamada: data.numero_chamada,
-        turma: data.turma,
-        nome_responsavel: data.nome_responsavel,
-        email_responsavel: data.email_responsavel,
+        cargo: sanitize(data.cargo),
+        telefone_fixo: sanitize(data.telefone_fixo),
+        telefone_mobile: sanitize(data.telefone_mobile),
+        cpf: sanitize(data.cpf),
+        rg: sanitize(data.rg),
+        endereco: sanitize(data.endereco),
+        cidade: sanitize(data.cidade),
+        estado: sanitize(data.estado),
+        cep: sanitize(data.cep),
+        data_nascimento: sanitize(data.data_nascimento),
+        numero_matricula: sanitize(data.numero_matricula),
+        numero_chamada: sanitize(data.numero_chamada),
+        turma: sanitize(data.turma),
+        nome_responsavel: sanitize(data.nome_responsavel),
+        email_responsavel: sanitize(data.email_responsavel),
         permissao_relatorios: data.permissao_relatorios,
         ativo: data.ativo,
       };
