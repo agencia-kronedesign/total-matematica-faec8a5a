@@ -85,51 +85,75 @@ export function evaluateExercise(input: EvaluationInput): EvaluationResult {
   // Normalizar resposta do aluno (vírgula → ponto, converter para número)
   const valorAluno = normalizarResposta(respostaAluno);
   
+  // Nomenclatura dos PDFs:
+  // RESPOSTA = valor correto calculado pela fórmula
+  // RESULTADO = valor que o aluno digitou
+  const RESPOSTA = valorEsperado;
+  const RESULTADO = valorAluno;
+  
   let acertoNivel: AcertoNivel;
   
-  // 1. Caso 100% correto (igualdade exata)
-  if (valorAluno === valorEsperado) {
+  // Condição 1: Verifica se está 100% correto
+  if (RESULTADO === RESPOSTA) {
+    console.log('[evaluateExercise] Condição 1 satisfeita: 100% correto');
     acertoNivel = 'correto';
   } else {
-    // 2. Cálculo das faixas de margem percentual
-    const margemRelativa = margem / 100;
-    const lowerMargin = valorEsperado * (1 - margemRelativa);
-    const upperMargin = valorEsperado * (1 + margemRelativa);
+    // Cálculos para as condições 2-5 (baseados no RESULTADO conforme PDFs)
+    const diferencaResposta = Math.abs(RESPOSTA - RESULTADO);
     
-    console.log('[evaluateExercise] Faixas:', { 
-      valorEsperado, 
-      valorAluno, 
+    // Condição 2: Margem inferior
+    // |RESPOSTA - RESULTADO| <= |RESULTADO - (RESULTADO * (1 - MARGEM/100))|
+    const condicao2_direita = Math.abs(RESULTADO - (RESULTADO * (1 - margem / 100)));
+    
+    // Condição 3: Margem superior
+    // |RESPOSTA - RESULTADO| <= |RESULTADO * (1 + MARGEM/100) - RESULTADO|
+    const condicao3_direita = Math.abs(RESULTADO * (1 + margem / 100) - RESULTADO);
+    
+    // Condições 4 e 5: Faixa de "meio certo" (±10%)
+    const diferencaAbsolutos = Math.abs(Math.abs(RESPOSTA) - Math.abs(RESULTADO));
+    const condicao4_direita1 = Math.abs(RESULTADO - RESULTADO * 1.1);
+    const condicao5_direita1 = Math.abs(RESULTADO * 1.1 - RESULTADO);
+    
+    console.log('[evaluateExercise] Valores calculados:', { 
+      RESPOSTA, 
+      RESULTADO, 
       margem,
-      lowerMargin, 
-      upperMargin 
+      diferencaResposta,
+      condicao2_direita,
+      condicao3_direita,
+      diferencaAbsolutos,
+      condicao4_direita1,
+      condicao5_direita1
     });
     
-    // 3. Verifica se está correto dentro da margem
-    if (valorAluno >= lowerMargin && valorAluno <= upperMargin) {
+    // Condição 2: Verifica margem inferior
+    if (diferencaResposta <= condicao2_direita) {
+      console.log('[evaluateExercise] Condição 2 satisfeita: margem inferior');
       acertoNivel = 'correto_com_margem';
-    } else {
-      // 4. Cálculo da faixa de "meio certo" (±10% do resultado)
-      const halfRelativa = 0.10;
-      const lowerHalf = valorEsperado * (1 - halfRelativa);
-      const upperHalf = valorEsperado * (1 + halfRelativa);
-      
-      // Meio certo: dentro de ±10%, MAS fora da margem de erro
-      const isWithinHalfRange = valorAluno >= lowerHalf && valorAluno <= upperHalf;
-      const isOutsideMarginRange = valorAluno < lowerMargin || valorAluno > upperMargin;
-      
-      console.log('[evaluateExercise] Meio certo check:', { 
-        lowerHalf, 
-        upperHalf, 
-        isWithinHalfRange, 
-        isOutsideMarginRange 
-      });
-      
-      if (isWithinHalfRange && isOutsideMarginRange) {
-        acertoNivel = 'meio_certo';
-      } else {
-        // 5. Caso contrário, está incorreto
-        acertoNivel = 'incorreto';
-      }
+    }
+    // Condição 3: Verifica margem superior
+    else if (diferencaResposta <= condicao3_direita) {
+      console.log('[evaluateExercise] Condição 3 satisfeita: margem superior');
+      acertoNivel = 'correto_com_margem';
+    }
+    // Condição 4: Verifica "meio certo" inferior
+    // ||RESPOSTA| - |RESULTADO|| <= |RESULTADO - RESULTADO * 1.1| E
+    // |RESPOSTA - RESULTADO| >= |RESULTADO - RESULTADO * (1 - MARGEM/100)|
+    else if (diferencaAbsolutos <= condicao4_direita1 && diferencaResposta >= condicao2_direita) {
+      console.log('[evaluateExercise] Condição 4 satisfeita: meio certo inferior');
+      acertoNivel = 'meio_certo';
+    }
+    // Condição 5: Verifica "meio certo" superior
+    // ||RESPOSTA| - |RESULTADO|| <= |RESULTADO * 1.1 - RESULTADO| E
+    // |RESPOSTA - RESULTADO| >= |RESULTADO * (1 + MARGEM/100) - RESULTADO|
+    else if (diferencaAbsolutos <= condicao5_direita1 && diferencaResposta >= condicao3_direita) {
+      console.log('[evaluateExercise] Condição 5 satisfeita: meio certo superior');
+      acertoNivel = 'meio_certo';
+    }
+    // Caso contrário: erro
+    else {
+      console.log('[evaluateExercise] Nenhuma condição satisfeita: incorreto');
+      acertoNivel = 'incorreto';
     }
   }
   
