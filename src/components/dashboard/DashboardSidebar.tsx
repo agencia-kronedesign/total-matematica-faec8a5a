@@ -18,6 +18,8 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
   SidebarSeparator,
+  SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import {
   BarChart2,
@@ -46,6 +48,8 @@ const DashboardSidebar = () => {
   const { user, signOut, userProfile, userType } = useAuth();
   const { isAdmin, canManageUsers, canManageSystem, canCreateExercises, canManageCategories, isStudent } = usePermissions();
   const location = useLocation();
+  const { state } = useSidebar();
+  const isCollapsed = state === 'collapsed';
   
   const getUserTypeLabel = (tipo: string) => {
     switch (tipo) {
@@ -140,29 +144,35 @@ const DashboardSidebar = () => {
   ];
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="relative h-12 w-12 overflow-hidden rounded-full bg-totalBlue">
+          <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-totalBlue">
             <img
               src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0A2463&color=FFFFFF`}
               alt={userName}
               className="h-full w-full object-cover"
             />
           </div>
-          <div className="flex flex-col">
-            <span className="font-medium">{userName}</span>
-            <span className="text-xs text-muted-foreground">{userTypeLabel}</span>
-          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col overflow-hidden">
+              <span className="font-medium truncate">{userName}</span>
+              <span className="text-xs text-muted-foreground">{userTypeLabel}</span>
+            </div>
+          )}
         </div>
-        <div className="mt-4 rounded-md bg-gray-100 p-2">
-          <div className="text-xs font-medium text-blue-900">Escola Santa Cecília - 5º ano C</div>
-        </div>
-        <div className="mt-3">
-          <Link to="/perfil" className="text-xs text-muted-foreground hover:underline">
-            Meu perfil
-          </Link>
-        </div>
+        {!isCollapsed && (
+          <>
+            <div className="mt-4 rounded-md bg-gray-100 p-2">
+              <div className="text-xs font-medium text-blue-900">Escola Santa Cecília - 5º ano C</div>
+            </div>
+            <div className="mt-3">
+              <Link to="/perfil" className="text-xs text-muted-foreground hover:underline">
+                Meu perfil
+              </Link>
+            </div>
+          </>
+        )}
       </SidebarHeader>
       
       <SidebarContent>
@@ -298,9 +308,10 @@ const DashboardSidebar = () => {
           className="w-full text-red-600 hover:bg-red-50 hover:text-red-700"
         >
           <LogOut />
-          <span>Sair</span>
+          {!isCollapsed && <span>Sair</span>}
         </SidebarMenuButton>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 };
