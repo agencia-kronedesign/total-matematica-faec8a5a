@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import ExerciseList from '@/components/exercises/ExerciseList';
 import ExerciseFilters from '@/components/exercises/ExerciseFilters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +12,7 @@ import AppLayout from '@/components/layout/AppLayout';
 
 const Exercises = () => {
   const { user } = useAuth();
+  const { isStudent } = usePermissions();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   
@@ -19,21 +21,25 @@ const Exercises = () => {
       <AppLayout title="Exercícios">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-totalBlue">Exercícios</h1>
-            <div className="flex gap-2">
-              <Button asChild variant="outline">
-                <Link to="/exercicios/cadastrar?tab=lista-categorias" className="flex items-center">
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  Gerenciar Categorias
-                </Link>
-              </Button>
-              <Button asChild variant="default">
-                <Link to="/exercicios/cadastrar" className="flex items-center">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Cadastrar Exercício
-                </Link>
-              </Button>
-            </div>
+            <h1 className="text-2xl font-bold text-totalBlue">
+              {isStudent() ? 'Praticar Exercícios' : 'Exercícios'}
+            </h1>
+            {!isStudent() && (
+              <div className="flex gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/exercicios/cadastrar?tab=lista-categorias" className="flex items-center">
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    Gerenciar Categorias
+                  </Link>
+                </Button>
+                <Button asChild variant="default">
+                  <Link to="/exercicios/cadastrar" className="flex items-center">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Cadastrar Exercício
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
           
           <Tabs defaultValue="todos" className="mb-8">

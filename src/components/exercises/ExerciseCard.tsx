@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ interface ExerciseCardProps {
 }
 
 const ExerciseCard = ({ exercise }: ExerciseCardProps) => {
+  const navigate = useNavigate();
+
   const getDifficultyLabel = (nivel: number | undefined) => {
     if (!nivel) return 'Não definida';
     if (nivel <= 2) return 'Fácil';
@@ -23,6 +25,10 @@ const ExerciseCard = ({ exercise }: ExerciseCardProps) => {
     if (nivel <= 2) return 'bg-green-100 text-green-800';
     if (nivel <= 4) return 'bg-yellow-100 text-yellow-800';
     return 'bg-red-100 text-red-800';
+  };
+
+  const handleResolveExercise = () => {
+    navigate(`/exercicios/resolver/${exercise.id}`);
   };
 
   return (
@@ -67,7 +73,7 @@ const ExerciseCard = ({ exercise }: ExerciseCardProps) => {
       </CardContent>
       
       <CardFooter className="pt-2 pb-4">
-        <Button className="w-full">
+        <Button className="w-full" onClick={handleResolveExercise}>
           Resolver Exercício
         </Button>
       </CardFooter>
