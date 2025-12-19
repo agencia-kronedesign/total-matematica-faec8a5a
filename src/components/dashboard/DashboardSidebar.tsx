@@ -83,6 +83,7 @@ const DashboardSidebar = () => {
       // Menu para alunos - apenas visualização e resolução
       return [
         { title: "Minhas Atividades", icon: BookOpen, path: "/atividades" },
+        { title: "Mais Exercícios", icon: Book, path: "/exercicios" },
         { title: "Exercícios Feitos", icon: FileText, path: "/exercicios-feitos" },
         { title: "Exercício do dia", icon: BarChart2, path: "/exercicio-do-dia" },
       ];

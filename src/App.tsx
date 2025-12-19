@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Exercises from "./pages/Exercises";
 import ExerciseForm from "./pages/ExerciseForm";
+import ExercisePractice from "./pages/ExercisePractice";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
@@ -54,6 +55,11 @@ const App = () => (
               <Route path="/exercicios" element={
                 <ProtectedRoute>
                   <Exercises />
+                </ProtectedRoute>
+              } />
+              <Route path="/exercicios/resolver/:exerciseId" element={
+                <ProtectedRoute>
+                  <ExercisePractice />
                 </ProtectedRoute>
               } />
               <Route path="/exercicios/cadastrar" element={
