@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -15,8 +14,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { SafeMathEvaluator } from '@/utils/safeMathEvaluator';
 import { useExerciseSubmission } from '@/hooks/useExerciseSubmission';
+import { 
+  evaluateExercise, 
+  getResultClassName, 
+  getToastType,
+  type EvaluationResult 
+} from '@/domain/exercises';
 
 const formSchema = z.object({
   input: z.coerce.number()
@@ -48,7 +52,7 @@ export function ExerciseResolver({
   imageUrl,
   atividadeId
 }: ExerciseResolverProps) {
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<EvaluationResult | null>(null);
   const { submitExercise, isSubmitting } = useExerciseSubmission();
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -59,58 +63,17 @@ export function ExerciseResolver({
     }
   });
 
-  const calculateResult = (formula: string, input: number, answer: number, margin: number) => {
-    // Validate and safely evaluate the mathematical expression
-    if (!SafeMathEvaluator.isValidFormula(formula)) {
-      throw new Error('Fórmula inválida ou insegura');
-    }
-    
-    const expectedResult = SafeMathEvaluator.evaluate(formula, input);
-    const userAnswer = answer;
-    
-    // Implementa a lógica exata do PHP
-    // 1. Verifica se está 100% correto
-    if (expectedResult === userAnswer) {
-      return 'PARABÉNS! 100% CORRETO!';
-    }
-    
-    // 2. Verifica se está correto com margem (inferior)
-    const marginLowerBound = Math.abs(expectedResult - (expectedResult * (1 - (margin / 100))));
-    if (Math.abs(userAnswer - expectedResult) <= marginLowerBound) {
-      return 'PARABÉNS! VOCÊ ACERTOU!';
-    }
-    
-    // 3. Verifica se está correto com margem (superior)
-    const marginUpperBound = Math.abs(expectedResult * (1 + (margin / 100)) - expectedResult);
-    if (Math.abs(userAnswer - expectedResult) <= marginUpperBound) {
-      return 'PARABÉNS! VOCÊ ACERTOU!';
-    }
-    
-    // 4. Verifica se está "meio certo" (inferior)
-    const halfRightLowerBound = Math.abs(expectedResult - (expectedResult * 1.1));
-    const marginLowerCheck = Math.abs(expectedResult - expectedResult * (1 - (margin / 100)));
-    if (Math.abs(Math.abs(userAnswer) - Math.abs(expectedResult)) <= halfRightLowerBound && 
-        Math.abs(userAnswer - expectedResult) >= marginLowerCheck) {
-      return 'Pode-se dizer que está "MEIO CERTO"! Não desista, continue tentando!';
-    }
-    
-    // 5. Verifica se está "meio certo" (superior)
-    const halfRightUpperBound = Math.abs(expectedResult * 1.1 - expectedResult);
-    const marginUpperCheck = Math.abs(expectedResult * (1 + (margin / 100)) - expectedResult);
-    if (Math.abs(Math.abs(userAnswer) - Math.abs(expectedResult)) <= halfRightUpperBound && 
-        Math.abs(userAnswer - expectedResult) >= marginUpperCheck) {
-      return 'Pode-se dizer que está "MEIO CERTO"! Não desista, continue tentando!';
-    }
-    
-    // 6. Caso contrário, está incorreto
-    return 'NÃO FOI DESSA VEZ! Continue tentando, VOCÊ CONSEGUE!';
-  };
-
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const expectedResult = SafeMathEvaluator.evaluate(formula, values.input);
-      const result = calculateResult(formula, values.input, values.answer, marginError);
-      setResult(result);
+      // Usar o módulo de domínio centralizado para avaliar
+      const evaluationResult = evaluateExercise({
+        formula,
+        margem: marginError,
+        n: values.input,
+        respostaAluno: values.answer.toString()
+      });
+      
+      setResult(evaluationResult);
 
       // Salvar resposta no banco de dados
       const submissionResult = await submitExercise({
@@ -118,18 +81,19 @@ export function ExerciseResolver({
         atividadeId,
         numeroN: values.input,
         respostaDigitada: values.answer.toString(),
-        resultadoCalculado: expectedResult,
+        resultadoCalculado: evaluationResult.valorEsperado,
         margemAplicada: marginError,
-        resultMessage: result
+        acertoNivel: evaluationResult.acertoNivel
       });
 
       if (submissionResult.success) {
-        if (result.includes('PARABÉNS')) {
-          toast.success(result);
-        } else if (result.includes('MEIO CERTO')) {
-          toast.warning(result);
+        const toastType = getToastType(evaluationResult.acertoNivel);
+        if (toastType === 'success') {
+          toast.success(evaluationResult.mensagem);
+        } else if (toastType === 'warning') {
+          toast.warning(evaluationResult.mensagem);
         } else {
-          toast.error(result);
+          toast.error(evaluationResult.mensagem);
         }
       } else {
         toast.error('Erro ao salvar resposta: ' + submissionResult.error);
@@ -202,12 +166,8 @@ export function ExerciseResolver({
             </Button>
 
             {result && (
-              <div className={`p-4 rounded-lg text-center font-medium ${
-                result.includes('PARABÉNS') 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
-                {result}
+              <div className={`p-4 rounded-lg text-center font-medium ${getResultClassName(result.acertoNivel)}`}>
+                {result.mensagem}
               </div>
             )}
           </form>
