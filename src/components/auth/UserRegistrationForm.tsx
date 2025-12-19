@@ -292,6 +292,27 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
 
       if (userError) throw userError;
 
+      // Se senha foi preenchida, atualizar no Supabase Auth
+      let passwordUpdated = false;
+      if (data.senha && data.senha.length >= 6) {
+        console.log('[UserRegistrationForm] Atualizando senha no Auth...');
+        
+        const { data: resetData, error: resetError } = await supabase.functions.invoke(
+          'admin-reset-password',
+          {
+            body: { userId: id, newPassword: data.senha }
+          }
+        );
+
+        if (resetError) {
+          console.error('[UserRegistrationForm] Erro ao atualizar senha:', resetError);
+          throw new Error('Erro ao atualizar senha: ' + resetError.message);
+        }
+
+        console.log('[UserRegistrationForm] Senha atualizada com sucesso');
+        passwordUpdated = true;
+      }
+
       // Atualizar preferências
       const { error: preferencesError } = await supabase
         .from('preferencias_usuario')
@@ -322,7 +343,9 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
 
       toast({
         title: "Usuário atualizado com sucesso!",
-        description: `Os dados de ${data.nome} foram atualizados.`,
+        description: passwordUpdated 
+          ? `Os dados de ${data.nome} foram atualizados, incluindo a senha.`
+          : `Os dados de ${data.nome} foram atualizados.`,
       });
 
       return { success: true };
