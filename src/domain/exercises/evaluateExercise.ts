@@ -87,32 +87,47 @@ export function evaluateExercise(input: EvaluationInput): EvaluationResult {
   
   let acertoNivel: AcertoNivel;
   
-  // 1. Verifica se está 100% correto
-  if (valorEsperado === valorAluno) {
+  // 1. Caso 100% correto (igualdade exata)
+  if (valorAluno === valorEsperado) {
     acertoNivel = 'correto';
-  }
-  // 2. Verifica se está correto com margem (inferior)
-  else {
-    const marginLowerBound = Math.abs(valorEsperado - (valorEsperado * (1 - (margem / 100))));
-    const marginUpperBound = Math.abs(valorEsperado * (1 + (margem / 100)) - valorEsperado);
-    const diferencaAbsoluta = Math.abs(valorAluno - valorEsperado);
+  } else {
+    // 2. Cálculo das faixas de margem percentual
+    const margemRelativa = margem / 100;
+    const lowerMargin = valorEsperado * (1 - margemRelativa);
+    const upperMargin = valorEsperado * (1 + margemRelativa);
     
-    if (diferencaAbsoluta <= marginLowerBound || diferencaAbsoluta <= marginUpperBound) {
-      // Está dentro da margem de erro permitida
+    console.log('[evaluateExercise] Faixas:', { 
+      valorEsperado, 
+      valorAluno, 
+      margem,
+      lowerMargin, 
+      upperMargin 
+    });
+    
+    // 3. Verifica se está correto dentro da margem
+    if (valorAluno >= lowerMargin && valorAluno <= upperMargin) {
       acertoNivel = 'correto_com_margem';
-    }
-    // 3. Verifica se está "meio certo" (dentro de 10% de tolerância)
-    else {
-      const halfRightBound = Math.abs(valorEsperado * 0.1); // 10% de tolerância
-      const marginCheck = Math.max(marginLowerBound, marginUpperBound);
-      const diferencaAbsolutaValores = Math.abs(Math.abs(valorAluno) - Math.abs(valorEsperado));
+    } else {
+      // 4. Cálculo da faixa de "meio certo" (±10% do resultado)
+      const halfRelativa = 0.10;
+      const lowerHalf = valorEsperado * (1 - halfRelativa);
+      const upperHalf = valorEsperado * (1 + halfRelativa);
       
-      if (diferencaAbsolutaValores <= Math.abs(valorEsperado * 1.1 - valorEsperado) && 
-          diferencaAbsoluta >= marginCheck) {
+      // Meio certo: dentro de ±10%, MAS fora da margem de erro
+      const isWithinHalfRange = valorAluno >= lowerHalf && valorAluno <= upperHalf;
+      const isOutsideMarginRange = valorAluno < lowerMargin || valorAluno > upperMargin;
+      
+      console.log('[evaluateExercise] Meio certo check:', { 
+        lowerHalf, 
+        upperHalf, 
+        isWithinHalfRange, 
+        isOutsideMarginRange 
+      });
+      
+      if (isWithinHalfRange && isOutsideMarginRange) {
         acertoNivel = 'meio_certo';
-      }
-      // 4. Caso contrário, está incorreto
-      else {
+      } else {
+        // 5. Caso contrário, está incorreto
         acertoNivel = 'incorreto';
       }
     }
