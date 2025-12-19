@@ -173,7 +173,7 @@ const ExerciseRegistrationForm = ({ exerciseId }: ExerciseRegistrationFormProps)
                   selectedCategory={selectedCategory}
                   onCategoryChange={(value) => {
                     setSelectedCategory(value);
-                    form.setValue('subcategoria_id', '');
+                    form.resetField('subcategoria_id');
                   }}
                 />
                 <SubcategoryField

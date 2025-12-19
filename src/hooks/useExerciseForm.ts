@@ -20,6 +20,7 @@ export const useExerciseForm = (exerciseId?: string) => {
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseFormSchema),
     defaultValues: {
+      subcategoria_id: undefined,
       ordem: 1,
       formula: '',
       margem_erro: 0.1,
