@@ -34,7 +34,7 @@ export function useStudentActivities() {
         throw new Error('Aluno não está matriculado em nenhuma turma');
       }
 
-      // Buscar atividades da turma com filtro de data
+      // Buscar todas as atividades ativas da turma (sem filtro de data para permitir visualização de atrasadas)
       const { data: atividades, error: atividadesError } = await supabase
         .from('atividades')
         .select(`
@@ -49,7 +49,6 @@ export function useStudentActivities() {
         `)
         .eq('turma_id', matricula.turma_id)
         .eq('status', 'ativa')
-        .or(`data_limite.is.null,data_limite.gt.${new Date().toISOString()}`)
         .order('data_envio', { ascending: false });
 
       if (atividadesError) {
