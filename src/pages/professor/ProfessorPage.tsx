@@ -34,14 +34,14 @@ const ProfessorPage: React.FC<ProfessorPageProps> = ({ children }) => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <ProfessorSidebar />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 flex flex-col overflow-auto">
           <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
-            <SidebarTrigger className="lg:hidden" />
+            <SidebarTrigger className="h-8 w-8" />
             <div className="flex-1">
-              <h2 className="text-lg font-semibold">Área do Professor</h2>
+              <h2 className="text-lg font-semibold text-primary">Área do Professor</h2>
             </div>
           </header>
-          <div className="p-4 lg:p-6">
+          <div className="flex-1 p-4 lg:p-6">
             {children}
           </div>
         </main>
