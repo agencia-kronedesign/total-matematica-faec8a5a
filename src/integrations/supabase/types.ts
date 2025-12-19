@@ -1164,18 +1164,12 @@ export type Database = {
       }
     }
     Functions: {
-      atualizar_metricas_dashboard: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      atualizar_metricas_dashboard: { Args: never; Returns: undefined }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["user_type"]
       }
-      update_keep_alive: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_keep_alive: { Args: never; Returns: undefined }
     }
     Enums: {
       acerto_nivel_type:

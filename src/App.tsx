@@ -27,6 +27,9 @@ import AtividadesManagement from "./pages/admin/AtividadesManagement";
 import UserRegistration from "./pages/UserRegistration";
 import StudentActivities from "./pages/StudentActivities";
 import ActivityExercises from "./pages/ActivityExercises";
+import ProfessorPage from "./pages/professor/ProfessorPage";
+import ProfessorDashboard from "./pages/professor/ProfessorDashboard";
+import ProfessorAtividades from "./pages/professor/ProfessorAtividades";
 
 const queryClient = new QueryClient();
 
@@ -80,9 +83,27 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
+              {/* Professor Routes */}
+              <Route 
+                path="/professor" 
+                element={
+                  <ProfessorPage>
+                    <ProfessorDashboard />
+                  </ProfessorPage>
+                } 
+              />
+              <Route 
+                path="/professor/atividades" 
+                element={
+                  <ProfessorPage>
+                    <ProfessorAtividades />
+                  </ProfessorPage>
+                } 
+              />
+
               {/* Admin Routes */}
               <Route 
-                path="/admin" 
+                path="/admin"
                 element={
                   <AdminPage>
                     <AdminDashboard />

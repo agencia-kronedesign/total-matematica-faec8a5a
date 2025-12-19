@@ -38,7 +38,8 @@ import {
   Shield,
   School,
   Database,
-  Calendar
+  Calendar,
+  GraduationCap
 } from 'lucide-react';
 
 const DashboardSidebar = () => {
@@ -114,6 +115,11 @@ const DashboardSidebar = () => {
   };
   
   const menuItems = getMenuItems();
+
+  const professorItems = [
+    { title: "Área do Professor", icon: GraduationCap, path: "/professor" },
+    { title: "Minhas Atividades", icon: Calendar, path: "/professor/atividades" },
+  ];
 
   const adminItems = [
     { title: "Painel Admin", icon: Shield, path: "/admin" },
@@ -215,6 +221,32 @@ const DashboardSidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Professor Section */}
+        {canCreateExercises() && !isStudent() && (
+          <>
+            <SidebarSeparator />
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-primary font-semibold">
+                Professor
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {professorItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton isActive={isActive(item.path)} asChild>
+                        <Link to={item.path}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
         
         {/* Admin Section */}
         {isAdmin && (
