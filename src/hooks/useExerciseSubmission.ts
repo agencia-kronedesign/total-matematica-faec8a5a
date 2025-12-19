@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
-
-type AcertoNivelType = Database['public']['Enums']['acerto_nivel_type'];
+import { type AcertoNivel } from '@/domain/exercises';
 
 export interface ExerciseSubmissionData {
   exerciseId: string;
@@ -11,24 +9,12 @@ export interface ExerciseSubmissionData {
   respostaDigitada: string;
   resultadoCalculado: number;
   margemAplicada: number;
-  resultMessage: string;
+  acertoNivel: AcertoNivel;
 }
 
 export function useExerciseSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const mapResultToAcertoNivel = (resultMessage: string): AcertoNivelType => {
-    if (resultMessage.includes('100% CORRETO')) {
-      return 'correto';
-    } else if (resultMessage.includes('PARABÉNS! VOCÊ ACERTOU!')) {
-      return 'correto_com_margem';
-    } else if (resultMessage.includes('MEIO CERTO')) {
-      return 'meio_certo';
-    } else {
-      return 'incorreto';
-    }
-  };
 
   const submitExercise = async (data: ExerciseSubmissionData) => {
     setIsSubmitting(true);
@@ -41,7 +27,11 @@ export function useExerciseSubmission() {
         throw new Error('Usuário não autenticado');
       }
 
-      const acertoNivel = mapResultToAcertoNivel(data.resultMessage);
+      console.log('[useExerciseSubmission] Salvando resposta:', {
+        exerciseId: data.exerciseId,
+        atividadeId: data.atividadeId,
+        acertoNivel: data.acertoNivel
+      });
 
       const { error: insertError } = await supabase
         .from('respostas')
@@ -53,7 +43,7 @@ export function useExerciseSubmission() {
           resposta_digitada: data.respostaDigitada,
           resultado_calculado: data.resultadoCalculado,
           margem_aplicada: data.margemAplicada,
-          acerto_nivel: acertoNivel,
+          acerto_nivel: data.acertoNivel,
           data_envio: new Date().toISOString()
         });
 
@@ -61,9 +51,12 @@ export function useExerciseSubmission() {
         throw insertError;
       }
 
-      return { success: true, acertoNivel };
+      console.log('[useExerciseSubmission] Resposta salva com sucesso');
+
+      return { success: true, acertoNivel: data.acertoNivel };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      console.error('[useExerciseSubmission] Erro:', errorMessage);
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
