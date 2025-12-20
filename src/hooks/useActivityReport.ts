@@ -54,7 +54,8 @@ export interface ActivityReportData {
 }
 
 // Prioridade para determinar melhor tentativa
-const PRIORIDADE_ACERTO: Record<string, number> = {
+// Exportar para reutilização em useAlunoEvolucao
+export const PRIORIDADE_ACERTO: Record<string, number> = {
   'correto': 4,
   'correto_com_margem': 3,
   'meio_certo': 2,
@@ -62,7 +63,8 @@ const PRIORIDADE_ACERTO: Record<string, number> = {
 };
 
 // Mapear acerto_nivel para StatusGeral
-const mapAcertoNivelToStatus = (acertoNivel: string | null): StatusGeral => {
+// Exportar para reutilização em useAlunoEvolucao
+export const mapAcertoNivelToStatus = (acertoNivel: string | null): StatusGeral => {
   switch (acertoNivel) {
     case 'correto':
       return 'CORRETO';
@@ -78,7 +80,8 @@ const mapAcertoNivelToStatus = (acertoNivel: string | null): StatusGeral => {
 };
 
 // Determinar melhor tentativa baseado na prioridade
-const determinarMelhorTentativa = (respostas: RespostaDetalhe[]): StatusGeral => {
+// Exportar para reutilização em useAlunoEvolucao
+export const determinarMelhorTentativa = (respostas: RespostaDetalhe[]): StatusGeral => {
   if (!respostas || respostas.length === 0) {
     return 'NAO_RESPONDEU';
   }
