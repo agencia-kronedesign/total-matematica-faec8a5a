@@ -124,6 +124,7 @@ const DashboardSidebar = () => {
   const professorItems = [
     { title: "Área do Professor", icon: GraduationCap, path: "/professor" },
     { title: "Minhas Atividades", icon: Calendar, path: "/professor/atividades" },
+    { title: "Minhas Turmas", icon: Users, path: "/professor/turmas" },
   ];
 
   const adminItems = [
