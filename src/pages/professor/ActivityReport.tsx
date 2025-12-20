@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, FileText, Calendar, Eye } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, FileText, Calendar, Eye, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -345,15 +345,31 @@ const ActivityReport = () => {
                         {aluno.respostas.length}
                       </TableCell>
                       <TableCell className="text-right">
-                        {aluno.respostas.length > 0 && (
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Botão existente de ver detalhes (mantém como está hoje) */}
+                          {aluno.respostas.length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedAluno(aluno)}
+                              title="Ver detalhes"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
+                          
+                          {/* NOVO: Botão "Ver evolução" */}
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setSelectedAluno(aluno)}
+                            onClick={() =>
+                              navigate(`/professor/alunos/${aluno.alunoId}/evolucao?turma=${atividade.turma?.id || ''}`)
+                            }
+                            title="Ver evolução do aluno"
                           >
-                            <Eye className="h-4 w-4" />
+                            <TrendingUp className="h-4 w-4" />
                           </Button>
-                        )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
