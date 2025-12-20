@@ -65,17 +65,34 @@ export function ExerciseResolver({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      console.log('[ExerciseResolver] Iniciando submissão:', { 
+        exerciseId, 
+        formula, 
+        marginError, 
+        input: values.input, 
+        answer: values.answer,
+        atividadeId 
+      });
+      
+      // Validar fórmula antes de avaliar
+      if (!formula || formula.trim() === '') {
+        throw new Error('Fórmula do exercício não está definida');
+      }
+      
       // Usar o módulo de domínio centralizado para avaliar
+      console.log('[ExerciseResolver] Avaliando exercício com fórmula:', formula);
       const evaluationResult = evaluateExercise({
         formula,
         margem: marginError,
         n: values.input,
         respostaAluno: values.answer.toString()
       });
+      console.log('[ExerciseResolver] Resultado da avaliação:', evaluationResult);
       
       setResult(evaluationResult);
 
       // Salvar resposta no banco de dados
+      console.log('[ExerciseResolver] Salvando resposta no banco...');
       const submissionResult = await submitExercise({
         exerciseId,
         atividadeId,
@@ -85,6 +102,7 @@ export function ExerciseResolver({
         margemAplicada: marginError,
         acertoNivel: evaluationResult.acertoNivel
       });
+      console.log('[ExerciseResolver] Resultado da submissão:', submissionResult);
 
       if (submissionResult.success) {
         const toastType = getToastType(evaluationResult.acertoNivel);
@@ -99,8 +117,9 @@ export function ExerciseResolver({
         toast.error('Erro ao salvar resposta: ' + submissionResult.error);
       }
     } catch (error) {
-      console.error('Erro ao calcular resultado:', error);
-      toast.error('Erro ao processar sua resposta. Tente novamente.');
+      console.error('[ExerciseResolver] Erro detalhado:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro: ${errorMessage}`);
     }
   };
 
