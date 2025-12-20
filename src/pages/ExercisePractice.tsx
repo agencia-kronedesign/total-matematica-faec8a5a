@@ -129,6 +129,7 @@ const ExercisePractice = () => {
           marginError={exercise.margem_erro || 0}
           imageUrl={exercise.imagem_url || undefined}
           atividadeId={undefined}
+          mode="PRATICA_LIVRE"
         />
       </div>
     </AppLayout>

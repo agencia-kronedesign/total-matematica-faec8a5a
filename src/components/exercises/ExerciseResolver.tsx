@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,8 @@ import {
   FormItem, 
   FormLabel, 
   FormControl, 
-  FormMessage 
+  FormMessage,
+  FormDescription
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,9 @@ import {
   getToastType,
   type EvaluationResult 
 } from '@/domain/exercises';
+import { Lock } from 'lucide-react';
+
+export type ExerciseMode = 'CASA' | 'AULA' | 'PRATICA_LIVRE';
 
 const formSchema = z.object({
   input: z.coerce.number()
@@ -40,6 +44,8 @@ interface ExerciseResolverProps {
   marginError: number;
   imageUrl?: string;
   atividadeId?: string;
+  mode?: ExerciseMode;
+  studentCallNumber?: number | null;
 }
 
 export function ExerciseResolver({ 
@@ -50,18 +56,30 @@ export function ExerciseResolver({
   formula, 
   marginError,
   imageUrl,
-  atividadeId
+  atividadeId,
+  mode = 'PRATICA_LIVRE',
+  studentCallNumber
 }: ExerciseResolverProps) {
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const { submitExercise, isSubmitting } = useExerciseSubmission();
   
+  const isCasaMode = mode === 'CASA';
+  const isInputDisabled = isCasaMode && studentCallNumber != null;
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      input: undefined,
+      input: isInputDisabled ? studentCallNumber : undefined,
       answer: undefined
     }
   });
+
+  // Atualizar o campo input quando studentCallNumber mudar no modo CASA
+  useEffect(() => {
+    if (isCasaMode && studentCallNumber != null) {
+      form.setValue('input', studentCallNumber);
+    }
+  }, [isCasaMode, studentCallNumber, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -157,10 +175,23 @@ export function ExerciseResolver({
               name="input"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Número da chamada (Digite o valor que você atribuiu ao "n")</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    Número da chamada (Digite o valor que você atribuiu ao "n")
+                    {isInputDisabled && <Lock className="h-4 w-4 text-muted-foreground" />}
+                  </FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Input 
+                      type="number" 
+                      {...field} 
+                      disabled={isInputDisabled}
+                      className={isInputDisabled ? 'bg-muted cursor-not-allowed' : ''}
+                    />
                   </FormControl>
+                  {isInputDisabled && (
+                    <FormDescription className="text-xs text-muted-foreground">
+                      No modo CASA, o valor de "n" é fixado como seu número de chamada.
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
