@@ -16,7 +16,12 @@ export function useActivityExercises(atividadeId?: string) {
   return useQuery({
     queryKey: ['activity-exercises', atividadeId],
     queryFn: async () => {
-      if (!atividadeId) return [];
+      if (!atividadeId) {
+        console.log('[useActivityExercises] Nenhum atividadeId fornecido');
+        return [];
+      }
+
+      console.log('[useActivityExercises] Buscando exercícios para atividade:', atividadeId);
 
       const { data, error } = await supabase
         .from('atividade_exercicios')
@@ -40,11 +45,35 @@ export function useActivityExercises(atividadeId?: string) {
         .eq('atividade_id', atividadeId);
 
       if (error) {
+        console.error('[useActivityExercises] Erro ao buscar exercícios:', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        });
         throw error;
       }
 
+      console.log('[useActivityExercises] Exercícios encontrados (total):', data?.length || 0);
+
+      // Log detalhado dos exercícios
+      if (data && data.length > 0) {
+        const exerciciosAtivos = data.filter(item => item.exercicios.ativo === true);
+        const exerciciosInativos = data.filter(item => item.exercicios.ativo === false);
+        
+        console.log('[useActivityExercises] Exercícios ativos:', exerciciosAtivos.length);
+        console.log('[useActivityExercises] Exercícios inativos:', exerciciosInativos.length);
+        
+        if (exerciciosInativos.length > 0) {
+          console.warn('[useActivityExercises] ATENÇÃO: Existem exercícios inativos vinculados a esta atividade:', 
+            exerciciosInativos.map(e => e.exercicios.id)
+          );
+        }
+      } else {
+        console.warn('[useActivityExercises] Nenhum exercício vinculado a esta atividade');
+      }
+
       // Filtrar apenas exercícios ativos e ordenar por ordem no JavaScript
-      return data
+      const result = data
         .filter(item => item.exercicios.ativo === true)
         .map(item => ({
           id: item.exercicios.id,
@@ -57,6 +86,10 @@ export function useActivityExercises(atividadeId?: string) {
           ativo: item.exercicios.ativo
         }))
         .sort((a, b) => (a.ordem || 0) - (b.ordem || 0)) as ActivityExercise[];
+
+      console.log('[useActivityExercises] Exercícios retornados:', result.length);
+      
+      return result;
     },
     enabled: !!atividadeId
   });
