@@ -31,6 +31,7 @@ import ActivityExercises from "./pages/ActivityExercises";
 import ProfessorPage from "./pages/professor/ProfessorPage";
 import ProfessorDashboard from "./pages/professor/ProfessorDashboard";
 import ProfessorAtividades from "./pages/professor/ProfessorAtividades";
+import ProfessorTurmas from "./pages/professor/ProfessorTurmas";
 import ActivityReport from "./pages/professor/ActivityReport";
 
 const queryClient = new QueryClient();
@@ -112,6 +113,14 @@ const App = () => (
                 element={
                   <ProfessorPage>
                     <ActivityReport />
+                  </ProfessorPage>
+                } 
+              />
+              <Route 
+                path="/professor/turmas" 
+                element={
+                  <ProfessorPage>
+                    <ProfessorTurmas />
                   </ProfessorPage>
                 } 
               />
