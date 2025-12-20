@@ -24,6 +24,7 @@ import {
   ArrowLeft,
   Plus,
   BarChart2,
+  Users,
 } from 'lucide-react';
 
 const ProfessorSidebar = () => {
@@ -39,6 +40,7 @@ const ProfessorSidebar = () => {
   const menuItems = [
     { title: "Dashboard", icon: Home, path: "/professor" },
     { title: "Minhas Atividades", icon: Calendar, path: "/professor/atividades" },
+    { title: "Minhas Turmas", icon: Users, path: "/professor/turmas" },
     { title: "Criar Atividade", icon: Plus, path: "/professor/atividades?criar=true" },
   ];
 
