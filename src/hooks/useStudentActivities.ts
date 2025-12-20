@@ -64,15 +64,18 @@ export function useStudentActivities() {
             .select('*', { count: 'exact', head: true })
             .eq('atividade_id', atividade.id);
 
-          // Contar exercícios resolvidos pelo aluno
-          const { count: exerciciosResolvidos } = await supabase
+          // Buscar exercícios únicos resolvidos pelo aluno (evitar contagem duplicada)
+          const { data: respostasData } = await supabase
             .from('respostas')
-            .select('exercicio_id', { count: 'exact', head: true })
+            .select('exercicio_id')
             .eq('atividade_id', atividade.id)
             .eq('aluno_id', user.id);
 
+          // Contar exercícios únicos respondidos
+          const exerciciosUnicos = [...new Set(respostasData?.map(r => r.exercicio_id).filter(Boolean) || [])];
+          
           const total = totalExercicios || 0;
-          const resolvidos = exerciciosResolvidos || 0;
+          const resolvidos = exerciciosUnicos.length;
           const percentual = total > 0 ? Math.round((resolvidos / total) * 100) : 0;
 
           return {

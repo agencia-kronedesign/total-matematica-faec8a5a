@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, ArrowLeft, CheckCircle, Clock } from 'lucide-react';
 import { useActivityExercises } from '@/hooks/useActivityExercises';
-import { useStudentResponses } from '@/hooks/useActivityExercises';
+import { useActivityAllResponses } from '@/hooks/useActivityAllResponses';
 import { ExerciseResolver, type ExerciseMode } from '@/components/exercises/ExerciseResolver';
 import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/components/Header';
@@ -22,17 +22,21 @@ const ActivityExercises = () => {
   const { data: activityType } = useActivityType(atividadeId);
   const { data: studentCallNumber } = useStudentCallNumber();
   
+  // Buscar TODAS as respostas da atividade para calcular progresso corretamente
+  const { data: allResponses } = useActivityAllResponses(atividadeId);
+  
   const currentExercise = exercises?.[currentExerciseIndex];
-  const { data: responses } = useStudentResponses(currentExercise?.id);
   
   // Determinar o modo baseado no tipo da atividade
   const exerciseMode: ExerciseMode = activityType === 'casa' ? 'CASA' : 'AULA';
 
-  const hasResponse = responses && responses.length > 0;
-  const completedExercises = exercises?.filter(ex => {
-    // Para cada exercício, verificar se há respostas
-    return responses?.some(r => r.exercicio_id === ex.id);
-  }).length || 0;
+  // Verificar se o exercício atual foi respondido
+  const hasResponse = allResponses?.includes(currentExercise?.id || '');
+  
+  // Calcular exercícios completos baseado nas respostas de TODA a atividade
+  const completedExercises = exercises?.filter(ex => 
+    allResponses?.includes(ex.id)
+  ).length || 0;
 
   const progressPercentage = exercises?.length ? Math.round((completedExercises / exercises.length) * 100) : 0;
 
