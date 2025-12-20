@@ -83,6 +83,31 @@ const ExercisePractice = () => {
   const subcategoria = exercise.subcategoria;
   const categoria = subcategoria?.categoria;
 
+  // Validar se o exercício tem fórmula
+  if (!exercise.formula || exercise.formula.trim() === '') {
+    return (
+      <AppLayout title="Resolver Exercício">
+        <div className="container mx-auto px-4 py-6">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">
+                Este exercício não possui fórmula cadastrada e não pode ser resolvido.
+              </p>
+              <Button 
+                className="mt-4 w-full" 
+                variant="outline"
+                onClick={() => navigate('/exercicios')}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para Lista de Exercícios
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout title="Resolver Exercício">
       <div className="container mx-auto px-4 py-6">
@@ -100,7 +125,7 @@ const ExercisePractice = () => {
           category={categoria?.nome || 'Sem categoria'}
           subcategory={subcategoria?.nome || 'Sem subcategoria'}
           order={exercise.ordem || 1}
-          formula={exercise.formula || ''}
+          formula={exercise.formula}
           marginError={exercise.margem_erro || 0}
           imageUrl={exercise.imagem_url || undefined}
           atividadeId={undefined}
