@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { useExerciseSubmission } from '@/hooks/useExerciseSubmission';
 import { 
@@ -22,7 +23,8 @@ import {
   getToastType,
   type EvaluationResult 
 } from '@/domain/exercises';
-import { Lock } from 'lucide-react';
+import { SafeMathEvaluator } from '@/utils/safeMathEvaluator';
+import { Lock, AlertTriangle } from 'lucide-react';
 
 export type ExerciseMode = 'CASA' | 'AULA' | 'PRATICA_LIVRE';
 
@@ -81,6 +83,9 @@ export function ExerciseResolver({
     }
   }, [isCasaMode, studentCallNumber, form]);
 
+  // Verificar se a fórmula é válida
+  const isFormulaValid = formula && formula.trim() !== '' && SafeMathEvaluator.isValidFormula(formula);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       console.log('[ExerciseResolver] Iniciando submissão:', { 
@@ -94,18 +99,32 @@ export function ExerciseResolver({
       
       // Validar fórmula antes de avaliar
       if (!formula || formula.trim() === '') {
-        throw new Error('Fórmula do exercício não está definida');
+        toast.error('Fórmula do exercício não está definida. Contate o administrador.');
+        return;
+      }
+
+      if (!SafeMathEvaluator.isValidFormula(formula)) {
+        console.error('[ExerciseResolver] Fórmula inválida:', formula);
+        toast.error('A fórmula deste exercício está incorreta. Contate o administrador.');
+        return;
       }
       
-      // Usar o módulo de domínio centralizado para avaliar
-      console.log('[ExerciseResolver] Avaliando exercício com fórmula:', formula);
-      const evaluationResult = evaluateExercise({
-        formula,
-        margem: marginError,
-        n: values.input,
-        respostaAluno: values.answer.toString()
-      });
-      console.log('[ExerciseResolver] Resultado da avaliação:', evaluationResult);
+      // Tentar avaliar a fórmula com try-catch específico
+      let evaluationResult: EvaluationResult;
+      try {
+        console.log('[ExerciseResolver] Avaliando exercício com fórmula:', formula);
+        evaluationResult = evaluateExercise({
+          formula,
+          margem: marginError,
+          n: values.input,
+          respostaAluno: values.answer.toString()
+        });
+        console.log('[ExerciseResolver] Resultado da avaliação:', evaluationResult);
+      } catch (formulaError) {
+        console.error('[ExerciseResolver] Erro ao avaliar fórmula:', formulaError);
+        toast.error('Erro ao processar a fórmula do exercício. Contate o administrador.');
+        return;
+      }
       
       setResult(evaluationResult);
 
@@ -157,6 +176,18 @@ export function ExerciseResolver({
             (OBS: Os exercícios NÃO estão em ordem crescente de dificuldade)
           </p>
         </div>
+
+        {/* Alerta se a fórmula for inválida */}
+        {!isFormulaValid && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Erro no Exercício</AlertTitle>
+            <AlertDescription>
+              Este exercício possui uma fórmula inválida ou não configurada. 
+              Por favor, contate o administrador do sistema.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {imageUrl && (
           <div className="mb-6">
