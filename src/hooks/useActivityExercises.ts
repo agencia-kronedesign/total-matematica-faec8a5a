@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SafeMathEvaluator } from '@/utils/safeMathEvaluator';
 
 interface ActivityExercise {
   id: string;
@@ -10,6 +11,7 @@ interface ActivityExercise {
   categoria: string;
   subcategoria: string;
   ativo: boolean;
+  formulaValida: boolean;
 }
 
 export function useActivityExercises(atividadeId?: string) {
@@ -75,19 +77,38 @@ export function useActivityExercises(atividadeId?: string) {
       // Filtrar apenas exercícios ativos e ordenar por ordem no JavaScript
       const result = data
         .filter(item => item.exercicios.ativo === true)
-        .map(item => ({
-          id: item.exercicios.id,
-          ordem: item.exercicios.ordem,
-          formula: item.exercicios.formula,
-          margem_erro: item.exercicios.margem_erro,
-          imagem_url: item.exercicios.imagem_url,
-          categoria: item.exercicios.subcategorias.categorias.nome,
-          subcategoria: item.exercicios.subcategorias.nome,
-          ativo: item.exercicios.ativo
-        }))
+        .map(item => {
+          const formula = item.exercicios.formula || '';
+          const formulaValida = SafeMathEvaluator.isValidFormula(formula);
+          
+          if (!formulaValida) {
+            console.warn('[useActivityExercises] Exercício com fórmula inválida:', {
+              id: item.exercicios.id,
+              formula: formula
+            });
+          }
+          
+          return {
+            id: item.exercicios.id,
+            ordem: item.exercicios.ordem,
+            formula: formula,
+            margem_erro: item.exercicios.margem_erro,
+            imagem_url: item.exercicios.imagem_url,
+            categoria: item.exercicios.subcategorias.categorias.nome,
+            subcategoria: item.exercicios.subcategorias.nome,
+            ativo: item.exercicios.ativo,
+            formulaValida: formulaValida
+          };
+        })
         .sort((a, b) => (a.ordem || 0) - (b.ordem || 0)) as ActivityExercise[];
 
       console.log('[useActivityExercises] Exercícios retornados:', result.length);
+      
+      // Log de resumo de fórmulas
+      const formulasInvalidas = result.filter(e => !e.formulaValida);
+      if (formulasInvalidas.length > 0) {
+        console.warn('[useActivityExercises] ATENÇÃO: Existem', formulasInvalidas.length, 'exercício(s) com fórmulas inválidas');
+      }
       
       return result;
     },
