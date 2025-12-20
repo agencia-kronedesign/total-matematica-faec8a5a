@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Plus, Search, Calendar, Users, Book, Filter, Eye, Edit, Trash2 } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Plus, Search, Calendar, Users, Book, Filter, Eye, Edit, Trash2, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const ProfessorAtividades = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTurma, setSelectedTurma] = useState('all');
   const [selectedTipo, setSelectedTipo] = useState('all');
@@ -233,11 +234,18 @@ const ProfessorAtividades = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleEdit(atividade)}
-                  className="flex-1"
+                  onClick={() => navigate(`/professor/atividades/${atividade.id}/relatorio`)}
+                  title="Ver relatório da atividade"
                 >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Editar
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(atividade)}
+                >
+                  <Edit className="h-4 w-4" />
                 </Button>
                 
                 <AlertDialog>
