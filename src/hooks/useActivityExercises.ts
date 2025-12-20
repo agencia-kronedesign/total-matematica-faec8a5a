@@ -37,24 +37,26 @@ export function useActivityExercises(atividadeId?: string) {
             )
           )
         `)
-        .eq('atividade_id', atividadeId)
-        .eq('exercicios.ativo', true)
-        .order('exercicios.ordem');
+        .eq('atividade_id', atividadeId);
 
       if (error) {
         throw error;
       }
 
-      return data.map(item => ({
-        id: item.exercicios.id,
-        ordem: item.exercicios.ordem,
-        formula: item.exercicios.formula,
-        margem_erro: item.exercicios.margem_erro,
-        imagem_url: item.exercicios.imagem_url,
-        categoria: item.exercicios.subcategorias.categorias.nome,
-        subcategoria: item.exercicios.subcategorias.nome,
-        ativo: item.exercicios.ativo
-      })) as ActivityExercise[];
+      // Filtrar apenas exercícios ativos e ordenar por ordem no JavaScript
+      return data
+        .filter(item => item.exercicios.ativo === true)
+        .map(item => ({
+          id: item.exercicios.id,
+          ordem: item.exercicios.ordem,
+          formula: item.exercicios.formula,
+          margem_erro: item.exercicios.margem_erro,
+          imagem_url: item.exercicios.imagem_url,
+          categoria: item.exercicios.subcategorias.categorias.nome,
+          subcategoria: item.exercicios.subcategorias.nome,
+          ativo: item.exercicios.ativo
+        }))
+        .sort((a, b) => (a.ordem || 0) - (b.ordem || 0)) as ActivityExercise[];
     },
     enabled: !!atividadeId
   });
