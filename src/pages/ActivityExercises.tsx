@@ -7,9 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, ArrowLeft, CheckCircle, Clock } from 'lucide-react';
 import { useActivityExercises } from '@/hooks/useActivityExercises';
 import { useStudentResponses } from '@/hooks/useActivityExercises';
-import { ExerciseResolver } from '@/components/exercises/ExerciseResolver';
+import { ExerciseResolver, type ExerciseMode } from '@/components/exercises/ExerciseResolver';
 import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/components/Header';
+import { useActivityType } from '@/hooks/useActivityType';
+import { useStudentCallNumber } from '@/hooks/useStudentCallNumber';
 
 const ActivityExercises = () => {
   const { atividadeId } = useParams<{ atividadeId: string }>();
@@ -17,8 +19,14 @@ const ActivityExercises = () => {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
 
   const { data: exercises, isLoading: exercisesLoading } = useActivityExercises(atividadeId);
+  const { data: activityType } = useActivityType(atividadeId);
+  const { data: studentCallNumber } = useStudentCallNumber();
+  
   const currentExercise = exercises?.[currentExerciseIndex];
   const { data: responses } = useStudentResponses(currentExercise?.id);
+  
+  // Determinar o modo baseado no tipo da atividade
+  const exerciseMode: ExerciseMode = activityType === 'casa' ? 'CASA' : 'AULA';
 
   const hasResponse = responses && responses.length > 0;
   const completedExercises = exercises?.filter(ex => {
@@ -151,6 +159,8 @@ const ActivityExercises = () => {
                   marginError={currentExercise.margem_erro}
                   imageUrl={currentExercise.imagem_url}
                   atividadeId={atividadeId}
+                  mode={exerciseMode}
+                  studentCallNumber={studentCallNumber}
                 />
               </CardContent>
             </Card>
