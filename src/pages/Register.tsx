@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureAdminSetup } from '@/hooks/useSecureAdminSetup';
 import Logo from '@/components/Logo';
+import PasswordInput, { isPasswordValid } from '@/components/auth/PasswordInput';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -28,17 +29,25 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
+    if (!isPasswordValid(password)) {
+      setError('A senha não atende aos requisitos de segurança.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('As senhas não coincidem');
       return;
     }
 
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
-      return;
+    try {
+      await signUp(email, password, name);
+    } catch (err: any) {
+      if (err.message?.includes('already registered')) {
+        setError('Este email já está cadastrado.');
+      } else {
+        setError(err.message || 'Erro ao criar conta.');
+      }
     }
-
-    await signUp(email, password, name);
   };
 
   const createFirstAdmin = async () => {
@@ -46,10 +55,9 @@ const Register = () => {
       setError('');
       setAdminCreating(true);
       
-      // Primeiro, criar o usuário
       const { data, error } = await supabase.auth.signUp({
         email: 'admin@sistema.com',
-        password: 'admin123',
+        password: 'Admin123!',
         options: {
           data: {
             nome: 'Administrador do Sistema',
@@ -60,10 +68,8 @@ const Register = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Aguardar um pouco para garantir que o trigger do handle_new_user funcione
         setTimeout(async () => {
           try {
-            // Promover o usuário a admin
             const { error: updateError } = await supabase
               .from('usuarios')
               .update({ tipo_usuario: 'admin' })
@@ -73,10 +79,9 @@ const Register = () => {
 
             toast({
               title: "Admin criado com sucesso!",
-              description: "Email: admin@sistema.com | Senha: admin123",
+              description: "Email: admin@sistema.com | Senha: Admin123!",
             });
             
-            // Recarregar a página para ocultar o botão
             window.location.reload();
           } catch (updateError: any) {
             toast({
@@ -138,53 +143,67 @@ const Register = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
-                placeholder="Crie uma senha"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                onChange={setPassword}
+                placeholder="Crie uma senha segura"
+                showStrengthIndicator
+                showValidationList
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirme a senha</Label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
-                placeholder="Confirme sua senha"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
+                onChange={setConfirmPassword}
+                placeholder="Confirme sua senha"
+                showStrengthIndicator={false}
+                showValidationList={false}
               />
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-xs text-destructive">As senhas não coincidem</p>
+              )}
             </div>
             
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             
-            <Button type="submit" className="w-full bg-totalBlue" disabled={authLoading}>
-              {authLoading ? 'Processando...' : 'Cadastrar'}
+            <Button 
+              type="submit" 
+              className="w-full bg-totalBlue" 
+              disabled={authLoading || !isPasswordValid(password) || password !== confirmPassword}
+            >
+              {authLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                'Cadastrar'
+              )}
             </Button>
           </form>
           
-          {/* Mensagens informativas sobre configuração de admin */}
           {setupMessage && (
             <div className="mt-4">
               <Alert variant={setupMessage.type === 'error' ? 'destructive' : 'default'}>
-                <AlertDescription>
-                  {setupMessage.message}
-                </AlertDescription>
+                <AlertDescription>{setupMessage.message}</AlertDescription>
               </Alert>
             </div>
           )}
           
-          {/* Seção de criação do primeiro administrador (apenas com chave válida) */}
           {canShowSetup && !setupLoading && (
             <div className="mt-4 pt-4 border-t">
               <div className="mb-3">
                 <Alert>
                   <AlertDescription className="text-sm">
-                    <strong>Configuração Inicial:</strong> Você está no modo de setup inicial do sistema. 
-                    Clique no botão abaixo para criar o primeiro administrador.
+                    <strong>Configuração Inicial:</strong> Modo de setup inicial do sistema.
                   </AlertDescription>
                 </Alert>
               </div>
@@ -195,7 +214,7 @@ const Register = () => {
                 onClick={createFirstAdmin}
                 disabled={loading || adminCreating}
               >
-                {adminCreating ? 'Criando Administrador...' : 'Criar Primeiro Admin (admin@sistema.com)'}
+                {adminCreating ? 'Criando Administrador...' : 'Criar Primeiro Admin'}
               </Button>
             </div>
           )}

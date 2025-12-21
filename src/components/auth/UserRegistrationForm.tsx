@@ -34,7 +34,7 @@ const createUserRegistrationSchema = (isEditMode: boolean) => z.object({
   // Dados pessoais básicos
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   email: z.string().email('Email inválido'),
-  senha: isEditMode ? z.string().optional() : z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  senha: isEditMode ? z.string().optional() : z.string().min(8, 'Senha deve ter pelo menos 8 caracteres').regex(/[A-Z]/, 'Deve conter letra maiúscula').regex(/[a-z]/, 'Deve conter letra minúscula').regex(/[0-9]/, 'Deve conter um número'),
   confirmarSenha: z.string().optional(),
   tipo_usuario: z.enum(['admin', 'direcao', 'coordenador', 'professor', 'aluno', 'responsavel']),
   ativo: z.boolean().default(true),

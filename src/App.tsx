@@ -13,6 +13,8 @@ import SessionManager from "@/components/SessionManager";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Exercises from "./pages/Exercises";
@@ -50,6 +52,8 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/entrar" element={<Login />} />
               <Route path="/cadastrar" element={<Register />} />
+              <Route path="/recuperar-senha" element={<ForgotPassword />} />
+              <Route path="/redefinir-senha" element={<ResetPassword />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />
