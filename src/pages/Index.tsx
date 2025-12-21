@@ -5,7 +5,7 @@ import BenefitCard from '@/components/BenefitCard';
 import Faq from '@/components/Faq';
 import VideoButton from '@/components/VideoButton';
 import VideoModal from '@/components/VideoModal';
-import ContactForm from '@/components/forms/ContactForm';
+
 import LeadForm from '@/components/forms/LeadForm';
 import Testimonial from '@/components/Testimonial';
 import { Book, Users, Calendar, Video } from 'lucide-react';
@@ -181,13 +181,65 @@ const Index = () => {
       {/* FAQ Section */}
       <Faq />
       
-      {/* Contact Section */}
+      {/* How It Works Section */}
       <section id="contato" className="py-12 px-4 bg-totalBlue">
-        <div className="container mx-auto">
-          <h2 className="text-2xl font-bold text-white text-center mb-8">
-            Fale Conosco / Sugestões
+        <div className="container mx-auto text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">
+            Como o Total Matemática funciona na sua escola?
           </h2>
-          <ContactForm origin="meio" />
+          
+          <div className="max-w-2xl mx-auto mb-10">
+            <div className="grid gap-6 text-left">
+              {/* Passo 1 */}
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-totalYellow text-totalBlue font-bold flex items-center justify-center">
+                  1
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Apresentação</h3>
+                  <p className="text-gray-200">
+                    Apresentamos o método para a equipe gestora e pedagógica da sua escola.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Passo 2 */}
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-totalYellow text-totalBlue font-bold flex items-center justify-center">
+                  2
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Formação</h3>
+                  <p className="text-gray-200">
+                    Formamos os professores e configuramos o portal personalizado para a escola.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Passo 3 */}
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-totalYellow text-totalBlue font-bold flex items-center justify-center">
+                  3
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Acompanhamento</h3>
+                  <p className="text-gray-200">
+                    Acompanhamos resultados com relatórios e suporte contínuo.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <Button 
+            onClick={() => {
+              scrollToSection('lead-form');
+              console.log('[Landing/BlocoAzul]', 'cta-click', { action: 'ver-na-escola' });
+            }}
+            className="bg-totalYellow text-totalBlue font-semibold px-8 py-3 text-lg hover:bg-yellow-300 transition-colors"
+          >
+            Quero ver na minha escola
+          </Button>
         </div>
       </section>
       
