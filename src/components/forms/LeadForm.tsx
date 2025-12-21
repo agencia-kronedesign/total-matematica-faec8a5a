@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -55,8 +56,18 @@ const LeadForm: React.FC = () => {
     console.log('[LeadForm]', 'submit', { nome, email, escolaOuRede });
 
     try {
-      // TODO: integrar com Supabase (tabela leads) na próxima fase
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const userAgent = navigator.userAgent;
+
+      const { error } = await supabase.from('leads').insert({
+        nome,
+        email,
+        escola_ou_rede: escolaOuRede || null,
+        origem: 'landing:lead-form',
+        user_agent: userAgent,
+        ip: null,
+      });
+
+      if (error) throw error;
       
       setStatus('success');
       console.log('[LeadForm]', 'success');

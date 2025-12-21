@@ -144,13 +144,43 @@ const scrollToSection = (id: string) => {
 };
 ```
 
+## Integração Supabase – Leads e Contatos
+
+### Tabelas
+| Tabela | Descrição |
+|--------|-----------|
+| `public.leads` | Solicitações de videoconferência/representante |
+| `public.contacts` | Mensagens de contato genéricas |
+
+### Mapeamento Formulário → Tabela
+| Componente | Tabela | Campo `origem` |
+|------------|--------|----------------|
+| `LeadForm` | `leads` | `landing:lead-form` |
+| `ContactForm origin="footer"` | `contacts` | `landing:footer` |
+
+### RLS (Row Level Security)
+- **Insert**: Permitido para `anon` (visitantes)
+- **Select/Update/Delete**: Apenas usuários com `get_current_user_role() = 'admin'`
+
+### Campos Capturados
+| Campo | Descrição | Obrigatório |
+|-------|-----------|-------------|
+| `nome` | Nome do visitante | Sim |
+| `email` | Email do visitante | Sim |
+| `mensagem` | Mensagem (apenas contacts) | Sim |
+| `escola_ou_rede` | Escola/rede (apenas leads) | Não |
+| `origem` | Identificador do formulário | Sim |
+| `user_agent` | Navegador do visitante | Não |
+| `ip` | IP (null, capturar via edge function se necessário) | Não |
+
 ## TODO - Integrações Futuras
 
-- [ ] Integrar `ContactForm` com Supabase (tabela `contatos` ou edge function)
-- [ ] Integrar `LeadForm` com Supabase (tabela `leads`)
+- [x] ~~Integrar `ContactForm` com Supabase (tabela `contacts`)~~
+- [x] ~~Integrar `LeadForm` com Supabase (tabela `leads`)~~
 - [ ] Implementar reCAPTCHA real no lugar do checkbox simples
 - [ ] Adicionar página `/quem-somos` com conteúdo institucional
 - [ ] Implementar envio de email de confirmação para leads
+- [ ] Criar painel admin para visualizar leads e contatos
 
 ## Responsividade
 
