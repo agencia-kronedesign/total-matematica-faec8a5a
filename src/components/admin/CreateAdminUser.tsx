@@ -2,19 +2,42 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import PasswordInput, { isPasswordValid } from '@/components/auth/PasswordInput';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 const CreateAdminUser = () => {
-  const [email, setEmail] = useState('totalmatematica.com.br@gmail.com');
-  const [password, setPassword] = useState('12345678');
-  const [nome, setNome] = useState('Total Matemática Admin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [nome, setNome] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const createAdminUser = async () => {
+    setError('');
+
+    // Validar campos
+    if (!nome.trim()) {
+      setError('Nome é obrigatório.');
+      return;
+    }
+
+    if (!email.trim()) {
+      setError('Email é obrigatório.');
+      return;
+    }
+
+    if (!isPasswordValid(password)) {
+      setError('A senha não atende aos requisitos de segurança.');
+      return;
+    }
+
     setLoading(true);
     try {
       // Usar Edge Function para criar usuário sem afetar sessão atual
@@ -37,9 +60,9 @@ const CreateAdminUser = () => {
       });
 
       // Limpar formulário após sucesso
-      setEmail('totalmatematica.com.br@gmail.com');
-      setPassword('12345678');
-      setNome('Total Matemática Admin');
+      setEmail('');
+      setPassword('');
+      setNome('');
 
       // Redirecionar para página de gerenciamento de usuários após sucesso
       setTimeout(() => {
@@ -48,6 +71,7 @@ const CreateAdminUser = () => {
 
     } catch (error: any) {
       console.error('Erro ao criar usuário admin:', error);
+      setError(error.message || 'Erro desconhecido ao criar administrador.');
       toast({
         title: "Erro ao criar usuário admin",
         description: error.message || 'Erro desconhecido',
@@ -67,38 +91,57 @@ const CreateAdminUser = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm font-medium">Nome</label>
+        <div className="space-y-2">
+          <Label htmlFor="nome">Nome</Label>
           <Input
+            id="nome"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Nome do administrador"
           />
         </div>
-        <div>
-          <label className="text-sm font-medium">Email</label>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
           <Input
+            id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email do administrador"
           />
         </div>
-        <div>
-          <label className="text-sm font-medium">Senha</label>
-          <Input
-            type="password"
+        <div className="space-y-2">
+          <Label htmlFor="password">Senha</Label>
+          <PasswordInput
+            id="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Senha"
+            onChange={setPassword}
+            placeholder="Digite uma senha segura"
+            showStrengthIndicator
+            showValidationList
           />
         </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <Button 
           onClick={createAdminUser} 
-          disabled={loading}
+          disabled={loading || !isPasswordValid(password) || !nome.trim() || !email.trim()}
           className="w-full"
         >
-          {loading ? 'Criando...' : 'Criar Admin'}
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Criando...
+            </>
+          ) : (
+            'Criar Admin'
+          )}
         </Button>
       </CardContent>
     </Card>

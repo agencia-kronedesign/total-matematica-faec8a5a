@@ -8,9 +8,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertTriangle, Key, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Key, Loader2, AlertCircle } from 'lucide-react';
+import PasswordInput, { isPasswordValid, getPasswordStrength } from '@/components/auth/PasswordInput';
 
 interface RecreateUserDialogProps {
   open: boolean;
@@ -37,11 +38,28 @@ export const RecreateUserDialog: React.FC<RecreateUserDialogProps> = ({
   const [error, setError] = useState('');
 
   const generatePassword = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    // Garantir que a senha gerada atende todos os requisitos
+    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lowercase = 'abcdefghjkmnpqrstuvwxyz';
+    const numbers = '23456789';
+    const special = '!@#$%';
+    
+    // Garantir pelo menos um de cada tipo
     let result = '';
-    for (let i = 0; i < 12; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+    result += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+    result += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    result += special.charAt(Math.floor(Math.random() * special.length));
+    
+    // Completar com caracteres aleatórios
+    const allChars = uppercase + lowercase + numbers + special;
+    for (let i = 0; i < 8; i++) {
+      result += allChars.charAt(Math.floor(Math.random() * allChars.length));
     }
+    
+    // Embaralhar
+    result = result.split('').sort(() => Math.random() - 0.5).join('');
+    
     setPassword(result);
     setConfirmPassword(result);
     setError('');
@@ -50,8 +68,8 @@ export const RecreateUserDialog: React.FC<RecreateUserDialogProps> = ({
   const handleConfirm = async () => {
     setError('');
 
-    if (!password || password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
+    if (!isPasswordValid(password)) {
+      setError('A senha não atende aos requisitos de segurança (8+ caracteres, maiúscula, minúscula, número).');
       return;
     }
 
@@ -77,6 +95,9 @@ export const RecreateUserDialog: React.FC<RecreateUserDialogProps> = ({
 
   if (!user) return null;
 
+  const passwordStrength = getPasswordStrength(password);
+  const isValid = isPasswordValid(password) && password === confirmPassword;
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
@@ -98,42 +119,52 @@ export const RecreateUserDialog: React.FC<RecreateUserDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Nova Senha</Label>
-            <div className="flex gap-2">
-              <Input
-                id="password"
-                type="text"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Digite a nova senha"
-              />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Nova Senha</Label>
               <Button 
                 type="button" 
                 variant="outline" 
+                size="sm"
                 onClick={generatePassword}
-                title="Gerar senha automática"
+                title="Gerar senha segura automática"
               >
-                <Key className="h-4 w-4" />
+                <Key className="h-4 w-4 mr-1" />
+                Gerar Senha
               </Button>
             </div>
+            <PasswordInput
+              id="password"
+              value={password}
+              onChange={setPassword}
+              placeholder="Digite a nova senha"
+              showStrengthIndicator
+              showValidationList
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
-              type="text"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={setConfirmPassword}
               placeholder="Confirme a senha"
+              showStrengthIndicator={false}
+              showValidationList={false}
             />
+            {confirmPassword && password !== confirmPassword && (
+              <p className="text-xs text-destructive">As senhas não coincidem</p>
+            )}
           </div>
 
           {error && (
-            <p className="text-sm text-destructive">{error}</p>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
-          {password && (
+          {password && isValid && (
             <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
               <p className="text-sm text-amber-800 dark:text-amber-200">
                 <strong>Atenção:</strong> Anote a senha antes de confirmar. 
@@ -147,7 +178,7 @@ export const RecreateUserDialog: React.FC<RecreateUserDialogProps> = ({
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button onClick={handleConfirm} disabled={isLoading || !password}>
+          <Button onClick={handleConfirm} disabled={isLoading || !isValid}>
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
