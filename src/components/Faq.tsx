@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Accordion,
@@ -33,7 +32,7 @@ const faqItems: FaqItem[] = [
 
 const Faq: React.FC = () => {
   return (
-    <section className="py-10 px-4 bg-gray-50">
+    <section id="faq" className="py-10 px-4 bg-gray-50">
       <div className="container mx-auto">
         <h2 className="section-heading text-center mb-8">Vamos conversar!</h2>
         <h3 className="text-center mb-6 text-gray-600">Tire suas dúvidas</h3>

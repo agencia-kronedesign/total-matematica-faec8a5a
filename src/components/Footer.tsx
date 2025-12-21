@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from './Logo';
+import ContactForm from './forms/ContactForm';
 
 const Footer = () => {
   return (
@@ -28,21 +28,7 @@ const Footer = () => {
           
           <div>
             <h3 className="font-semibold text-lg mb-4">Fale Conosco / Sugestões</h3>
-            <form className="space-y-3">
-              <input 
-                type="text" 
-                placeholder="Nome" 
-                className="w-full px-4 py-2 rounded text-gray-800"
-              />
-              <input 
-                type="email" 
-                placeholder="Email" 
-                className="w-full px-4 py-2 rounded text-gray-800"
-              />
-              <button className="bg-totalYellow text-totalBlue font-semibold py-2 px-6 rounded">
-                Enviar
-              </button>
-            </form>
+            <ContactForm origin="footer" />
           </div>
         </div>
         
