@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 
@@ -62,8 +63,18 @@ const ContactForm: React.FC<ContactFormProps> = ({ origin, title, className = ''
     console.log('[ContactForm]', 'submit', { origin, nome, email });
 
     try {
-      // TODO: integrar com Supabase / endpoint real de contato
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const userAgent = navigator.userAgent;
+
+      const { error } = await supabase.from('contacts').insert({
+        nome,
+        email,
+        mensagem,
+        origem: `landing:${origin}`,
+        user_agent: userAgent,
+        ip: null,
+      });
+
+      if (error) throw error;
       
       setStatus('success');
       console.log('[ContactForm]', 'success');

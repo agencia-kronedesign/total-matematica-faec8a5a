@@ -321,6 +321,39 @@ export type Database = {
           },
         ]
       }
+      contacts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          ip: string | null
+          mensagem: string
+          nome: string
+          origem: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          ip?: string | null
+          mensagem: string
+          nome: string
+          origem?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          ip?: string | null
+          mensagem?: string
+          nome?: string
+          origem?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       dashboard_metricas: {
         Row: {
           created_at: string | null
@@ -508,6 +541,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      leads: {
+        Row: {
+          created_at: string
+          email: string
+          escola_ou_rede: string | null
+          id: string
+          ip: string | null
+          nome: string
+          origem: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          escola_ou_rede?: string | null
+          id?: string
+          ip?: string | null
+          nome: string
+          origem?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          escola_ou_rede?: string | null
+          id?: string
+          ip?: string | null
+          nome?: string
+          origem?: string
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       logs_acesso: {
         Row: {
