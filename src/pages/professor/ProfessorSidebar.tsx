@@ -47,7 +47,7 @@ const ProfessorSidebar = () => {
   const quickLinks = [
     { title: "Exercícios", icon: BookOpen, path: "/exercicios" },
     { title: "Novo Exercício", icon: Plus, path: "/exercicios/cadastrar" },
-    { title: "Relatórios", icon: BarChart2, path: "/relatorios" },
+    { title: "Relatórios", icon: BarChart2, path: "/professor/atividades" },
   ];
 
   return (
