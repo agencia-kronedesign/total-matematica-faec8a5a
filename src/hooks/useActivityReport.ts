@@ -162,12 +162,12 @@ export const useActivityReport = (atividadeId: string) => {
 
       console.log('[ActivityReport] Matrículas encontradas:', matriculas?.length || 0);
 
-      // 3. Buscar exercícios da atividade
-      const { data: atividadeExercicios, error: exerciciosError } = await supabase
+      // 3. Buscar exercícios da atividade (apenas ativos)
+      const { data: atividadeExerciciosRaw, error: exerciciosError } = await supabase
         .from('atividade_exercicios')
         .select(`
           exercicio_id,
-          exercicio:exercicios(id, formula)
+          exercicio:exercicios(id, formula, ativo)
         `)
         .eq('atividade_id', atividadeId);
 
@@ -175,6 +175,12 @@ export const useActivityReport = (atividadeId: string) => {
         console.error('[ActivityReport] Erro ao buscar exercícios:', exerciciosError);
         throw exerciciosError;
       }
+
+      // Filtrar apenas exercícios ativos para alinhar com a view do aluno
+      const atividadeExercicios = atividadeExerciciosRaw?.filter(ae => {
+        const exercicio = ae.exercicio as { id: string; formula: string | null; ativo: boolean } | null;
+        return exercicio?.ativo === true;
+      }) || [];
 
       const exercicioIds = atividadeExercicios?.map(ae => ae.exercicio_id).filter(Boolean) || [];
 
