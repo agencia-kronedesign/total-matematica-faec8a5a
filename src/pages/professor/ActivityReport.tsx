@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, Clock, Calendar, Eye, TrendingUp, Printer, FileText } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, Clock, Calendar, Eye, TrendingUp, Printer, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +14,79 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useActivityReport, StatusGeral, StatusProgresso, RespostaPorAluno } from '@/hooks/useActivityReport';
+import { useActivityReport, StatusGeral, StatusProgresso, RespostaPorAluno, AtividadeInfo } from '@/hooks/useActivityReport';
 import { RedinAlunoDialog } from '@/components/relatorios/RedinAlunoDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+// Função para exportar relatório como CSV
+const exportarRelatorioCsv = (
+  atividade: AtividadeInfo,
+  respostasPorAluno: RespostaPorAluno[]
+) => {
+  if (!atividade || !respostasPorAluno || respostasPorAluno.length === 0) return;
+
+  const headers = [
+    'numero_chamada',
+    'nome_aluno',
+    'status_progresso',
+    'exercicios_respondidos',
+    'total_exercicios_ativos',
+    'melhor_resultado',
+    'total_respostas',
+  ];
+
+  const statusProgressoTexto: Record<StatusProgresso, string> = {
+    CONCLUIDO: 'Concluído',
+    PARCIAL: 'Parcial',
+    NAO_INICIOU: 'Não Iniciou',
+  };
+
+  const statusGeralTexto: Record<StatusGeral, string> = {
+    CORRETO: '100% Correto',
+    ACERTO_MARGEM: 'Acerto com Margem',
+    MEIO_CERTO: 'Meio Certo',
+    ERRO: 'Erro',
+    NAO_RESPONDEU: 'Não Respondeu',
+  };
+
+  const linhas = respostasPorAluno.map(aluno => [
+    aluno.numeroChamada ?? '',
+    `"${(aluno.nomeAluno ?? '').replace(/"/g, '""')}"`,
+    statusProgressoTexto[aluno.statusProgresso] ?? '',
+    aluno.exerciciosRespondidos ?? 0,
+    aluno.totalExerciciosAtivos ?? 0,
+    statusGeralTexto[aluno.statusGeral] ?? '',
+    aluno.respostas?.length ?? 0,
+  ]);
+
+  const csvConteudo = [
+    headers.join(';'),
+    ...linhas.map(l => l.join(';')),
+  ].join('\n');
+
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvConteudo], { type: 'text/csv;charset=utf-8;' });
+
+  const slugTitulo = atividade.titulo
+    ?.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .replace(/\s+/g, '-')
+    .toLowerCase() || 'atividade';
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const fileName = `relatorio-atividade-${slugTitulo}-${hoje}.csv`;
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 // Componente para badge de status
 const StatusBadge = ({ status }: { status: StatusGeral }) => {
@@ -209,14 +278,29 @@ const ActivityReport = () => {
           </div>
         </div>
         
-        {/* Botão Imprimir PDF */}
-        <Button
-          variant="outline"
-          onClick={() => window.open(`/professor/atividades/${atividadeId}/relatorio/print`, '_blank')}
-        >
-          <Printer className="h-4 w-4 mr-2" />
-          Imprimir PDF
-        </Button>
+        {/* Botões de Ação */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportarRelatorioCsv(atividade, respostasPorAluno)}
+            disabled={!respostasPorAluno || respostasPorAluno.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+            <span className="sm:hidden">CSV</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(`/professor/atividades/${atividadeId}/relatorio/print`, '_blank')}
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Imprimir PDF</span>
+            <span className="sm:hidden">PDF</span>
+          </Button>
+        </div>
       </div>
 
       {/* Cards de Resumo */}
