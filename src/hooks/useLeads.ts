@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export interface Lead {
   id: string;
@@ -10,11 +11,13 @@ export interface Lead {
   escola_ou_rede: string | null;
   origem: string;
   user_agent: string | null;
+  status: string;
 }
 
 export interface UseLeadsFilters {
   dataInicio?: string;
   dataFim?: string;
+  search?: string;
 }
 
 const LEADS_PER_PAGE = 20;
@@ -50,6 +53,14 @@ export function useLeads() {
       }
       if (filters.dataFim) {
         query = query.lte('created_at', `${filters.dataFim}T23:59:59.999Z`);
+      }
+
+      // Apply search filter
+      if (filters.search) {
+        const search = filters.search.trim();
+        if (search) {
+          query = query.or(`nome.ilike.%${search}%,email.ilike.%${search}%`);
+        }
       }
 
       // Order by created_at descending (most recent first)
@@ -91,6 +102,28 @@ export function useLeads() {
     fetchLeads(page);
   }, [fetchLeads]);
 
+  const updateLeadStatus = useCallback(async (id: string, status: string) => {
+    console.log('[Admin/Status] update-start', { id, status, table: 'leads' });
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setLeads(prev =>
+        prev.map(lead => lead.id === id ? { ...lead, status } : lead)
+      );
+
+      console.log('[Admin/Status] update-success', { id, status });
+      toast.success('Status atualizado com sucesso');
+    } catch (err) {
+      console.error('[Admin/Status] update-error', err);
+      toast.error('Erro ao atualizar status');
+    }
+  }, []);
+
   const exportToCSV = useCallback(() => {
     if (leads.length === 0) {
       console.log('[Admin/Leads] export-csv: no leads to export');
@@ -99,13 +132,14 @@ export function useLeads() {
 
     console.log('[Admin/Leads] export-csv-start', { count: leads.length });
     
-    const headers = ['Nome', 'Email', 'Escola/Rede', 'Origem', 'Data de Criação'];
+    const headers = ['Nome', 'Email', 'Escola/Rede', 'Status', 'Origem', 'Data de Criação'];
     const csvRows = [
       headers.join(','),
       ...leads.map(lead => [
         `"${lead.nome.replace(/"/g, '""')}"`,
         `"${lead.email.replace(/"/g, '""')}"`,
         `"${(lead.escola_ou_rede || '').replace(/"/g, '""')}"`,
+        `"${(lead.status || 'novo').replace(/"/g, '""')}"`,
         `"${lead.origem.replace(/"/g, '""')}"`,
         `"${new Date(lead.created_at).toLocaleDateString('pt-BR')}"`
       ].join(','))
@@ -143,5 +177,6 @@ export function useLeads() {
     refreshLeads,
     goToPage,
     exportToCSV,
+    updateLeadStatus,
   };
 }

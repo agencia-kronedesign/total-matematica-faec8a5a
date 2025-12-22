@@ -4,7 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Download, RefreshCw, Filter, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { FileText, Download, RefreshCw, Filter, ChevronLeft, ChevronRight, Loader2, Search } from 'lucide-react';
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const config: Record<string, { label: string; className: string }> = {
+    novo: { label: 'Novo', className: 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500' },
+    em_atendimento: { label: 'Em atendimento', className: 'bg-yellow-500 hover:bg-yellow-600 text-black border-yellow-500' },
+    concluido: { label: 'Concluído', className: 'bg-green-500 hover:bg-green-600 text-white border-green-500' },
+    arquivado: { label: 'Arquivado', className: 'bg-gray-400 hover:bg-gray-500 text-white border-gray-400' },
+  };
+  const { label, className } = config[status] || config.novo;
+  return <Badge className={className}>{label}</Badge>;
+};
 
 const LeadsManagement: React.FC = () => {
   const { 
@@ -17,19 +30,26 @@ const LeadsManagement: React.FC = () => {
     refreshLeads,
     goToPage,
     exportToCSV,
-    setFilters 
+    setFilters,
+    updateLeadStatus
   } = useLeads();
 
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
+  const [search, setSearch] = useState('');
 
   const handleFilter = () => {
-    setFilters({ dataInicio: dataInicio || undefined, dataFim: dataFim || undefined });
+    setFilters({ 
+      dataInicio: dataInicio || undefined, 
+      dataFim: dataFim || undefined,
+      search: search || undefined
+    });
   };
 
   const handleClearFilters = () => {
     setDataInicio('');
     setDataFim('');
+    setSearch('');
     setFilters({});
   };
 
@@ -77,7 +97,22 @@ const LeadsManagement: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1">
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">
+                Buscar
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou email..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleFilter()}
+                  className="pl-9"
+                />
+              </div>
+            </div>
             <div className="flex-1">
               <label className="text-sm font-medium text-muted-foreground mb-1 block">
                 Data Início
@@ -142,8 +177,8 @@ const LeadsManagement: React.FC = () => {
             <div className="text-center py-12 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Nenhum lead encontrado</p>
-              {(dataInicio || dataFim) && (
-                <p className="text-sm mt-2">Tente ajustar os filtros de data</p>
+              {(dataInicio || dataFim || search) && (
+                <p className="text-sm mt-2">Tente ajustar os filtros</p>
               )}
             </div>
           ) : (
@@ -155,6 +190,7 @@ const LeadsManagement: React.FC = () => {
                       <TableHead>Nome</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead className="hidden md:table-cell">Escola/Rede</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead className="hidden sm:table-cell">Origem</TableHead>
                       <TableHead>Data</TableHead>
                     </TableRow>
@@ -173,6 +209,32 @@ const LeadsManagement: React.FC = () => {
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           {lead.escola_ou_rede || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={lead.status || 'novo'}
+                            onValueChange={(value) => updateLeadStatus(lead.id, value)}
+                          >
+                            <SelectTrigger className="w-[150px] h-8">
+                              <SelectValue>
+                                <StatusBadge status={lead.status || 'novo'} />
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="novo">
+                                <StatusBadge status="novo" />
+                              </SelectItem>
+                              <SelectItem value="em_atendimento">
+                                <StatusBadge status="em_atendimento" />
+                              </SelectItem>
+                              <SelectItem value="concluido">
+                                <StatusBadge status="concluido" />
+                              </SelectItem>
+                              <SelectItem value="arquivado">
+                                <StatusBadge status="arquivado" />
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs">

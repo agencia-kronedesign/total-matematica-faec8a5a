@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export interface Contact {
   id: string;
@@ -11,11 +12,13 @@ export interface Contact {
   origem: string;
   ip: string | null;
   user_agent: string | null;
+  status: string;
 }
 
 export interface UseContactsFilters {
   dataInicio?: string;
   dataFim?: string;
+  search?: string;
 }
 
 const CONTACTS_PER_PAGE = 20;
@@ -51,6 +54,14 @@ export function useContacts() {
       }
       if (filters.dataFim) {
         query = query.lte('created_at', `${filters.dataFim}T23:59:59.999Z`);
+      }
+
+      // Apply search filter
+      if (filters.search) {
+        const search = filters.search.trim();
+        if (search) {
+          query = query.or(`nome.ilike.%${search}%,email.ilike.%${search}%`);
+        }
       }
 
       // Order by created_at descending (most recent first)
@@ -92,6 +103,28 @@ export function useContacts() {
     fetchContacts(page);
   }, [fetchContacts]);
 
+  const updateContactStatus = useCallback(async (id: string, status: string) => {
+    console.log('[Admin/Status] update-start', { id, status, table: 'contacts' });
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setContacts(prev =>
+        prev.map(contact => contact.id === id ? { ...contact, status } : contact)
+      );
+
+      console.log('[Admin/Status] update-success', { id, status });
+      toast.success('Status atualizado com sucesso');
+    } catch (err) {
+      console.error('[Admin/Status] update-error', err);
+      toast.error('Erro ao atualizar status');
+    }
+  }, []);
+
   const exportToCSV = useCallback(() => {
     if (contacts.length === 0) {
       console.log('[Admin/Contacts] export-csv: no contacts to export');
@@ -100,13 +133,14 @@ export function useContacts() {
 
     console.log('[Admin/Contacts] export-csv-start', { count: contacts.length });
     
-    const headers = ['Nome', 'Email', 'Mensagem', 'Origem', 'Data de Criação'];
+    const headers = ['Nome', 'Email', 'Mensagem', 'Status', 'Origem', 'Data de Criação'];
     const csvRows = [
       headers.join(','),
       ...contacts.map(contact => [
         `"${contact.nome.replace(/"/g, '""')}"`,
         `"${contact.email.replace(/"/g, '""')}"`,
         `"${contact.mensagem.replace(/"/g, '""')}"`,
+        `"${(contact.status || 'novo').replace(/"/g, '""')}"`,
         `"${contact.origem.replace(/"/g, '""')}"`,
         `"${new Date(contact.created_at).toLocaleDateString('pt-BR')}"`
       ].join(','))
@@ -144,5 +178,6 @@ export function useContacts() {
     refreshContacts,
     goToPage,
     exportToCSV,
+    updateContactStatus,
   };
 }

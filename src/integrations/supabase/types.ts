@@ -330,6 +330,7 @@ export type Database = {
           mensagem: string
           nome: string
           origem: string
+          status: string
           user_agent: string | null
         }
         Insert: {
@@ -340,6 +341,7 @@ export type Database = {
           mensagem: string
           nome: string
           origem?: string
+          status?: string
           user_agent?: string | null
         }
         Update: {
@@ -350,6 +352,7 @@ export type Database = {
           mensagem?: string
           nome?: string
           origem?: string
+          status?: string
           user_agent?: string | null
         }
         Relationships: []
@@ -551,6 +554,7 @@ export type Database = {
           ip: string | null
           nome: string
           origem: string
+          status: string
           user_agent: string | null
         }
         Insert: {
@@ -561,6 +565,7 @@ export type Database = {
           ip?: string | null
           nome: string
           origem?: string
+          status?: string
           user_agent?: string | null
         }
         Update: {
@@ -571,6 +576,7 @@ export type Database = {
           ip?: string | null
           nome?: string
           origem?: string
+          status?: string
           user_agent?: string | null
         }
         Relationships: []
