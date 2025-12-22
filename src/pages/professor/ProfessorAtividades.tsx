@@ -37,8 +37,6 @@ const ProfessorAtividades = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  console.log('[ProfessorAtividade] Renderizando lista de atividades');
-
   const filteredAtividades = atividades?.filter(atividade => {
     const matchesSearch = atividade.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          atividade.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -234,12 +232,7 @@ const ProfessorAtividades = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    const url = `/professor/atividades/${atividade.id}/relatorio`;
-                    console.log('[DEBUG-ROTA] Navegando para:', url);
-                    console.log('[DEBUG-ROTA] ID da atividade:', atividade.id, typeof atividade.id);
-                    navigate(url);
-                  }}
+                  onClick={() => navigate(`/professor/atividades/${atividade.id}/relatorio`)}
                   title="Ver relatório da atividade"
                 >
                   <BarChart3 className="h-4 w-4" />

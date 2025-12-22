@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -8,10 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
  */
 const RelatoriosRedirect = () => {
   const { userProfile, loading } = useAuth();
-
-  useEffect(() => {
-    console.log('[DEBUG-ROTA] RelatoriosRedirect - userProfile:', userProfile?.tipo_usuario);
-  }, [userProfile]);
 
   if (loading) {
     return (

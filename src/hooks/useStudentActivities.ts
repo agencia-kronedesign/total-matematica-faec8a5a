@@ -35,7 +35,6 @@ export function useStudentActivities() {
       }
 
       if (!matricula) {
-        console.log('[DEBUG-ALUNO-ATIVIDADES] Aluno não está matriculado em nenhuma turma');
         return [];
       }
 
@@ -74,7 +73,7 @@ export function useStudentActivities() {
             .eq('exercicios.ativo', true);
 
           if (exerciciosError) {
-            console.error('[DEBUG-ALUNO-ATIVIDADES] Erro ao buscar exercícios:', exerciciosError);
+            // Erro silencioso - continua processando outras atividades
           }
 
           const totalExercicios = exerciciosAtivos?.length || 0;
@@ -97,11 +96,6 @@ export function useStudentActivities() {
           const resolvidos = exerciciosRespondidosAtivos.length;
           const percentual = totalExercicios > 0 ? Math.round((resolvidos / totalExercicios) * 100) : 0;
 
-          console.log('[DEBUG-ALUNO-ATIVIDADES] Atividade:', atividade.titulo);
-          console.log('[DEBUG-ALUNO-ATIVIDADES] Total exercícios ATIVOS:', totalExercicios);
-          console.log('[DEBUG-ALUNO-ATIVIDADES] Exercícios resolvidos (válidos):', resolvidos);
-          console.log('[DEBUG-ALUNO-ATIVIDADES] Percentual:', percentual);
-
           return {
             id: atividade.id,
             titulo: atividade.titulo,
@@ -120,8 +114,6 @@ export function useStudentActivities() {
 
       // Filtrar atividades que ainda têm exercícios ativos (oculta atividades "fantasmas")
       const atividadesValidas = atividadesComProgresso.filter(a => a.exercicios_count > 0);
-      
-      console.log('[DEBUG-ALUNO-ATIVIDADES] Total atividades válidas:', atividadesValidas.length);
 
       return atividadesValidas;
     }

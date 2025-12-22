@@ -141,11 +141,8 @@ export function ExerciseResolver({
         margemAplicada: marginError,
         acertoNivel: evaluationResult.acertoNivel
       });
-      console.log('[ExerciseResolver] Resultado da submissão:', submissionResult);
-
       if (submissionResult.success) {
         // Invalidar queries para atualizar progresso em tempo real
-        console.log('[DEBUG-RESOLUCAO] Resposta salva com sucesso, invalidando queries...');
         queryClient.invalidateQueries({ queryKey: ['activity-all-responses', atividadeId] });
         queryClient.invalidateQueries({ queryKey: ['student-activities'] });
         
@@ -158,7 +155,6 @@ export function ExerciseResolver({
           toast.error(evaluationResult.mensagem);
         }
       } else {
-        console.error('[DEBUG-RESOLUCAO] Falha ao salvar resposta, não marcar como concluída', submissionResult.error);
         toast.error('Erro ao salvar resposta: ' + submissionResult.error);
       }
     } catch (error) {
