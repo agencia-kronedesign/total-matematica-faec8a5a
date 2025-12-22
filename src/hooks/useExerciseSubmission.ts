@@ -99,14 +99,6 @@ export function useExerciseSubmission() {
           data_envio: new Date().toISOString()
         });
 
-      console.log('[DEBUG-RESOLUCAO] Resultado insert respostas', {
-        success: !insertError,
-        atividadeId: data.atividadeId,
-        exercicioId: data.exerciseId,
-        alunoId: user.id,
-        error: insertError
-      });
-
       if (insertError) {
         console.error('[useExerciseSubmission] Erro do Supabase ao inserir resposta:', {
           code: insertError.code,

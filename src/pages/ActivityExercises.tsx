@@ -43,16 +43,6 @@ const ActivityExercises = () => {
   // Verificar se a atividade está realmente concluída (todos os exercícios respondidos)
   const isActivityComplete = exercises?.length ? completedExercises === exercises.length : false;
   
-  // Debug log para rastrear estado do progresso
-  console.log('[DEBUG-BANNER-CONCLUSAO] Estado do progresso', {
-    atividadeId,
-    totalExercicios: exercises?.length,
-    completedExercises,
-    currentExerciseIndex,
-    progressPercentage,
-    isActivityComplete,
-    allResponsesIds: allResponses
-  });
 
   const goToNextExercise = () => {
     if (exercises && currentExerciseIndex < exercises.length - 1) {

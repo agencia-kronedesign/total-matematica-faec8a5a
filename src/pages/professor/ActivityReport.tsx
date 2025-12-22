@@ -68,13 +68,7 @@ const ActivityReport = () => {
   const navigate = useNavigate();
   const [selectedAluno, setSelectedAluno] = useState<RespostaPorAluno | null>(null);
 
-  console.log('[DEBUG-ROTA] ActivityReport CARREGADO');
-  console.log('[DEBUG-ROTA] ActivityReport - atividadeId:', atividadeId, typeof atividadeId);
-  console.log('[DEBUG-ROTA] ActivityReport - pathname:', window.location.pathname);
-
   const { data, isLoading, error } = useActivityReport(atividadeId || '');
-
-  console.log('[ActivityReport] Renderizando relatório para:', atividadeId);
 
   if (isLoading) {
     return (
