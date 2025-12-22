@@ -28,13 +28,18 @@ export function useStudentActivities() {
         .select('turma_id')
         .eq('usuario_id', user.id)
         .eq('status', 'ativo')
-        .single();
+        .maybeSingle();
 
       if (matriculaError) {
-        throw new Error('Aluno não está matriculado em nenhuma turma');
+        throw new Error('Erro ao buscar matrícula do aluno');
       }
 
-      // Buscar todas as atividades ativas da turma (sem filtro de data para permitir visualização de atrasadas)
+      if (!matricula) {
+        console.log('[DEBUG-ALUNO-ATIVIDADES] Aluno não está matriculado em nenhuma turma');
+        return [];
+      }
+
+      // Buscar todas as atividades ativas da turma
       const { data: atividades, error: atividadesError } = await supabase
         .from('atividades')
         .select(`
@@ -55,28 +60,47 @@ export function useStudentActivities() {
         throw atividadesError;
       }
 
-      // Para cada atividade, buscar o progresso do aluno
+      // Para cada atividade, buscar o progresso do aluno considerando apenas exercícios ATIVOS
       const atividadesComProgresso = await Promise.all(
         atividades.map(async (atividade) => {
-          // Contar total de exercícios da atividade
-          const { count: totalExercicios } = await supabase
+          // Buscar exercícios ATIVOS da atividade (JOIN com tabela exercicios)
+          const { data: exerciciosAtivos, error: exerciciosError } = await supabase
             .from('atividade_exercicios')
-            .select('*', { count: 'exact', head: true })
-            .eq('atividade_id', atividade.id);
+            .select(`
+              exercicio_id,
+              exercicios!inner(id, ativo)
+            `)
+            .eq('atividade_id', atividade.id)
+            .eq('exercicios.ativo', true);
 
-          // Buscar exercícios únicos resolvidos pelo aluno (evitar contagem duplicada)
+          if (exerciciosError) {
+            console.error('[DEBUG-ALUNO-ATIVIDADES] Erro ao buscar exercícios:', exerciciosError);
+          }
+
+          const totalExercicios = exerciciosAtivos?.length || 0;
+          const idsExerciciosAtivos = exerciciosAtivos?.map(e => e.exercicio_id).filter(Boolean) || [];
+
+          // Buscar respostas do aluno para esta atividade
           const { data: respostasData } = await supabase
             .from('respostas')
             .select('exercicio_id')
             .eq('atividade_id', atividade.id)
             .eq('aluno_id', user.id);
 
-          // Contar exercícios únicos respondidos
-          const exerciciosUnicos = [...new Set(respostasData?.map(r => r.exercicio_id).filter(Boolean) || [])];
+          // Contar apenas respostas para exercícios que ainda estão ATIVOS
+          const exerciciosRespondidosAtivos = [...new Set(
+            respostasData
+              ?.map(r => r.exercicio_id)
+              .filter(id => id && idsExerciciosAtivos.includes(id)) || []
+          )];
           
-          const total = totalExercicios || 0;
-          const resolvidos = exerciciosUnicos.length;
-          const percentual = total > 0 ? Math.round((resolvidos / total) * 100) : 0;
+          const resolvidos = exerciciosRespondidosAtivos.length;
+          const percentual = totalExercicios > 0 ? Math.round((resolvidos / totalExercicios) * 100) : 0;
+
+          console.log('[DEBUG-ALUNO-ATIVIDADES] Atividade:', atividade.titulo);
+          console.log('[DEBUG-ALUNO-ATIVIDADES] Total exercícios ATIVOS:', totalExercicios);
+          console.log('[DEBUG-ALUNO-ATIVIDADES] Exercícios resolvidos (válidos):', resolvidos);
+          console.log('[DEBUG-ALUNO-ATIVIDADES] Percentual:', percentual);
 
           return {
             id: atividade.id,
@@ -87,14 +111,19 @@ export function useStudentActivities() {
             data_limite: atividade.data_limite,
             status: atividade.status,
             professor_nome: atividade.usuarios?.nome || 'Professor',
-            exercicios_count: total,
+            exercicios_count: totalExercicios,
             exercicios_resolvidos: resolvidos,
             percentual_conclusao: percentual
           } as StudentActivity;
         })
       );
 
-      return atividadesComProgresso;
+      // Filtrar atividades que ainda têm exercícios ativos (oculta atividades "fantasmas")
+      const atividadesValidas = atividadesComProgresso.filter(a => a.exercicios_count > 0);
+      
+      console.log('[DEBUG-ALUNO-ATIVIDADES] Total atividades válidas:', atividadesValidas.length);
+
+      return atividadesValidas;
     }
   });
 }
