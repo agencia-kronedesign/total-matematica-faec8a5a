@@ -101,7 +101,13 @@ const ActivityReportPrintPage = () => {
       <Button
         variant="outline"
         size="sm"
-        onClick={() => navigate(-1)}
+        onClick={() => {
+          if (window.history.length > 1) {
+            navigate(-1);
+          } else {
+            window.close();
+          }
+        }}
         className="no-print fixed top-4 right-4 z-50"
       >
         <X className="h-4 w-4 mr-1" />
