@@ -14,6 +14,10 @@ const ProfessorPage: React.FC<ProfessorPageProps> = ({ children }) => {
   const { canCreateExercises } = usePermissions();
   const location = useLocation();
 
+  console.log('[DEBUG-ROTA] ProfessorPage - user:', user?.email, 'loading:', loading);
+  console.log('[DEBUG-ROTA] ProfessorPage - canCreateExercises:', canCreateExercises());
+  console.log('[DEBUG-ROTA] ProfessorPage - pathname:', location.pathname);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

@@ -234,7 +234,12 @@ const ProfessorAtividades = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate(`/professor/atividades/${atividade.id}/relatorio`)}
+                  onClick={() => {
+                    const url = `/professor/atividades/${atividade.id}/relatorio`;
+                    console.log('[DEBUG-ROTA] Navegando para:', url);
+                    console.log('[DEBUG-ROTA] ID da atividade:', atividade.id, typeof atividade.id);
+                    navigate(url);
+                  }}
                   title="Ver relatório da atividade"
                 >
                   <BarChart3 className="h-4 w-4" />
