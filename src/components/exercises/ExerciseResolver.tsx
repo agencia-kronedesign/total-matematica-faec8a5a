@@ -145,6 +145,8 @@ export function ExerciseResolver({
         // Invalidar queries para atualizar progresso em tempo real
         queryClient.invalidateQueries({ queryKey: ['activity-all-responses', atividadeId] });
         queryClient.invalidateQueries({ queryKey: ['student-activities'] });
+        // Invalidar query do relatório do professor para sincronizar
+        queryClient.invalidateQueries({ queryKey: ['activity-report', atividadeId] });
         
         const toastType = getToastType(evaluationResult.acertoNivel);
         if (toastType === 'success') {
