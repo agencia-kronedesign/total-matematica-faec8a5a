@@ -2,10 +2,10 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Calendar, Book, Users, Clock, FileText, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAtividadeStats } from '@/hooks/useAtividadeStats';
 
 interface AtividadeDetailDialogProps {
   open: boolean;
@@ -18,6 +18,8 @@ const AtividadeDetailDialog: React.FC<AtividadeDetailDialogProps> = ({
   onOpenChange, 
   atividade 
 }) => {
+  const { data: stats, isLoading: loadingStats } = useAtividadeStats(atividade?.id);
+  
   if (!atividade) return null;
 
   const getStatusColor = (status: string | null) => {
@@ -190,7 +192,7 @@ const AtividadeDetailDialog: React.FC<AtividadeDetailDialogProps> = ({
             </CardContent>
           </Card>
 
-          {/* Estatísticas (placeholder para futuras implementações) */}
+          {/* Estatísticas */}
           <Card>
             <CardHeader>
               <CardTitle>Estatísticas</CardTitle>
@@ -198,15 +200,21 @@ const AtividadeDetailDialog: React.FC<AtividadeDetailDialogProps> = ({
             <CardContent>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-2xl font-bold">-</p>
+                  <p className="text-2xl font-bold">
+                    {loadingStats ? '...' : (stats?.alunosParticipantes ?? 0)}
+                  </p>
                   <p className="text-sm text-muted-foreground">Alunos Participantes</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">-</p>
+                  <p className="text-2xl font-bold">
+                    {loadingStats ? '...' : (stats?.respostasEnviadas ?? 0)}
+                  </p>
                   <p className="text-sm text-muted-foreground">Respostas Enviadas</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">-</p>
+                  <p className="text-2xl font-bold">
+                    {loadingStats ? '...' : `${stats?.taxaAcerto ?? 0}%`}
+                  </p>
                   <p className="text-sm text-muted-foreground">Taxa de Acerto</p>
                 </div>
               </div>
