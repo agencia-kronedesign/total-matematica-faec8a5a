@@ -135,6 +135,7 @@ const DashboardSidebar = () => {
     { title: "Turmas", icon: BookOpen, path: "/admin/turmas" },
     { title: "Matrículas", icon: Users, path: "/admin/matriculas" },
     { title: "Atividades", icon: Calendar, path: "/admin/atividades" },
+    { title: "Leads", icon: FileText, path: "/admin/leads" },
     { title: "Relatórios Admin", icon: Database, path: "/admin/relatorios" },
     { title: "Configurações", icon: Settings, path: "/admin/configuracoes" },
   ];

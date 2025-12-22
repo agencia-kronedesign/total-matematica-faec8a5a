@@ -27,6 +27,7 @@ import EscolasManagement from "./pages/admin/EscolasManagement";
 import TurmasManagement from "./pages/admin/TurmasManagement";
 import MatriculasManagement from "./pages/admin/MatriculasManagement";
 import AtividadesManagement from "./pages/admin/AtividadesManagement";
+import LeadsManagement from "./pages/admin/LeadsManagement";
 import UserRegistration from "./pages/UserRegistration";
 import StudentActivities from "./pages/StudentActivities";
 import ActivityExercises from "./pages/ActivityExercises";
@@ -200,6 +201,14 @@ const App = () => (
                 element={
                   <AdminPage>
                     <AtividadesManagement />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/leads" 
+                element={
+                  <AdminPage>
+                    <LeadsManagement />
                   </AdminPage>
                 } 
               />
