@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Tipos para o relatório
 export type StatusGeral = 'CORRETO' | 'ACERTO_MARGEM' | 'MEIO_CERTO' | 'ERRO' | 'NAO_RESPONDEU';
+export type StatusProgresso = 'CONCLUIDO' | 'PARCIAL' | 'NAO_INICIOU';
 
 export interface RespostaDetalhe {
   exercicioId: string;
@@ -17,6 +18,9 @@ export interface RespostaPorAluno {
   nomeAluno: string;
   numeroChamada: number | null;
   statusGeral: StatusGeral;
+  statusProgresso: StatusProgresso;
+  exerciciosRespondidos: number;
+  totalExerciciosAtivos: number;
   respostas: RespostaDetalhe[];
 }
 
@@ -24,6 +28,10 @@ export interface ResumoAtividade {
   totalAlunosNaTurma: number;
   totalAlunosQueResponderam: number;
   totalRespostas: number;
+  totalExerciciosAtivos: number;
+  alunosConcluiram: number;
+  alunosEmAndamento: number;
+  alunosNaoIniciaram: number;
   porCategoriaResultado: {
     correto100: number;
     acertoMargem: number;
@@ -136,6 +144,10 @@ export const useActivityReport = (atividadeId: string) => {
             totalAlunosNaTurma: 0,
             totalAlunosQueResponderam: 0,
             totalRespostas: 0,
+            totalExerciciosAtivos: 0,
+            alunosConcluiram: 0,
+            alunosEmAndamento: 0,
+            alunosNaoIniciaram: 0,
             porCategoriaResultado: { correto100: 0, acertoMargem: 0, meioCerto: 0, erros: 0 },
           },
           respostasPorAluno: [],
@@ -183,6 +195,7 @@ export const useActivityReport = (atividadeId: string) => {
       }) || [];
 
       const exercicioIds = atividadeExercicios?.map(ae => ae.exercicio_id).filter(Boolean) || [];
+      const totalExerciciosAtivos = exercicioIds.length;
 
       // 4. Buscar todas as respostas para os exercícios desta atividade
       const { data: respostas, error: respostasError } = await supabase
@@ -242,11 +255,30 @@ export const useActivityReport = (atividadeId: string) => {
         const respostasDoAluno = respostasPorAlunoMap.get(matricula.usuario_id) || [];
         const statusGeral = determinarMelhorTentativa(respostasDoAluno);
 
+        // Calcular exercícios únicos respondidos pelo aluno
+        const exerciciosRespondidosSet = new Set(
+          respostasDoAluno.map(r => r.exercicioId).filter(Boolean)
+        );
+        const exerciciosRespondidos = exerciciosRespondidosSet.size;
+
+        // Determinar status de progresso
+        let statusProgresso: StatusProgresso;
+        if (exerciciosRespondidos === 0) {
+          statusProgresso = 'NAO_INICIOU';
+        } else if (exerciciosRespondidos >= totalExerciciosAtivos && totalExerciciosAtivos > 0) {
+          statusProgresso = 'CONCLUIDO';
+        } else {
+          statusProgresso = 'PARCIAL';
+        }
+
         respostasPorAluno.push({
           alunoId: matricula.usuario_id,
           nomeAluno: usuario?.nome || 'Aluno sem nome',
           numeroChamada: matricula.numero_chamada,
           statusGeral,
+          statusProgresso,
+          exerciciosRespondidos,
+          totalExerciciosAtivos,
           respostas: respostasDoAluno,
         });
       });
@@ -288,10 +320,19 @@ export const useActivityReport = (atividadeId: string) => {
         }
       });
 
+      // Calcular contadores de progresso
+      const alunosConcluiram = respostasPorAluno.filter(a => a.statusProgresso === 'CONCLUIDO').length;
+      const alunosEmAndamento = respostasPorAluno.filter(a => a.statusProgresso === 'PARCIAL').length;
+      const alunosNaoIniciaram = respostasPorAluno.filter(a => a.statusProgresso === 'NAO_INICIOU').length;
+
       const resumo: ResumoAtividade = {
         totalAlunosNaTurma,
         totalAlunosQueResponderam,
         totalRespostas,
+        totalExerciciosAtivos,
+        alunosConcluiram,
+        alunosEmAndamento,
+        alunosNaoIniciaram,
         porCategoriaResultado: {
           correto100,
           acertoMargem,

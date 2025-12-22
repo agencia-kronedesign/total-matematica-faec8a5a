@@ -1,20 +1,27 @@
 # Módulo: Relatório de Atividades (Visão do Professor)
 
 ## Descrição
-Este módulo permite que professores visualizem o desempenho da turma em uma atividade específica, mostrando dados agregados e individuais dos alunos.
+Este módulo permite que professores visualizem o desempenho e progresso da turma em uma atividade específica, mostrando dados agregados e individuais dos alunos.
 
 ## Funcionalidades
 
 ### 1. Relatório por Atividade (`/professor/atividades/:atividadeId/relatorio`)
 - Visualização do cabeçalho da atividade (título, turma, tipo, datas)
-- Cards de resumo com métricas agregadas
-- Distribuição de desempenho por categoria
+- Cards de resumo com métricas de progresso
+- Gráfico de distribuição de progresso
+- Filtros por status de progresso
 - Tabela com todos os alunos da turma
 - Modal de detalhes por aluno
 
 ## Regras de Negócio
 
-### Status Geral do Aluno
+### Status de Progresso (NOVO)
+O sistema calcula o progresso de conclusão da atividade para cada aluno:
+- `CONCLUIDO`: Aluno respondeu **todos** os exercícios ativos da atividade
+- `PARCIAL`: Aluno respondeu **pelo menos 1**, mas não todos os exercícios
+- `NAO_INICIOU`: Aluno **não respondeu nenhum** exercício
+
+### Status Geral (Melhor Resultado)
 O sistema considera a **MELHOR TENTATIVA** do aluno na atividade, seguindo a prioridade:
 1. `correto` (prioridade 4) → Status: **100% CORRETO**
 2. `correto_com_margem` (prioridade 3) → Status: **ACERTO COM MARGEM**
@@ -25,7 +32,7 @@ O sistema considera a **MELHOR TENTATIVA** do aluno na atividade, seguindo a pri
 ### Visibilidade Total da Turma
 A lista de alunos inclui **TODOS** os matriculados na turma da atividade:
 - Alunos com respostas: exibem seu status baseado na melhor tentativa
-- Alunos sem respostas: exibidos com status `NAO_RESPONDEU` (cinza)
+- Alunos sem respostas: exibidos com status `NAO_RESPONDEU` e progresso `NAO_INICIOU`
 
 ### Proteção de Rota
 A página usa `ProfessorPage` que verifica:
@@ -36,7 +43,7 @@ A página usa `ProfessorPage` que verifica:
 
 ### Hooks
 - `src/hooks/useActivityReport.ts` - Busca e agrega dados do relatório
-  - Tipos exportados: `StatusGeral`, `RespostaPorAluno`, `ResumoAtividade`, `AtividadeInfo`, `ActivityReportData`
+  - Tipos exportados: `StatusGeral`, `StatusProgresso`, `RespostaPorAluno`, `ResumoAtividade`, `AtividadeInfo`, `ActivityReportData`
   - Função: `useActivityReport(atividadeId)`
 
 ### Páginas
@@ -71,6 +78,10 @@ A página usa `ProfessorPage` que verifica:
     totalAlunosNaTurma: number;
     totalAlunosQueResponderam: number;
     totalRespostas: number;
+    totalExerciciosAtivos: number;       // NOVO
+    alunosConcluiram: number;            // NOVO
+    alunosEmAndamento: number;           // NOVO
+    alunosNaoIniciaram: number;          // NOVO
     porCategoriaResultado: {
       correto100: number;
       acertoMargem: number;
@@ -83,6 +94,9 @@ A página usa `ProfessorPage` que verifica:
     nomeAluno: string;
     numeroChamada: number | null;
     statusGeral: 'CORRETO' | 'ACERTO_MARGEM' | 'MEIO_CERTO' | 'ERRO' | 'NAO_RESPONDEU';
+    statusProgresso: 'CONCLUIDO' | 'PARCIAL' | 'NAO_INICIOU';  // NOVO
+    exerciciosRespondidos: number;                              // NOVO
+    totalExerciciosAtivos: number;                              // NOVO
     respostas: Array<{
       exercicioId: string;
       formula: string | null;
@@ -99,10 +113,18 @@ A página usa `ProfessorPage` que verifica:
 O hook realiza 4 consultas:
 1. `atividades` - Dados da atividade com turma
 2. `matriculas` - Alunos matriculados na turma (status = 'ativo')
-3. `atividade_exercicios` - Exercícios vinculados
+3. `atividade_exercicios` - Exercícios vinculados (filtrados por `ativo = true`)
 4. `respostas` - Respostas dos alunos (filtrado por atividade_id)
 
-## Cores para Status
+## Cores para Status de Progresso
+
+| Status | Background | Texto | Borda |
+|--------|------------|-------|-------|
+| CONCLUIDO | `bg-green-100` | `text-green-800` | `border-green-200` |
+| PARCIAL | `bg-yellow-100` | `text-yellow-800` | `border-yellow-200` |
+| NAO_INICIOU | `bg-gray-100` | `text-gray-600` | `border-gray-200` |
+
+## Cores para Status Geral (Melhor Resultado)
 
 | Status | Background | Texto | Borda |
 |--------|------------|-------|-------|
@@ -124,7 +146,7 @@ console.log('[ActivityReport] Total alunos processados:', count);
 
 ## Responsividade
 
-- **Mobile (< 640px):** Cards em coluna única, tabela com scroll horizontal
+- **Mobile (< 640px):** Cards em coluna única, tabela com scroll horizontal, colunas "Melhor Resultado" e "Respostas" ocultas
 - **Tablet (640px - 1024px):** Grid 2x2 para cards
 - **Desktop (> 1024px):** Grid 4 colunas para cards de resumo
 
@@ -139,6 +161,12 @@ Da biblioteca shadcn/ui:
 - `Alert`, `AlertTitle`, `AlertDescription`
 - `Skeleton`
 
+## Componentes Internos
+
+- `StatusBadge` - Badge de status de qualidade (melhor resultado)
+- `ProgressoBadge` - Badge de status de progresso com fração (X/Y exercícios)
+- `StatCard` - Card de estatística com ícone
+
 ## Integração com Tabelas do Banco
 
 ### Tabelas Lidas
@@ -147,7 +175,7 @@ Da biblioteca shadcn/ui:
 - `matriculas` - Alunos matriculados com número de chamada
 - `usuarios` - Nome dos alunos
 - `atividade_exercicios` - Exercícios da atividade
-- `exercicios` - Fórmulas dos exercícios
+- `exercicios` - Fórmulas e status ativo dos exercícios
 - `respostas` - Respostas enviadas pelos alunos
 
 ### Campos Utilizados da Tabela `respostas`

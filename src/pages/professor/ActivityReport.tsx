@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, FileText, Calendar, Eye, TrendingUp, Printer } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, Clock, Calendar, Eye, TrendingUp, Printer, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useActivityReport, StatusGeral, RespostaPorAluno } from '@/hooks/useActivityReport';
+import { useActivityReport, StatusGeral, StatusProgresso, RespostaPorAluno } from '@/hooks/useActivityReport';
 import { RedinAlunoDialog } from '@/components/relatorios/RedinAlunoDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -35,6 +35,34 @@ const StatusBadge = ({ status }: { status: StatusGeral }) => {
     <Badge variant="outline" className={className}>
       {label}
     </Badge>
+  );
+};
+
+// Componente de badge de progresso
+const ProgressoBadge = ({ 
+  status, 
+  respondidos, 
+  total 
+}: { 
+  status: StatusProgresso; 
+  respondidos: number; 
+  total: number;
+}) => {
+  const config: Record<StatusProgresso, { label: string; className: string }> = {
+    CONCLUIDO: { label: 'Concluído', className: 'bg-green-100 text-green-800 border-green-200' },
+    PARCIAL: { label: 'Parcial', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    NAO_INICIOU: { label: 'Não Iniciou', className: 'bg-gray-100 text-gray-600 border-gray-200' },
+  };
+
+  const { label, className } = config[status];
+
+  return (
+    <div className="flex items-center gap-2">
+      <Badge variant="outline" className={className}>
+        {label}
+      </Badge>
+      <span className="text-xs text-muted-foreground">{respondidos}/{total}</span>
+    </div>
   );
 };
 
@@ -67,7 +95,7 @@ const ActivityReport = () => {
   const { atividadeId } = useParams<{ atividadeId: string }>();
   const navigate = useNavigate();
   const [selectedAluno, setSelectedAluno] = useState<RespostaPorAluno | null>(null);
-
+  const [filtroStatus, setFiltroStatus] = useState<StatusProgresso | 'TODOS'>('TODOS');
   const { data, isLoading, error } = useActivityReport(atividadeId || '');
 
   if (isLoading) {
@@ -133,6 +161,18 @@ const ActivityReport = () => {
 
   const { atividade, resumo, respostasPorAluno } = data;
 
+  // Filtrar alunos por status de progresso
+  const alunosFiltrados = respostasPorAluno.filter(a => {
+    if (filtroStatus === 'TODOS') return true;
+    return a.statusProgresso === filtroStatus;
+  });
+
+  // Cálculo de percentuais para gráfico de progresso
+  const total = resumo.totalAlunosNaTurma || 1;
+  const pctConcluiram = (resumo.alunosConcluiram / total) * 100;
+  const pctEmAndamento = (resumo.alunosEmAndamento / total) * 100;
+  const pctNaoIniciaram = (resumo.alunosNaoIniciaram / total) * 100;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -187,23 +227,73 @@ const ActivityReport = () => {
           icon={Users}
         />
         <StatCard
-          title="Responderam"
-          value={resumo.totalAlunosQueResponderam}
+          title="Concluíram"
+          value={resumo.alunosConcluiram}
           icon={CheckCircle}
           className="border-l-4 border-l-green-500"
         />
         <StatCard
-          title="Não Responderam"
-          value={resumo.totalAlunosNaTurma - resumo.totalAlunosQueResponderam}
-          icon={XCircle}
+          title="Em Andamento"
+          value={resumo.alunosEmAndamento}
+          icon={Clock}
           className="border-l-4 border-l-yellow-500"
         />
         <StatCard
-          title="Total de Respostas"
-          value={resumo.totalRespostas}
-          icon={FileText}
+          title="Não Iniciaram"
+          value={resumo.alunosNaoIniciaram}
+          icon={XCircle}
+          className="border-l-4 border-l-gray-400"
         />
       </div>
+
+      {/* Gráfico de Distribuição de Progresso */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Distribuição de Progresso</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-4 w-full overflow-hidden rounded-full bg-gray-100">
+            {pctConcluiram > 0 && (
+              <div 
+                style={{ width: `${pctConcluiram}%` }} 
+                className="bg-green-500 transition-all" 
+                title={`Concluíram: ${resumo.alunosConcluiram}`} 
+              />
+            )}
+            {pctEmAndamento > 0 && (
+              <div 
+                style={{ width: `${pctEmAndamento}%` }} 
+                className="bg-yellow-500 transition-all" 
+                title={`Em Andamento: ${resumo.alunosEmAndamento}`} 
+              />
+            )}
+            {pctNaoIniciaram > 0 && (
+              <div 
+                style={{ width: `${pctNaoIniciaram}%` }} 
+                className="bg-gray-400 transition-all" 
+                title={`Não Iniciaram: ${resumo.alunosNaoIniciaram}`} 
+              />
+            )}
+          </div>
+          <div className="flex flex-wrap justify-between mt-3 text-xs gap-2">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-green-500 rounded-full" /> 
+              Concluíram ({resumo.alunosConcluiram})
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-yellow-500 rounded-full" /> 
+              Em Andamento ({resumo.alunosEmAndamento})
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-gray-400 rounded-full" /> 
+              Não Iniciaram ({resumo.alunosNaoIniciaram})
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {resumo.totalExerciciosAtivos} exercício(s) ativo(s) nesta atividade
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Distribuição de Desempenho */}
       <Card>
@@ -234,8 +324,25 @@ const ActivityReport = () => {
 
       {/* Tabela de Alunos */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="text-lg">Desempenho por Aluno</CardTitle>
+          
+          {/* Filtros por Status */}
+          <div className="flex flex-wrap gap-2">
+            {(['TODOS', 'CONCLUIDO', 'PARCIAL', 'NAO_INICIOU'] as const).map(status => (
+              <Button
+                key={status}
+                variant={filtroStatus === status ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFiltroStatus(status)}
+                className="text-xs"
+              >
+                {status === 'TODOS' ? 'Todos' :
+                 status === 'CONCLUIDO' ? 'Concluídos' :
+                 status === 'PARCIAL' ? 'Em Andamento' : 'Não Iniciados'}
+              </Button>
+            ))}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -244,20 +351,23 @@ const ActivityReport = () => {
                 <TableRow>
                   <TableHead className="w-16">Nº</TableHead>
                   <TableHead>Nome do Aluno</TableHead>
-                  <TableHead>Status Geral</TableHead>
-                  <TableHead className="w-24 text-center">Respostas</TableHead>
+                  <TableHead>Progresso</TableHead>
+                  <TableHead className="hidden sm:table-cell">Melhor Resultado</TableHead>
+                  <TableHead className="w-24 text-center hidden sm:table-cell">Respostas</TableHead>
                   <TableHead className="w-24 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {respostasPorAluno.length === 0 ? (
+                {alunosFiltrados.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Nenhum aluno matriculado nesta turma.
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {respostasPorAluno.length === 0 
+                        ? 'Nenhum aluno matriculado nesta turma.'
+                        : 'Nenhum aluno encontrado com o filtro selecionado.'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  respostasPorAluno.map(aluno => (
+                  alunosFiltrados.map(aluno => (
                     <TableRow 
                       key={aluno.alunoId}
                       className="hover:bg-muted/50 transition-colors"
@@ -267,9 +377,16 @@ const ActivityReport = () => {
                       </TableCell>
                       <TableCell>{aluno.nomeAluno}</TableCell>
                       <TableCell>
+                        <ProgressoBadge 
+                          status={aluno.statusProgresso} 
+                          respondidos={aluno.exerciciosRespondidos}
+                          total={aluno.totalExerciciosAtivos}
+                        />
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <StatusBadge status={aluno.statusGeral} />
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center hidden sm:table-cell">
                         {aluno.respostas.length}
                       </TableCell>
                       <TableCell className="text-right">
@@ -284,7 +401,7 @@ const ActivityReport = () => {
                             <Eye className="h-4 w-4" />
                           </Button>
                           
-                          {/* NOVO: Botão "Ver evolução" */}
+                          {/* Botão "Ver evolução" */}
                           <Button
                             variant="ghost"
                             size="sm"
