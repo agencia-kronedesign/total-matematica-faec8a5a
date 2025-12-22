@@ -18,10 +18,22 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, User, BookOpen, Calendar, Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { 
+  AlertCircle, User, BookOpen, Calendar, Clock, 
+  TrendingUp, TrendingDown, Minus, FileDown 
+} from 'lucide-react';
 import { useRedinReport, StatusAluno, StatusGeralAtividade, ComparativoTurma } from '@/hooks/useRedinReport';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
 
 interface RedinAlunoDialogProps {
   open: boolean;
@@ -100,6 +112,21 @@ const StatCard = ({
   </div>
 );
 
+// Converter status para valor percentual para o gráfico
+const statusToPercentage = (status: StatusAluno): number => {
+  switch (status) {
+    case 'CORRETO':
+    case 'CORRETO_MARGEM':
+      return 100;
+    case 'MEIO_CERTO':
+      return 50;
+    case 'INCORRETO':
+    case 'NAO_RESPONDEU':
+    default:
+      return 0;
+  }
+};
+
 export function RedinAlunoDialog({
   open,
   onOpenChange,
@@ -111,13 +138,42 @@ export function RedinAlunoDialog({
     alunoId,
   });
 
+  // Preparar dados do gráfico
+  const chartData = React.useMemo(() => {
+    if (!data?.questoes) return [];
+    console.log('[REDIN-GRAFICO] Preparando dados do gráfico', { questoes: data.questoes.length });
+    return data.questoes.map(q => ({
+      questao: `Q${q.ordem}`,
+      aluno: statusToPercentage(q.statusAluno),
+      turma: Math.round(q.percentualAcertoTurma),
+    }));
+  }, [data?.questoes]);
+
+  // Handler para exportar PDF
+  const handleExportPDF = () => {
+    console.log('[REDIN-PDF] export-start', { atividadeId, alunoId });
+    const url = `/professor/relatorios/redin/print?atividadeId=${atividadeId}&alunoId=${alunoId}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="flex flex-row items-center justify-between gap-4">
           <DialogTitle className="text-lg">
             Desempenho do Aluno na Atividade (REDIN)
           </DialogTitle>
+          {!isLoading && !error && data && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleExportPDF}
+              className="flex items-center gap-2"
+            >
+              <FileDown className="h-4 w-4" />
+              Exportar PDF
+            </Button>
+          )}
         </DialogHeader>
 
         {/* Loading State */}
@@ -129,6 +185,7 @@ export function RedinAlunoDialog({
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
+            <Skeleton className="h-48 w-full" />
             <Skeleton className="h-8 w-full" />
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -241,6 +298,67 @@ export function RedinAlunoDialog({
                   </div>
                   <ComparativoBadge comparativo={data.resumo.comparativoTurma} />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico de Desempenho */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Gráfico de Desempenho por Questão</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartData.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Sem dados suficientes para o gráfico.
+                  </div>
+                ) : (
+                  <div className="w-full h-64 md:h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={chartData}
+                        margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                      >
+                        <XAxis 
+                          dataKey="questao" 
+                          tick={{ fontSize: 12 }}
+                          tickLine={false}
+                        />
+                        <YAxis 
+                          domain={[0, 100]} 
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={(value) => `${value}%`}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => `${value}%`}
+                          labelStyle={{ fontWeight: 'bold' }}
+                          contentStyle={{ 
+                            borderRadius: '8px', 
+                            border: '1px solid hsl(var(--border))',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                          }}
+                        />
+                        <Legend 
+                          wrapperStyle={{ fontSize: '12px' }}
+                          iconType="circle"
+                        />
+                        <Bar 
+                          dataKey="aluno" 
+                          name="Seu desempenho" 
+                          fill="hsl(217, 91%, 22%)" 
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar 
+                          dataKey="turma" 
+                          name="Média da turma" 
+                          fill="hsl(220, 9%, 46%)" 
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

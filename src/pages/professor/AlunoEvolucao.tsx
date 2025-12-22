@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, FileText, CheckCircle, XCircle, Award, Calendar, Users, TrendingUp } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle, XCircle, Award, Calendar, Users, TrendingUp, Eye, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,28 +14,27 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useAlunoEvolucao, StatusGeral, EvolucaoAtividade } from '@/hooks/useAlunoEvolucao';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useRedalgraf, RedalgrafAtividade } from '@/hooks/useRedalgraf';
+import { RedinAlunoDialog } from '@/components/relatorios/RedinAlunoDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-// Componente para badge de status (consistente com ActivityReport)
-const StatusBadge = ({ status }: { status: StatusGeral }) => {
-  const config: Record<StatusGeral, { label: string; className: string }> = {
-    CORRETO: { label: 'Correto', className: 'bg-green-100 text-green-800 border-green-200' },
-    ACERTO_MARGEM: { label: 'Margem', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    MEIO_CERTO: { label: 'Parcial', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    ERRO: { label: 'Incorreto', className: 'bg-red-100 text-red-800 border-red-200' },
-    NAO_RESPONDEU: { label: 'Não Respondeu', className: 'bg-gray-100 text-gray-600 border-gray-200' },
-  };
-
-  const { label, className } = config[status];
-
-  return (
-    <Badge variant="outline" className={className}>
-      {label}
-    </Badge>
-  );
-};
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  CartesianGrid 
+} from 'recharts';
 
 // Componente de card de estatística
 const StatCard = ({ 
@@ -45,7 +44,7 @@ const StatCard = ({
   className = '' 
 }: { 
   title: string; 
-  value: number; 
+  value: number | string; 
   icon: React.ElementType; 
   className?: string;
 }) => (
@@ -62,45 +61,21 @@ const StatCard = ({
   </Card>
 );
 
-// Card de atividade individual
-const AtividadeCard = ({ atividade }: { atividade: EvolucaoAtividade }) => {
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="pt-4 pb-4">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-2">
-            <h4 className="font-semibold text-sm line-clamp-2">{atividade.titulo}</h4>
-            <StatusBadge status={atividade.melhorStatus} />
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {atividade.turmaNome} - {atividade.anoLetivo}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {format(new Date(atividade.dataCriacao), 'dd/MM/yyyy', { locale: ptBR })}
-            </span>
-            {atividade.dataPrazo && (
-              <span className="text-destructive">
-                Prazo: {format(new Date(atividade.dataPrazo), 'dd/MM/yyyy', { locale: ptBR })}
-              </span>
-            )}
-          </div>
-
-          <div className="text-xs font-medium">
-            <span className={atividade.totalRespondidos > 0 ? 'text-primary' : 'text-muted-foreground'}>
-              {atividade.totalRespondidos}/{atividade.totalExercicios} exercícios respondidos
-            </span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+// Custom tooltip para o gráfico
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background border rounded-lg shadow-lg p-3 text-sm">
+        <p className="font-semibold mb-1">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <p key={index} style={{ color: entry.color }}>
+            {entry.name}: {entry.value.toFixed(1)}%
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
 };
 
 const AlunoEvolucao = () => {
@@ -109,9 +84,39 @@ const AlunoEvolucao = () => {
   const navigate = useNavigate();
   const turmaId = searchParams.get('turma') || undefined;
 
-  const { aluno, atividades, resumo, isLoading, error } = useAlunoEvolucao(alunoId || '', turmaId);
+  // Estados
+  const [periodo, setPeriodo] = useState<'30dias' | 'bimestre' | 'ano'>('ano');
+  const [selectedAtividade, setSelectedAtividade] = useState<{ atividadeId: string } | null>(null);
 
-  console.log('[AlunoEvolucao] Renderizando evolução para:', alunoId, 'turma:', turmaId);
+  const { aluno, atividades, resumo, isLoading, error } = useRedalgraf({
+    alunoId: alunoId || '',
+    turmaId,
+    periodo,
+  });
+
+  console.log('[REDALGRAF] Renderizando evolução para:', alunoId, 'turma:', turmaId, 'período:', periodo);
+
+  // Preparar dados do gráfico
+  const chartData = React.useMemo(() => {
+    console.log('[REDALGRAF] Preparando dados do gráfico', { atividades: atividades.length });
+    return atividades.map(a => ({
+      nome: a.titulo.length > 15 ? `${a.titulo.substring(0, 15)}...` : a.titulo,
+      data: format(new Date(a.dataEnvio), 'dd/MM', { locale: ptBR }),
+      aluno: a.percentualAcertoAluno,
+      turma: a.percentualAcertoTurma,
+      atividadeId: a.atividadeId,
+      tituloCompleto: a.titulo,
+    }));
+  }, [atividades]);
+
+  // Handler para clique no gráfico
+  const handleChartClick = (data: any) => {
+    if (data?.activePayload?.[0]?.payload?.atividadeId) {
+      const atividadeId = data.activePayload[0].payload.atividadeId;
+      console.log('[REDALGRAF] Clique no gráfico, abrindo REDIN:', atividadeId);
+      setSelectedAtividade({ atividadeId });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -129,15 +134,7 @@ const AlunoEvolucao = () => {
             </Card>
           ))}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <Card key={i}>
-              <CardContent className="pt-4 pb-4">
-                <Skeleton className="h-24 w-full" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Skeleton className="h-72 w-full" />
       </div>
     );
   }
@@ -188,8 +185,8 @@ const AlunoEvolucao = () => {
           </Button>
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <h1 className="text-2xl font-bold">Evolução do Aluno</h1>
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <h1 className="text-2xl font-bold">Evolução do Aluno (REDALGRAF)</h1>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-lg font-medium">{aluno.nome}</span>
@@ -200,9 +197,24 @@ const AlunoEvolucao = () => {
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Acompanhe o desempenho do aluno ao longo das atividades
+              Acompanhe a evolução do desempenho ao longo das atividades
             </p>
           </div>
+        </div>
+
+        {/* Filtro de Período */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Período:</span>
+          <Select value={periodo} onValueChange={(v) => setPeriodo(v as typeof periodo)}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30dias">Últimos 30 dias</SelectItem>
+              <SelectItem value="bimestre">Último bimestre</SelectItem>
+              <SelectItem value="ano">Ano todo</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -214,122 +226,185 @@ const AlunoEvolucao = () => {
           icon={FileText}
         />
         <StatCard
-          title="Concluídas"
-          value={resumo.concluidas}
-          icon={CheckCircle}
-          className="border-l-4 border-l-green-500"
-        />
-        <StatCard
-          title="Não Respondidas"
-          value={resumo.naoRespondidas}
-          icon={XCircle}
-          className="border-l-4 border-l-yellow-500"
-        />
-        <StatCard
-          title="100% Corretas"
-          value={resumo.corretas}
+          title="Média Geral do Aluno"
+          value={`${resumo.mediaGeralAluno.toFixed(1)}%`}
           icon={Award}
-          className="border-l-4 border-l-emerald-500"
+          className="border-l-4 border-l-primary"
+        />
+        <StatCard
+          title="Média Geral da Turma"
+          value={`${resumo.mediaGeralTurma.toFixed(1)}%`}
+          icon={Users}
+          className="border-l-4 border-l-muted"
+        />
+        <StatCard
+          title="Diferença"
+          value={`${(resumo.mediaGeralAluno - resumo.mediaGeralTurma) >= 0 ? '+' : ''}${(resumo.mediaGeralAluno - resumo.mediaGeralTurma).toFixed(1)}%`}
+          icon={TrendingUp}
+          className={`border-l-4 ${resumo.mediaGeralAluno >= resumo.mediaGeralTurma ? 'border-l-green-500' : 'border-l-orange-500'}`}
         />
       </div>
 
-      {/* Distribuição de Desempenho */}
-      {resumo.totalAtividades > 0 && (
+      {/* Gráfico de Evolução */}
+      {atividades.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Distribuição de Desempenho (Melhor Tentativa)</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Evolução do Desempenho
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Clique em um ponto do gráfico para ver detalhes da atividade (REDIN)
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="text-2xl font-bold text-green-700">{resumo.corretas}</div>
-                <div className="text-sm text-green-600">Correto</div>
-              </div>
-              <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                <div className="text-2xl font-bold text-emerald-700">{resumo.acertoMargem}</div>
-                <div className="text-sm text-emerald-600">Com Margem</div>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div className="text-2xl font-bold text-yellow-700">{resumo.meioCertas}</div>
-                <div className="text-sm text-yellow-600">Parcial</div>
-              </div>
-              <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
-                <div className="text-2xl font-bold text-red-700">{resumo.erros}</div>
-                <div className="text-sm text-red-600">Incorreto</div>
-              </div>
+            <div className="w-full h-72 md:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart 
+                  data={chartData}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
+                  onClick={handleChartClick}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="data" 
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    domain={[0, 100]} 
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => `${value}%`}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend 
+                    wrapperStyle={{ fontSize: '12px' }}
+                    iconType="circle"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="aluno" 
+                    name="Aluno" 
+                    stroke="hsl(217, 91%, 22%)" 
+                    strokeWidth={3}
+                    dot={{ fill: 'hsl(217, 91%, 22%)', strokeWidth: 2, r: 5 }}
+                    activeDot={{ r: 8, stroke: 'hsl(217, 91%, 22%)', strokeWidth: 2 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="turma" 
+                    name="Média da Turma" 
+                    stroke="hsl(220, 9%, 46%)" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ fill: 'hsl(220, 9%, 46%)', strokeWidth: 1, r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Lista de Atividades (Cards) */}
+      {/* Lista de Atividades */}
       {atividades.length === 0 ? (
         <Alert>
           <FileText className="h-4 w-4" />
           <AlertTitle>Nenhuma atividade encontrada</AlertTitle>
           <AlertDescription>
-            Este aluno ainda não possui atividades com respostas registradas.
+            Não há atividades no período selecionado para este aluno.
           </AlertDescription>
         </Alert>
       ) : (
-        <>
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Atividades ({atividades.length})</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {atividades.map(atividade => (
-                <AtividadeCard key={atividade.atividadeId} atividade={atividade} />
-              ))}
-            </div>
-          </div>
-
-          {/* Tabela Detalhada */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Tabela Detalhada</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Atividade</TableHead>
-                      <TableHead>Turma</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-center">Exercícios</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {atividades.map(atividade => (
-                      <TableRow 
-                        key={atividade.atividadeId}
-                        className="hover:bg-muted/50 transition-colors"
-                      >
-                        <TableCell className="font-medium max-w-[200px]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Atividades ({atividades.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Atividade</TableHead>
+                    <TableHead>Turma</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-center">Questões</TableHead>
+                    <TableHead className="text-right">% Aluno</TableHead>
+                    <TableHead className="text-right">% Turma</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {atividades.map(atividade => (
+                    <TableRow 
+                      key={atividade.atividadeId}
+                      className="hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedAtividade({ atividadeId: atividade.atividadeId })}
+                    >
+                      <TableCell className="font-medium max-w-[200px]">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {atividade.tipoAtividade === 'casa' ? 'Casa' : 'Aula'}
+                          </Badge>
                           <span className="line-clamp-1">{atividade.titulo}</span>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {atividade.turmaNome}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {format(new Date(atividade.dataCriacao), 'dd/MM/yyyy', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={atividade.melhorStatus} />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className={atividade.totalRespondidos > 0 ? 'text-primary font-medium' : 'text-muted-foreground'}>
-                            {atividade.totalRespondidos}/{atividade.totalExercicios}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {atividade.turmaNome}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {format(new Date(atividade.dataEnvio), 'dd/MM/yyyy', { locale: ptBR })}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className={atividade.questoesRespondidas > 0 ? 'text-primary font-medium' : 'text-muted-foreground'}>
+                          {atividade.questoesCorretas}/{atividade.totalQuestoes}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={`font-medium ${
+                          atividade.percentualAcertoAluno >= atividade.percentualAcertoTurma 
+                            ? 'text-green-600' 
+                            : 'text-orange-600'
+                        }`}>
+                          {atividade.percentualAcertoAluno.toFixed(1)}%
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {atividade.percentualAcertoTurma.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedAtividade({ atividadeId: atividade.atividadeId });
+                          }}
+                          title="Ver detalhes (REDIN)"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modal REDIN */}
+      {selectedAtividade && alunoId && (
+        <RedinAlunoDialog
+          open={!!selectedAtividade}
+          onOpenChange={(open) => !open && setSelectedAtividade(null)}
+          atividadeId={selectedAtividade.atividadeId}
+          alunoId={alunoId}
+        />
       )}
     </div>
   );

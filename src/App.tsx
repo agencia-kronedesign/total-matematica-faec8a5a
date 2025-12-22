@@ -38,6 +38,7 @@ import ProfessorAtividades from "./pages/professor/ProfessorAtividades";
 import ProfessorTurmas from "./pages/professor/ProfessorTurmas";
 import ActivityReport from "./pages/professor/ActivityReport";
 import AlunoEvolucao from "./pages/professor/AlunoEvolucao";
+import RedinPrintPage from "./pages/professor/RedinPrintPage";
 
 const queryClient = new QueryClient();
 
@@ -138,6 +139,10 @@ const App = () => (
                     <AlunoEvolucao />
                   </ProfessorPage>
                 } 
+              />
+              <Route 
+                path="/professor/relatorios/redin/print" 
+                element={<RedinPrintPage />} 
               />
 
               {/* Admin Routes */}
