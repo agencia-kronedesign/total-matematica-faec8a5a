@@ -28,6 +28,7 @@ import TurmasManagement from "./pages/admin/TurmasManagement";
 import MatriculasManagement from "./pages/admin/MatriculasManagement";
 import AtividadesManagement from "./pages/admin/AtividadesManagement";
 import LeadsManagement from "./pages/admin/LeadsManagement";
+import ContactsManagement from "./pages/admin/ContactsManagement";
 import UserRegistration from "./pages/UserRegistration";
 import StudentActivities from "./pages/StudentActivities";
 import ActivityExercises from "./pages/ActivityExercises";
@@ -209,6 +210,14 @@ const App = () => (
                 element={
                   <AdminPage>
                     <LeadsManagement />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/contatos" 
+                element={
+                  <AdminPage>
+                    <ContactsManagement />
                   </AdminPage>
                 } 
               />
