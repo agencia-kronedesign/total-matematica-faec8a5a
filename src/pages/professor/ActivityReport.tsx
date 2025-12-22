@@ -14,13 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { useActivityReport, StatusGeral, RespostaPorAluno } from '@/hooks/useActivityReport';
+import { RedinAlunoDialog } from '@/components/relatorios/RedinAlunoDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -67,80 +62,6 @@ const StatCard = ({
     </CardContent>
   </Card>
 );
-
-// Modal de detalhes do aluno
-const AlunoDetailModal = ({ 
-  aluno, 
-  open, 
-  onClose 
-}: { 
-  aluno: RespostaPorAluno | null; 
-  open: boolean; 
-  onClose: () => void;
-}) => {
-  if (!aluno) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span>Respostas de {aluno.nomeAluno}</span>
-            {aluno.numeroChamada && (
-              <Badge variant="outline">Nº {aluno.numeroChamada}</Badge>
-            )}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Status Geral:</span>
-            <StatusBadge status={aluno.statusGeral} />
-          </div>
-
-          {aluno.respostas.length === 0 ? (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Nenhuma resposta</AlertTitle>
-              <AlertDescription>
-                Este aluno ainda não respondeu nenhum exercício desta atividade.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="space-y-3">
-              <h4 className="font-semibold text-sm">Respostas ({aluno.respostas.length})</h4>
-              {aluno.respostas.map((resp, index) => (
-                <Card key={index} className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-start">
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Fórmula: </span>
-                        <code className="bg-muted px-1 rounded">{resp.formula || 'N/A'}</code>
-                      </div>
-                      <StatusBadge status={
-                        resp.acertoNivel === 'correto' ? 'CORRETO' :
-                        resp.acertoNivel === 'correto_com_margem' ? 'ACERTO_MARGEM' :
-                        resp.acertoNivel === 'meio_certo' ? 'MEIO_CERTO' :
-                        resp.acertoNivel === 'incorreto' ? 'ERRO' : 'NAO_RESPONDEU'
-                      } />
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Resposta digitada: </span>
-                      <span className="font-medium">{resp.respostaDigitada || 'N/A'}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Enviado em: {format(new Date(resp.dataResposta), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 const ActivityReport = () => {
   const { atividadeId } = useParams<{ atividadeId: string }>();
@@ -346,17 +267,15 @@ const ActivityReport = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {/* Botão existente de ver detalhes (mantém como está hoje) */}
-                          {aluno.respostas.length > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setSelectedAluno(aluno)}
-                              title="Ver detalhes"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          )}
+                          {/* Botão REDIN - sempre visível */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedAluno(aluno)}
+                            title="Ver detalhes (REDIN)"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           
                           {/* NOVO: Botão "Ver evolução" */}
                           <Button
@@ -380,12 +299,15 @@ const ActivityReport = () => {
         </CardContent>
       </Card>
 
-      {/* Modal de Detalhes */}
-      <AlunoDetailModal
-        aluno={selectedAluno}
-        open={!!selectedAluno}
-        onClose={() => setSelectedAluno(null)}
-      />
+      {/* Modal REDIN */}
+      {selectedAluno && atividadeId && (
+        <RedinAlunoDialog
+          open={!!selectedAluno}
+          onOpenChange={(open) => !open && setSelectedAluno(null)}
+          atividadeId={atividadeId}
+          alunoId={selectedAluno.alunoId}
+        />
+      )}
     </div>
   );
 };
