@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, FileText, Calendar, Eye, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, FileText, Calendar, Eye, TrendingUp, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -174,6 +174,15 @@ const ActivityReport = () => {
             </div>
           </div>
         </div>
+        
+        {/* Botão Imprimir PDF */}
+        <Button
+          variant="outline"
+          onClick={() => window.open(`/professor/atividades/${atividadeId}/relatorio/print`, '_blank')}
+        >
+          <Printer className="h-4 w-4 mr-2" />
+          Imprimir PDF
+        </Button>
       </div>
 
       {/* Cards de Resumo */}
