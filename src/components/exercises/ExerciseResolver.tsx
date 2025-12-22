@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   Form, 
   FormField, 
@@ -64,6 +65,7 @@ export function ExerciseResolver({
 }: ExerciseResolverProps) {
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const { submitExercise, isSubmitting } = useExerciseSubmission();
+  const queryClient = useQueryClient();
   
   const isCasaMode = mode === 'CASA';
   const isInputDisabled = isCasaMode && studentCallNumber != null;
@@ -142,6 +144,11 @@ export function ExerciseResolver({
       console.log('[ExerciseResolver] Resultado da submissão:', submissionResult);
 
       if (submissionResult.success) {
+        // Invalidar queries para atualizar progresso em tempo real
+        console.log('[DEBUG-RESOLUCAO] Resposta salva com sucesso, invalidando queries...');
+        queryClient.invalidateQueries({ queryKey: ['activity-all-responses', atividadeId] });
+        queryClient.invalidateQueries({ queryKey: ['student-activities'] });
+        
         const toastType = getToastType(evaluationResult.acertoNivel);
         if (toastType === 'success') {
           toast.success(evaluationResult.mensagem);
@@ -151,6 +158,7 @@ export function ExerciseResolver({
           toast.error(evaluationResult.mensagem);
         }
       } else {
+        console.error('[DEBUG-RESOLUCAO] Falha ao salvar resposta, não marcar como concluída', submissionResult.error);
         toast.error('Erro ao salvar resposta: ' + submissionResult.error);
       }
     } catch (error) {
