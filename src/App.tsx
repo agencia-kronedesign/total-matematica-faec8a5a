@@ -37,6 +37,7 @@ import ProfessorDashboard from "./pages/professor/ProfessorDashboard";
 import ProfessorAtividades from "./pages/professor/ProfessorAtividades";
 import ProfessorTurmas from "./pages/professor/ProfessorTurmas";
 import ActivityReport from "./pages/professor/ActivityReport";
+import ActivityReportPrintPage from "./pages/professor/ActivityReportPrintPage";
 import AlunoEvolucao from "./pages/professor/AlunoEvolucao";
 import RedinPrintPage from "./pages/professor/RedinPrintPage";
 import RedalgrafPrintPage from "./pages/professor/RedalgrafPrintPage";
@@ -165,6 +166,16 @@ const App = () => (
                   <ProtectedRoute>
                     <TeacherRoute>
                       <RedalgrafPrintPage />
+                    </TeacherRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/professor/atividades/:atividadeId/relatorio/print" 
+                element={
+                  <ProtectedRoute>
+                    <TeacherRoute>
+                      <ActivityReportPrintPage />
                     </TeacherRoute>
                   </ProtectedRoute>
                 } 
