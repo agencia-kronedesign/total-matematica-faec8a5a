@@ -39,6 +39,20 @@ const ActivityExercises = () => {
   ).length || 0;
 
   const progressPercentage = exercises?.length ? Math.round((completedExercises / exercises.length) * 100) : 0;
+  
+  // Verificar se a atividade está realmente concluída (todos os exercícios respondidos)
+  const isActivityComplete = exercises?.length ? completedExercises === exercises.length : false;
+  
+  // Debug log para rastrear estado do progresso
+  console.log('[DEBUG-BANNER-CONCLUSAO] Estado do progresso', {
+    atividadeId,
+    totalExercicios: exercises?.length,
+    completedExercises,
+    currentExerciseIndex,
+    progressPercentage,
+    isActivityComplete,
+    allResponsesIds: allResponses
+  });
 
   const goToNextExercise = () => {
     if (exercises && currentExerciseIndex < exercises.length - 1) {
@@ -191,18 +205,35 @@ const ActivityExercises = () => {
             </Button>
           </div>
 
-          {/* Resumo se chegou ao final */}
-          {currentExerciseIndex === exercises.length - 1 && (
+          {/* Banner quando está no último exercício mas NÃO completou tudo */}
+          {currentExerciseIndex === exercises.length - 1 && !isActivityComplete && (
+            <Card className="border-amber-200 bg-amber-50">
+              <CardHeader>
+                <CardTitle className="text-amber-800">Último Exercício!</CardTitle>
+                <CardDescription className="text-amber-600">
+                  Você chegou ao último exercício, mas ainda faltam {exercises.length - completedExercises} exercício(s) para completar a atividade.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-amber-700 mb-4">
+                  Progresso atual: {completedExercises} de {exercises.length} exercícios resolvidos ({progressPercentage}%)
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Banner de atividade REALMENTE concluída (todos os exercícios respondidos) */}
+          {isActivityComplete && (
             <Card className="border-green-200 bg-green-50">
               <CardHeader>
                 <CardTitle className="text-green-800">Atividade Concluída!</CardTitle>
                 <CardDescription className="text-green-600">
-                  Você chegou ao último exercício desta atividade.
+                  Parabéns! Você completou todos os {exercises.length} exercícios desta atividade.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-green-700 mb-4">
-                  Progresso final: {completedExercises} de {exercises.length} exercícios resolvidos ({progressPercentage}%)
+                  Progresso final: {completedExercises} de {exercises.length} exercícios resolvidos (100%)
                 </p>
                 <Button onClick={() => navigate('/atividades')}>
                   Voltar para Minhas Atividades
