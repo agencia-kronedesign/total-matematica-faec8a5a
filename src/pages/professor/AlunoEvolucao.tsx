@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, FileText, CheckCircle, XCircle, Award, Calendar, Users, TrendingUp, Eye, BarChart3 } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle, XCircle, Award, Calendar, Users, TrendingUp, Eye, BarChart3, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -202,8 +202,8 @@ const AlunoEvolucao = () => {
           </div>
         </div>
 
-        {/* Filtro de Período */}
-        <div className="flex items-center gap-2">
+        {/* Filtro de Período e Exportar PDF */}
+        <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground">Período:</span>
           <Select value={periodo} onValueChange={(v) => setPeriodo(v as typeof periodo)}>
             <SelectTrigger className="w-[150px]">
@@ -215,6 +215,18 @@ const AlunoEvolucao = () => {
               <SelectItem value="ano">Ano todo</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            onClick={() => {
+              console.log('[REDALGRAF-PDF] Abrindo página de impressão');
+              const url = `/professor/relatorios/redalgraf/print?alunoId=${alunoId}&turma=${turmaId || ''}&periodo=${periodo}`;
+              window.open(url, '_blank');
+            }}
+            title="Exportar PDF"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Exportar PDF
+          </Button>
         </div>
       </div>
 

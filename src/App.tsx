@@ -39,7 +39,7 @@ import ProfessorTurmas from "./pages/professor/ProfessorTurmas";
 import ActivityReport from "./pages/professor/ActivityReport";
 import AlunoEvolucao from "./pages/professor/AlunoEvolucao";
 import RedinPrintPage from "./pages/professor/RedinPrintPage";
-
+import RedalgrafPrintPage from "./pages/professor/RedalgrafPrintPage";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -140,9 +140,26 @@ const App = () => (
                   </ProfessorPage>
                 } 
               />
+              {/* Rotas de impressão de relatórios (protegidas, sem layout) */}
               <Route 
                 path="/professor/relatorios/redin/print" 
-                element={<RedinPrintPage />} 
+                element={
+                  <ProtectedRoute>
+                    <TeacherRoute>
+                      <RedinPrintPage />
+                    </TeacherRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/professor/relatorios/redalgraf/print" 
+                element={
+                  <ProtectedRoute>
+                    <TeacherRoute>
+                      <RedalgrafPrintPage />
+                    </TeacherRoute>
+                  </ProtectedRoute>
+                } 
               />
 
               {/* Admin Routes */}
