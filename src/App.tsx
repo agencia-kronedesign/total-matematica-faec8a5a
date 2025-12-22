@@ -40,6 +40,7 @@ import ActivityReport from "./pages/professor/ActivityReport";
 import AlunoEvolucao from "./pages/professor/AlunoEvolucao";
 import RedinPrintPage from "./pages/professor/RedinPrintPage";
 import RedalgrafPrintPage from "./pages/professor/RedalgrafPrintPage";
+import RelatoriosRedirect from "./pages/RelatoriosRedirect";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -96,6 +97,13 @@ const App = () => (
               <Route path="/atividades/:atividadeId" element={
                 <ProtectedRoute>
                   <ActivityExercises />
+                </ProtectedRoute>
+              } />
+              
+              {/* Rota de redirecionamento para /relatorios (compatibilidade) */}
+              <Route path="/relatorios" element={
+                <ProtectedRoute>
+                  <RelatoriosRedirect />
                 </ProtectedRoute>
               } />
               
