@@ -29,12 +29,9 @@ const UserMenu = () => {
   if (!user) {
     return (
       <div className="flex items-center gap-4">
-        <Link to="/entrar" className="text-totalBlue font-semibold hover:text-opacity-90 transition-colors">
-          Entrar
-        </Link>
-        <Link to="/cadastrar">
+        <Link to="/entrar">
           <Button className="bg-totalYellow text-totalBlue font-semibold hover:bg-opacity-90 transition-colors">
-            Cadastrar
+            Entrar
           </Button>
         </Link>
       </div>
