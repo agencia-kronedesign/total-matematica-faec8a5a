@@ -84,7 +84,7 @@ const Index = () => {
   };
 
   const handleVerNaEscolaClick = () => {
-    scrollToSection('lead-form');
+    scrollToSection('contato-escola');
     console.log('[Landing/Depoimento]', 'cta-click', { action: 'ver-na-escola' });
   };
 
@@ -116,11 +116,28 @@ const Index = () => {
               Matemática <br />
               Criativa
             </h1>
-            <p className="text-lg mb-8 text-white">Veja como é fácil!</p>
+            <p className="text-lg mb-4 text-white">Veja como é fácil!</p>
+            <p className="text-sm md:text-base mb-8 text-gray-200">
+              Diretores e coordenadores: vejam como evitar que a dificuldade em matemática vire reprovação.
+            </p>
             
-            <div className="flex flex-wrap gap-4">
-              <VideoButton title="Método" onClick={handleMetodoClick} />
-              <VideoButton title="Na prática" onClick={handleNaPraticaClick} />
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* CTA Principal - Scroll para formulário */}
+              <Button 
+                onClick={() => scrollToSection('contato-escola')}
+                className="bg-totalYellow text-totalBlue font-semibold px-6 py-3 text-lg hover:bg-yellow-300 transition-colors rounded-full shadow-md"
+              >
+                Quero ver na minha escola
+              </Button>
+              {/* CTA Secundário - Link para teste */}
+              <Link to="/faca-um-teste">
+                <Button 
+                  variant="outline"
+                  className="bg-transparent border-2 border-white text-white font-semibold px-6 py-3 text-lg hover:bg-white hover:text-totalBlue transition-colors rounded-full w-full"
+                >
+                  Ver na prática
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -174,12 +191,15 @@ const Index = () => {
             >
               Quero ver na minha escola
             </Button>
+            <p className="mt-4 text-sm text-gray-500 max-w-md mx-auto">
+              Utilizado em escolas que buscam melhorar o desempenho em matemática com acompanhamento próximo de cada turma.
+            </p>
           </div>
         </div>
       </section>
       
       {/* Video Conference Request Section */}
-      <section id="lead-form" className="py-12 px-4 bg-totalYellow">
+      <section id="contato-escola" className="py-12 px-4 bg-totalYellow">
         <div className="container mx-auto text-center">
           <h2 className="text-2xl font-bold text-totalBlue mb-6">
             Solicite uma videoconferência ou visita de um representante!
@@ -244,7 +264,7 @@ const Index = () => {
           
           <Button 
             onClick={() => {
-              scrollToSection('lead-form');
+              scrollToSection('contato-escola');
               console.log('[Landing/BlocoAzul]', 'cta-click', { action: 'ver-na-escola' });
             }}
             className="bg-totalYellow text-totalBlue font-semibold px-8 py-3 text-lg hover:bg-yellow-300 transition-colors"

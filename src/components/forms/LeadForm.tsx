@@ -104,7 +104,7 @@ const LeadForm: React.FC = () => {
       <div>
         <Input 
           type="text" 
-          placeholder="Nome" 
+          placeholder="Seu nome (ex.: Maria, coordenadora)" 
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           disabled={status === 'submitting'}
@@ -116,7 +116,7 @@ const LeadForm: React.FC = () => {
       <div>
         <Input 
           type="email" 
-          placeholder="Email" 
+          placeholder="Seu melhor e-mail para contato" 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={status === 'submitting'}
