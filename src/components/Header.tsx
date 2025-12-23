@@ -56,7 +56,7 @@ const Header = () => {
                 >
                   CONTATO
                 </button>
-                <Link to="/cadastrar" className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors">
+                <Link to="/faca-um-teste" className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors">
                   FAÇA UM TESTE
                 </Link>
               </>
@@ -149,7 +149,7 @@ const Header = () => {
                 >
                   CONTATO
                 </button>
-                <Link to="/cadastrar" onClick={() => setIsMenuOpen(false)} className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md text-center hover:bg-opacity-90 transition-colors">
+                <Link to="/faca-um-teste" onClick={() => setIsMenuOpen(false)} className="bg-totalBlue text-white font-semibold py-2 px-4 rounded-md text-center hover:bg-opacity-90 transition-colors">
                   FAÇA UM TESTE
                 </Link>
               </>

@@ -44,6 +44,7 @@ import RedalgrafPrintPage from "./pages/professor/RedalgrafPrintPage";
 import RelatoriosRedirect from "./pages/RelatoriosRedirect";
 import Profile from "./pages/Profile";
 import QuemSomos from "./pages/QuemSomos";
+import FacaUmTeste from "./pages/FacaUmTeste";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -58,6 +59,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/quem-somos" element={<QuemSomos />} />
+              <Route path="/faca-um-teste" element={<FacaUmTeste />} />
               <Route path="/entrar" element={<Login />} />
               <Route path="/cadastrar" element={<Register />} />
               <Route path="/recuperar-senha" element={<ForgotPassword />} />
