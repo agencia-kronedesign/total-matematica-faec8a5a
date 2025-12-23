@@ -30,11 +30,21 @@ const Profile = () => {
 
   console.log('[ProfilePage]', 'mount');
 
+  // Função para formatar telefone com máscara (99) 99999-9999
+  const formatPhone = (value: string): string => {
+    const digits = value.replace(/\D/g, '');
+    const limited = digits.slice(0, 11);
+    
+    if (limited.length <= 2) return limited;
+    if (limited.length <= 7) return `(${limited.slice(0, 2)}) ${limited.slice(2)}`;
+    return `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7)}`;
+  };
+
   // Inicializar campos quando userProfile carregar
   useEffect(() => {
     if (userProfile) {
       setNome(userProfile.nome ?? '');
-      setTelefone(userProfile.telefone ?? '');
+      setTelefone(formatPhone(userProfile.telefone ?? ''));
     }
   }, [userProfile]);
 
@@ -47,14 +57,40 @@ const Profile = () => {
     );
   }
 
-  // Erro ao carregar perfil (RLS ou outro problema)
+  // Erro ao carregar perfil (RLS ou outro problema) - Tela robusta com ações
   if (user && !userProfile && !loading) {
+    console.error('[ProfilePage]', 'userProfile-not-loaded');
+
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-        <p className="text-destructive text-center">
-          Não foi possível carregar seu perfil. Tente sair e entrar novamente.
-        </p>
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 flex flex-col items-center justify-center px-4 text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+          <h1 className="mb-2 text-xl font-semibold text-foreground">
+            Não foi possível carregar seu perfil
+          </h1>
+          <p className="mb-6 text-sm text-muted-foreground max-w-md">
+            Tente recarregar a página ou sair e entrar novamente. 
+            Se o problema persistir, entre em contato com o suporte da escola.
+          </p>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+            >
+              Recarregar página
+            </Button>
+            <Button
+              onClick={() => {
+                console.log('[ProfilePage]', 'force-refresh-userProfile');
+                refreshUserProfile();
+              }}
+            >
+              Tentar novamente
+            </Button>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -64,9 +100,18 @@ const Profile = () => {
     setProfileError(null);
     setProfileSuccess(null);
 
-    // Validação
+    // Validação do nome
     if (!nome.trim() || nome.trim().length < 2) {
       setProfileError('O nome deve ter pelo menos 2 caracteres.');
+      return;
+    }
+
+    // Validação do telefone (opcional, mas se preenchido deve ser válido)
+    const rawDigits = telefone.replace(/\D/g, '');
+    const telefoneToSave = rawDigits.length === 0 ? null : telefone;
+
+    if (rawDigits.length > 0 && rawDigits.length < 10) {
+      setProfileError('Informe um telefone válido com DDD (mínimo 10 dígitos).');
       return;
     }
 
@@ -77,7 +122,7 @@ const Profile = () => {
       .from('usuarios')
       .update({ 
         nome: nome.trim(), 
-        telefone: telefone.trim() || null 
+        telefone: telefoneToSave
       })
       .eq('id', user?.id);
 
@@ -194,15 +239,16 @@ const Profile = () => {
                 />
               </div>
 
-              {/* Telefone (editável) */}
+              {/* Telefone (editável com máscara) */}
               <div className="space-y-2">
                 <Label htmlFor="telefone">Telefone</Label>
                 <Input 
-                  id="telefone" 
+                  id="telefone"
+                  type="tel"
                   value={telefone} 
-                  onChange={(e) => setTelefone(e.target.value)}
+                  onChange={(e) => setTelefone(formatPhone(e.target.value))}
                   disabled={isSavingProfile}
-                  placeholder="(00) 00000-0000"
+                  placeholder="(11) 91234-5678"
                 />
               </div>
 
