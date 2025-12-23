@@ -11,7 +11,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, LogOut, BookOpen, LayoutDashboard, Shield, Users } from 'lucide-react';
+
+// Gera as iniciais do nome (ex: "João Silva" → "JS")
+const getInitials = (nome: string | undefined) => {
+  if (!nome) return 'U';
+  const parts = nome.trim().split(' ').filter(Boolean);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 const UserMenu = () => {
   const { user, userProfile, signOut } = useAuth();
@@ -43,9 +52,15 @@ const UserMenu = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative gap-2 px-3">
           <span className="hidden sm:inline text-sm font-medium text-totalBlue">{primeiroNome}</span>
-          <div className="h-8 w-8 rounded-full bg-totalBlue text-white flex items-center justify-center">
-            <User className="h-4 w-4" />
-          </div>
+          <Avatar className="h-8 w-8">
+            <AvatarImage 
+              src={userProfile?.foto_url || undefined} 
+              alt={userProfile?.nome || 'Avatar do usuário'} 
+            />
+            <AvatarFallback className="bg-totalBlue text-white text-sm font-semibold">
+              {getInitials(userProfile?.nome)}
+            </AvatarFallback>
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
