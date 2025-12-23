@@ -3,6 +3,7 @@ import React from 'react';
 import ExerciseCard from './ExerciseCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useExercises } from '@/hooks/useExercises';
+import { CheckCircle, BookOpen, FileQuestion } from 'lucide-react';
 
 interface ExerciseListProps {
   filter: 'todos' | 'pendentes' | 'concluidos';
@@ -15,6 +16,21 @@ const ExerciseList = ({ filter, selectedCategory, selectedDifficulty }: Exercise
   
   const filteredExercises = exercises?.filter(exercise => {
     if (!exercise.subcategoria) return false;
+    
+    // Filtro por status de conclusão (NOVO)
+    if (filter === 'pendentes') {
+      // Pendente = sem resposta OU resposta não correta
+      const isCompleted = exercise.userResponse?.acerto_nivel === 'correto' || 
+                          exercise.userResponse?.acerto_nivel === 'correto_com_margem';
+      if (isCompleted) return false;
+    }
+    
+    if (filter === 'concluidos') {
+      // Concluído = resposta correta (com ou sem margem)
+      const isCompleted = exercise.userResponse?.acerto_nivel === 'correto' || 
+                          exercise.userResponse?.acerto_nivel === 'correto_com_margem';
+      if (!isCompleted) return false;
+    }
     
     // Filtro por categoria
     if (selectedCategory && exercise.subcategoria.categoria.id !== selectedCategory) {
@@ -53,10 +69,32 @@ const ExerciseList = ({ filter, selectedCategory, selectedDifficulty }: Exercise
   }
   
   if (!filteredExercises || filteredExercises.length === 0) {
+    const emptyStates = {
+      todos: {
+        icon: FileQuestion,
+        title: "Nenhum exercício disponível no momento.",
+        subtitle: "Novos exercícios serão adicionados em breve!"
+      },
+      pendentes: {
+        icon: CheckCircle,
+        title: "Nenhum exercício pendente!",
+        subtitle: "Parabéns! Você completou todos os exercícios disponíveis."
+      },
+      concluidos: {
+        icon: BookOpen,
+        title: "Você ainda não concluiu nenhum exercício.",
+        subtitle: "Comece resolvendo exercícios na aba 'Todos os Exercícios'!"
+      }
+    };
+    
+    const state = emptyStates[filter];
+    const Icon = state.icon;
+    
     return (
       <div className="text-center py-12">
-        <p className="text-lg text-gray-600">Nenhum exercício encontrado para os filtros selecionados.</p>
-        <p className="text-muted-foreground">Tente mudar os filtros para ver mais resultados.</p>
+        <Icon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+        <p className="text-lg text-foreground">{state.title}</p>
+        <p className="text-muted-foreground mt-1">{state.subtitle}</p>
       </div>
     );
   }
