@@ -28,7 +28,7 @@ import {
   FileText,
   HelpCircle,
   Home,
-  List,
+  
   LogOut,
   MessageSquare,
   Settings,
@@ -111,7 +111,6 @@ const DashboardSidebar = () => {
         subItems: exerciseSubItems
       },
       { title: "Atividades em Classe", icon: BookOpen, path: "/atividades" },
-      { title: "Tarefas", icon: List, path: "/tarefas", badge: "NOVA" },
       { title: "Exercício do dia", icon: BarChart2, path: "/exercicio-do-dia" },
       { title: "Exercícios Feitos", icon: FileText, path: "/exercicios-feitos" },
     ];
@@ -217,11 +216,7 @@ const DashboardSidebar = () => {
                         <item.icon />
                         <span>{item.title}</span>
                         {item.badge && (
-                          <div className={`ml-auto flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium ${
-                            item.badge === "NOVA" 
-                              ? "bg-yellow-300 text-totalBlue" 
-                              : "bg-totalBlue text-white"
-                          }`}>
+                          <div className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium bg-totalBlue text-white">
                             {item.badge}
                           </div>
                         )}
