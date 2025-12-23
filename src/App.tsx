@@ -43,6 +43,7 @@ import RedinPrintPage from "./pages/professor/RedinPrintPage";
 import RedalgrafPrintPage from "./pages/professor/RedalgrafPrintPage";
 import RelatoriosRedirect from "./pages/RelatoriosRedirect";
 import Profile from "./pages/Profile";
+import QuemSomos from "./pages/QuemSomos";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -56,6 +57,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/quem-somos" element={<QuemSomos />} />
               <Route path="/entrar" element={<Login />} />
               <Route path="/cadastrar" element={<Register />} />
               <Route path="/recuperar-senha" element={<ForgotPassword />} />
