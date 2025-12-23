@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,10 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, User, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Loader2, User, Lock, CheckCircle, AlertCircle, Camera, Trash2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
+// Gera as iniciais do nome (ex: "João Silva" → "JS")
+const getInitials = (nome: string | undefined) => {
+  if (!nome) return 'U';
+  const parts = nome.trim().split(' ').filter(Boolean);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 const Profile = () => {
   const { user, userProfile, loading, refreshUserProfile } = useAuth();
   
@@ -20,6 +28,11 @@ const Profile = () => {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
+  
+  // Estados da foto
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Estados da senha
   const [novaSenha, setNovaSenha] = useState('');
@@ -94,6 +107,100 @@ const Profile = () => {
       </div>
     );
   }
+
+  // Upload de foto de perfil
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    // Validar tipo de arquivo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setPhotoError('Formato inválido. Use JPG, PNG ou WebP.');
+      return;
+    }
+
+    // Validar tamanho (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setPhotoError('A imagem deve ter no máximo 2MB.');
+      return;
+    }
+
+    setPhotoError(null);
+    setIsUploadingPhoto(true);
+    console.log('[ProfilePage]', 'photo-upload-start');
+
+    try {
+      // Gerar nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Upload para o bucket
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Obter URL pública
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Atualizar foto_url no perfil
+      const { error: updateError } = await supabase
+        .from('usuarios')
+        .update({ foto_url: `${urlData.publicUrl}?t=${Date.now()}` })
+        .eq('id', user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      console.log('[ProfilePage]', 'photo-upload-success');
+      await refreshUserProfile();
+    } catch (error) {
+      console.error('[ProfilePage]', 'photo-upload-error', error);
+      setPhotoError('Não foi possível enviar a foto. Tente novamente.');
+    } finally {
+      setIsUploadingPhoto(false);
+      // Limpar input para permitir re-upload do mesmo arquivo
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Remover foto de perfil
+  const handleRemovePhoto = async () => {
+    if (!user?.id || !userProfile?.foto_url) return;
+
+    setIsUploadingPhoto(true);
+    setPhotoError(null);
+    console.log('[ProfilePage]', 'photo-remove-start');
+
+    try {
+      // Remover foto_url do perfil
+      const { error: updateError } = await supabase
+        .from('usuarios')
+        .update({ foto_url: null })
+        .eq('id', user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      console.log('[ProfilePage]', 'photo-remove-success');
+      await refreshUserProfile();
+    } catch (error) {
+      console.error('[ProfilePage]', 'photo-remove-error', error);
+      setPhotoError('Não foi possível remover a foto. Tente novamente.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   // Salvar perfil
   const handleSaveProfile = async () => {
@@ -203,7 +310,83 @@ const Profile = () => {
             </p>
           </div>
 
-          {/* Card 1: Informações do Perfil */}
+          {/* Card 1: Foto de Perfil */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="h-5 w-5 text-primary" />
+                Foto de Perfil
+              </CardTitle>
+              <CardDescription>
+                Sua foto será exibida no menu e em outras áreas do sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-4">
+              {/* Avatar grande */}
+              <div className="relative">
+                <Avatar className="h-32 w-32">
+                  <AvatarImage 
+                    src={userProfile?.foto_url || undefined} 
+                    alt={userProfile?.nome || 'Avatar do usuário'} 
+                  />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-semibold">
+                    {getInitials(userProfile?.nome)}
+                  </AvatarFallback>
+                </Avatar>
+                {isUploadingPhoto && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                )}
+              </div>
+
+              {/* Botões de ação */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  {userProfile?.foto_url ? 'Trocar foto' : 'Enviar foto'}
+                </Button>
+                {userProfile?.foto_url && (
+                  <Button
+                    variant="outline"
+                    onClick={handleRemovePhoto}
+                    disabled={isUploadingPhoto}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Remover
+                  </Button>
+                )}
+              </div>
+
+              {/* Input oculto para upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+
+              {/* Feedback de erro */}
+              {photoError && (
+                <Alert variant="destructive" className="w-full">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{photoError}</AlertDescription>
+                </Alert>
+              )}
+
+              <p className="text-xs text-muted-foreground text-center">
+                Formatos aceitos: JPG, PNG ou WebP. Tamanho máximo: 2MB.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Card 2: Informações do Perfil */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
