@@ -62,12 +62,12 @@ const FacaUmTeste = () => {
     setLeadLoading(true);
 
     const { error } = await supabase
-      .from('leads')
+      .from('leads_teste')
       .insert({
         nome: nome.trim(),
         email: email.trim().toLowerCase(),
-        escola_ou_rede: tipoPerfil,
-        origem: 'faca-um-teste',
+        tipo_perfil: tipoPerfil,
+        origem: 'FAÇA UM TESTE',
       });
 
     if (error) {
