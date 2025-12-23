@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ProfessorSidebar from './ProfessorSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import UserMenu from '@/components/UserMenu';
 
 interface ProfessorPageProps {
   children: React.ReactNode;
@@ -35,11 +36,12 @@ const ProfessorPage: React.FC<ProfessorPageProps> = ({ children }) => {
       <div className="min-h-screen flex w-full bg-background">
         <ProfessorSidebar />
         <main className="flex-1 flex flex-col overflow-auto">
-          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
-            <SidebarTrigger className="h-8 w-8" />
-            <div className="flex-1">
+          <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background px-4 lg:px-6">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger className="h-8 w-8" />
               <h2 className="text-lg font-semibold text-primary">Área do Professor</h2>
             </div>
+            <UserMenu />
           </header>
           <div className="flex-1 p-4 lg:p-6">
             {children}

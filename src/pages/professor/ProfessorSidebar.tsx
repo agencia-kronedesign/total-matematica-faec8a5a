@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -20,7 +19,6 @@ import {
   Home,
   Calendar,
   BookOpen,
-  LogOut,
   ArrowLeft,
   Plus,
   BarChart2,
@@ -28,7 +26,7 @@ import {
 } from 'lucide-react';
 
 const ProfessorSidebar = () => {
-  const { user, signOut, userProfile } = useAuth();
+  const { user, userProfile } = useAuth();
   const location = useLocation();
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
@@ -126,16 +124,6 @@ const ProfessorSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
-      <SidebarFooter className="p-4">
-        <SidebarMenuButton 
-          onClick={signOut}
-          className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
-        >
-          <LogOut className="h-4 w-4" />
-          {!isCollapsed && <span>Sair</span>}
-        </SidebarMenuButton>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
