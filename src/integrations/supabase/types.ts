@@ -584,6 +584,33 @@ export type Database = {
         }
         Relationships: []
       }
+      leads_teste: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          nome: string
+          origem: string
+          tipo_perfil: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          nome: string
+          origem?: string
+          tipo_perfil: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          nome?: string
+          origem?: string
+          tipo_perfil?: string
+        }
+        Relationships: []
+      }
       logs_acesso: {
         Row: {
           created_at: string
