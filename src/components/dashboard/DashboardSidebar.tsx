@@ -6,7 +6,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -26,9 +25,7 @@ import {
   BookOpen,
   FileText,
   Home,
-  LogOut,
   MessageSquare,
-  Settings,
   Plus,
   Users,
   Shield,
@@ -39,7 +36,7 @@ import {
 } from 'lucide-react';
 
 const DashboardSidebar = () => {
-  const { user, signOut, userProfile, userType } = useAuth();
+  const { user, userProfile, userType } = useAuth();
   const { isAdmin, canManageUsers, canManageSystem, canCreateExercises, canManageCategories, isStudent } = usePermissions();
   const location = useLocation();
   const { state } = useSidebar();
@@ -125,7 +122,6 @@ const DashboardSidebar = () => {
     { title: "Leads", icon: FileText, path: "/admin/leads" },
     { title: "Contatos", icon: MessageSquare, path: "/admin/contatos" },
     { title: "Relatórios Admin", icon: Database, path: "/admin/relatorios" },
-    { title: "Configurações", icon: Settings, path: "/admin/configuracoes" },
   ];
 
 
@@ -148,16 +144,9 @@ const DashboardSidebar = () => {
           )}
         </div>
         {!isCollapsed && (
-          <>
-            <div className="mt-4 rounded-md bg-gray-100 p-2">
-              <div className="text-xs font-medium text-blue-900">Escola Santa Cecília - 5º ano C</div>
-            </div>
-            <div className="mt-3">
-              <Link to="/perfil" className="text-xs text-muted-foreground hover:underline">
-                Meu perfil
-              </Link>
-            </div>
-          </>
+          <div className="mt-4 rounded-md bg-gray-100 p-2">
+            <div className="text-xs font-medium text-blue-900">Escola Santa Cecília - 5º ano C</div>
+          </div>
         )}
       </SidebarHeader>
       
@@ -263,15 +252,6 @@ const DashboardSidebar = () => {
         
       </SidebarContent>
       
-      <SidebarFooter className="p-4">
-        <SidebarMenuButton 
-          onClick={signOut}
-          className="w-full text-red-600 hover:bg-red-50 hover:text-red-700"
-        >
-          <LogOut />
-          {!isCollapsed && <span>Sair</span>}
-        </SidebarMenuButton>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
