@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import ExerciseList from '@/components/exercises/ExerciseList';
 import ExerciseFilters from '@/components/exercises/ExerciseFilters';
@@ -11,10 +10,11 @@ import { Link } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 
 const Exercises = () => {
-  const { user } = useAuth();
   const { isStudent } = usePermissions();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  
+  const isAluno = isStudent();
   
   return (
     <ProtectedRoute>
@@ -22,9 +22,9 @@ const Exercises = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-totalBlue">
-              {isStudent() ? 'Praticar Exercícios' : 'Exercícios'}
+              {isAluno ? 'Praticar Exercícios' : 'Exercícios'}
             </h1>
-            {!isStudent() && (
+            {!isAluno && (
               <div className="flex gap-2">
                 <Button asChild variant="outline">
                   <Link to="/exercicios/cadastrar?tab=lista-categorias" className="flex items-center">
@@ -42,44 +42,57 @@ const Exercises = () => {
             )}
           </div>
           
-          <Tabs defaultValue="todos" className="mb-8">
-            <TabsList className="bg-gray-100">
-              <TabsTrigger value="todos">Todos os Exercícios</TabsTrigger>
-              <TabsTrigger value="pendentes">Exercícios Pendentes</TabsTrigger>
-              <TabsTrigger value="concluidos">Exercícios Concluídos</TabsTrigger>
-            </TabsList>
-            
-            <div className="mt-6">
-              <ExerciseFilters 
-                onCategoryChange={setSelectedCategory}
-                onDifficultyChange={setSelectedDifficulty}
-              />
-            </div>
-            
-            <TabsContent value="todos" className="mt-6">
+          {/* Filtros de Categoria e Dificuldade */}
+          <div className="mb-6">
+            <ExerciseFilters 
+              onCategoryChange={setSelectedCategory}
+              onDifficultyChange={setSelectedDifficulty}
+            />
+          </div>
+          
+          {/* Abas apenas para Alunos */}
+          {isAluno ? (
+            <Tabs defaultValue="todos" className="mb-8">
+              <TabsList className="bg-muted">
+                <TabsTrigger value="todos">Todos os Exercícios</TabsTrigger>
+                <TabsTrigger value="pendentes">Exercícios Pendentes</TabsTrigger>
+                <TabsTrigger value="concluidos">Exercícios Concluídos</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="todos" className="mt-6">
+                <ExerciseList 
+                  filter="todos"
+                  selectedCategory={selectedCategory}
+                  selectedDifficulty={selectedDifficulty}
+                />
+              </TabsContent>
+              
+              <TabsContent value="pendentes" className="mt-6">
+                <ExerciseList 
+                  filter="pendentes"
+                  selectedCategory={selectedCategory}
+                  selectedDifficulty={selectedDifficulty}
+                />
+              </TabsContent>
+              
+              <TabsContent value="concluidos" className="mt-6">
+                <ExerciseList 
+                  filter="concluidos"
+                  selectedCategory={selectedCategory}
+                  selectedDifficulty={selectedDifficulty}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            /* Para Admin/Professor/outros: sem abas, apenas lista */
+            <div className="mb-8">
               <ExerciseList 
                 filter="todos"
                 selectedCategory={selectedCategory}
                 selectedDifficulty={selectedDifficulty}
               />
-            </TabsContent>
-            
-            <TabsContent value="pendentes" className="mt-6">
-              <ExerciseList 
-                filter="pendentes"
-                selectedCategory={selectedCategory}
-                selectedDifficulty={selectedDifficulty}
-              />
-            </TabsContent>
-            
-            <TabsContent value="concluidos" className="mt-6">
-              <ExerciseList 
-                filter="concluidos"
-                selectedCategory={selectedCategory}
-                selectedDifficulty={selectedDifficulty}
-              />
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </div>
       </AppLayout>
     </ProtectedRoute>
