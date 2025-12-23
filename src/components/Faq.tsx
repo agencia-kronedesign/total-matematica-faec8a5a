@@ -49,12 +49,6 @@ const Faq: React.FC = () => {
             </AccordionItem>
           ))}
         </Accordion>
-        
-        <div className="text-center mt-6">
-          <button className="text-sm text-totalBlue hover:underline">
-            Veja mais questões!
-          </button>
-        </div>
       </div>
     </section>
   );
