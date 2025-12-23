@@ -25,12 +25,10 @@ import {
   Book,
   BookOpen,
   FileText,
-  HelpCircle,
   Home,
   LogOut,
   MessageSquare,
   Settings,
-  AlertTriangle,
   Plus,
   Users,
   Shield,
@@ -130,11 +128,6 @@ const DashboardSidebar = () => {
     { title: "Configurações", icon: Settings, path: "/admin/configuracoes" },
   ];
 
-  const supportItems = [
-    { title: "Ajuda e melhorias", icon: HelpCircle, path: "/ajuda" },
-    { title: "Achei um erro!", icon: AlertTriangle, path: "/reportar-erro" },
-    { title: "Tenho uma sugestão!", icon: Settings, path: "/sugestao" },
-  ];
 
   return (
     <Sidebar collapsible="icon">
@@ -268,22 +261,6 @@ const DashboardSidebar = () => {
           </>
         )}
         
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {supportItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.path}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
       
       <SidebarFooter className="p-4">
