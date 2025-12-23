@@ -22,19 +22,16 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import {
-  BarChart2,
   Book,
   BookOpen,
   FileText,
   HelpCircle,
   Home,
-  
   LogOut,
   MessageSquare,
   Settings,
   AlertTriangle,
   Plus,
-  ListFilter,
   Users,
   Shield,
   School,
@@ -83,8 +80,6 @@ const DashboardSidebar = () => {
       return [
         { title: "Minhas Atividades", icon: BookOpen, path: "/atividades" },
         { title: "Mais Exercícios", icon: Book, path: "/exercicios" },
-        { title: "Exercícios Feitos", icon: FileText, path: "/exercicios-feitos" },
-        { title: "Exercício do dia", icon: BarChart2, path: "/exercicio-do-dia" },
       ];
     }
     
@@ -103,7 +98,6 @@ const DashboardSidebar = () => {
     
     return [
       { title: "Relatórios", icon: FileText, path: "/relatorios" },
-      { title: "Mensagens", icon: MessageSquare, path: "/mensagens", badge: 14 },
       {
         title: "Exercícios",
         icon: Book,
@@ -111,8 +105,6 @@ const DashboardSidebar = () => {
         subItems: exerciseSubItems
       },
       { title: "Atividades em Classe", icon: BookOpen, path: "/atividades" },
-      { title: "Exercício do dia", icon: BarChart2, path: "/exercicio-do-dia" },
-      { title: "Exercícios Feitos", icon: FileText, path: "/exercicios-feitos" },
     ];
   };
   
@@ -215,11 +207,6 @@ const DashboardSidebar = () => {
                       <Link to={item.path}>
                         <item.icon />
                         <span>{item.title}</span>
-                        {item.badge && (
-                          <div className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium bg-totalBlue text-white">
-                            {item.badge}
-                          </div>
-                        )}
                       </Link>
                     </SidebarMenuButton>
                   )}
