@@ -167,20 +167,13 @@ const Index = () => {
             )}
           </div>
           
-          <div className="text-center space-y-4">
+          <div className="text-center">
             <Button 
               onClick={handleVerNaEscolaClick}
               className="btn-amarelo text-lg py-3 px-10"
             >
               Quero ver na minha escola
             </Button>
-            <div>
-              <Link to="/signup">
-                <Button variant="outline" className="text-totalBlue border-totalBlue hover:bg-totalBlue hover:text-white">
-                  Faça você mesmo!
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
       </section>
@@ -258,17 +251,6 @@ const Index = () => {
           >
             Quero ver na minha escola
           </Button>
-        </div>
-      </section>
-      
-      {/* Registration Button */}
-      <section className="py-10 px-4 bg-totalYellow text-center">
-        <div className="container mx-auto">
-          <Link to="/cadastrar">
-            <Button className="bg-totalBlue text-white font-bold py-3 px-10 rounded-full text-lg hover:bg-blue-900 transition-colors">
-              Cadastrar
-            </Button>
-          </Link>
         </div>
       </section>
       
