@@ -30,7 +30,6 @@ import {
   Users,
   Shield,
   School,
-  Database,
   Calendar,
   GraduationCap
 } from 'lucide-react';
@@ -121,7 +120,6 @@ const DashboardSidebar = () => {
     { title: "Atividades", icon: Calendar, path: "/admin/atividades" },
     { title: "Leads", icon: FileText, path: "/admin/leads" },
     { title: "Contatos", icon: MessageSquare, path: "/admin/contatos" },
-    { title: "Relatórios Admin", icon: Database, path: "/admin/relatorios" },
   ];
 
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,12 +13,7 @@ import {
   AlertTriangle, 
   CheckCircle, 
   RefreshCw,
-  Clock,
-  TrendingUp,
-  Database,
-  MessageSquare,
-  BarChart3,
-  Settings
+  Database
 } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
@@ -119,16 +115,16 @@ const AdminDashboard = () => {
       href: '/admin/usuarios',
     },
     {
-      title: 'Configurações',
-      description: 'Configurações gerais do sistema',
-      icon: Settings,
-      href: '/admin/configuracoes',
+      title: 'Gerenciar Escolas',
+      description: 'Adicionar e editar escolas no sistema',
+      icon: School,
+      href: '/admin/escolas',
     },
     {
-      title: 'Relatórios',
-      description: 'Visualizar relatórios e estatísticas',
-      icon: BarChart3,
-      href: '/admin/relatorios',
+      title: 'Gerenciar Turmas',
+      description: 'Criar e organizar turmas',
+      icon: BookOpen,
+      href: '/admin/turmas',
     },
   ];
 
@@ -247,19 +243,21 @@ const AdminDashboard = () => {
         <h2 className="text-xl font-semibold mb-4">Ações Rápidas</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {quickActions.map((action) => (
-            <Card key={action.title} className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <action.icon className="h-6 w-6 text-primary" />
-                  <CardTitle className="text-lg">{action.title}</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  {action.description}
-                </CardDescription>
-              </CardContent>
-            </Card>
+            <Link key={action.title} to={action.href}>
+              <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <action.icon className="h-6 w-6 text-primary" />
+                    <CardTitle className="text-lg">{action.title}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    {action.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </div>
