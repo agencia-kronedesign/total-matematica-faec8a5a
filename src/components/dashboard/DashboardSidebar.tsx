@@ -28,7 +28,6 @@ import {
   FileText,
   HelpCircle,
   Home,
-  Info,
   List,
   LogOut,
   MessageSquare,
@@ -103,7 +102,6 @@ const DashboardSidebar = () => {
     }
     
     return [
-      { title: "Informações", icon: Info, path: "/informacoes", badge: 6 },
       { title: "Relatórios", icon: FileText, path: "/relatorios" },
       { title: "Mensagens", icon: MessageSquare, path: "/mensagens", badge: 14 },
       {
