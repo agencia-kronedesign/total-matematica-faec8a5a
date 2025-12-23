@@ -113,11 +113,10 @@ const DashboardContent = () => {
       <WelcomeSection userName={userName} />
       
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-6">
-        <div className="md:col-span-8">
+        <div className="md:col-span-9">
           <DailyExerciseSection />
         </div>
-        <div className="md:col-span-4 space-y-6">
-          <ProgressSection />
+        <div className="md:col-span-3">
           <MedalsSection />
         </div>
       </div>
