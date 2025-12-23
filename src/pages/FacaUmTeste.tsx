@@ -156,7 +156,9 @@ const FacaUmTeste = () => {
     }
 
     const diferenca = Math.abs(respostaDigitada - currentExercicio.respostaEsperada);
-    const isCorrect = diferenca <= currentExercicio.margem_erro;
+    // Margem de erro é percentual (ex: 2 significa 2%)
+    const margemAbsoluta = Math.abs(currentExercicio.respostaEsperada * (currentExercicio.margem_erro / 100));
+    const isCorrect = diferenca <= margemAbsoluta;
     
     setAnswers([...answers, { 
       exercicioId: currentExercicio.id, 
