@@ -13,20 +13,20 @@ interface FaqItem {
 
 const faqItems: FaqItem[] = [
   {
-    question: "Qual a base/pilar Científica do Método?",
-    answer: "O método Total Matemática é baseado em pesquisas cognitivas e pedagógicas modernas, combinando técnicas de aprendizado ativo com tecnologia educacional para maximizar a compreensão matemática."
+    question: "Quanto tempo leva para começar a usar o Total Matemática na escola?",
+    answer: "A implantação é rápida. Após a apresentação inicial, configuramos o portal em poucos dias e oferecemos formação para os professores, permitindo início imediato das atividades."
   },
   {
-    question: "Como utilizar no dia a dia da escola?",
-    answer: "O Total Matemática pode ser integrado ao currículo regular como complemento às aulas, utilizado em laboratórios de matemática, ou como reforço para estudantes com dificuldades específicas."
+    question: "O que a equipe pedagógica precisa fazer para implantar o método?",
+    answer: "A equipe gestora define as turmas participantes e acompanha os relatórios. Os professores recebem formação completa e suporte contínuo. Não é necessário conhecimento técnico avançado."
   },
   {
-    question: "Qual a formação da equipe técnica?",
-    answer: "Nossa equipe é formada por educadores especializados em matemática, pesquisadores em pedagogia, desenvolvedores de software educacional e especialistas em design instrucional."
+    question: "Como os relatórios ajudam a reduzir reprovação em matemática?",
+    answer: "Os relatórios identificam rapidamente alunos com dificuldades, permitindo intervenção precoce. Acompanhamos a evolução individual e por turma, facilitando decisões pedagógicas baseadas em dados."
   },
   {
-    question: "Como funciona a integração com o currículo escolar?",
-    answer: "O método é adaptável aos diferentes currículos, com atividades alinhadas à BNCC e outros padrões curriculares, permitindo personalização conforme as necessidades específicas de cada instituição."
+    question: "É possível começar com um projeto piloto ou poucas turmas?",
+    answer: "Sim! Recomendamos iniciar com algumas turmas para validar o método na realidade da sua escola. Após os primeiros resultados, a expansão é simples e escalável."
   }
 ];
 
@@ -49,6 +49,22 @@ const Faq: React.FC = () => {
             </AccordionItem>
           ))}
         </Accordion>
+        
+        {/* Mini-CTA ao final do FAQ */}
+        <div className="text-center mt-8">
+          <p className="text-gray-600 mb-3">
+            Ainda ficou alguma dúvida? Peça uma conversa rápida com nossa equipe.
+          </p>
+          <button 
+            onClick={() => {
+              const element = document.getElementById('contato-escola');
+              element?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="text-totalBlue font-semibold hover:underline transition-colors"
+          >
+            Quero tirar dúvidas →
+          </button>
+        </div>
       </div>
     </section>
   );
