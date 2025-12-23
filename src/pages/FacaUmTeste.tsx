@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -9,49 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CheckCircle, XCircle, ArrowRight, Brain, BarChart, Users } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowRight, Brain, BarChart, Users, Loader2, AlertCircle } from 'lucide-react';
+import { SafeMathEvaluator } from '@/utils/safeMathEvaluator';
 
 type Step = 'lead' | 'quiz' | 'result';
 
-type TestQuestion = {
-  id: number;
-  enunciado: string;
-  alternativas: string[];
-  respostaCorretaIndex: number;
+type ExercicioDemo = {
+  id: string;
+  formula: string;
+  margem_erro: number;
+  imagem_url: string | null;
+  n: number;
+  respostaEsperada: number;
 };
-
-const TEST_QUESTIONS: TestQuestion[] = [
-  {
-    id: 1,
-    enunciado: 'Quanto é 7 × 8?',
-    alternativas: ['48', '54', '56', '64'],
-    respostaCorretaIndex: 2,
-  },
-  {
-    id: 2,
-    enunciado: 'Qual número completa a sequência? 5, 10, 15, ___, 25',
-    alternativas: ['18', '20', '22', '24'],
-    respostaCorretaIndex: 1,
-  },
-  {
-    id: 3,
-    enunciado: '1/2 é equivalente a:',
-    alternativas: ['2/6', '3/8', '2/4', '4/6'],
-    respostaCorretaIndex: 2,
-  },
-  {
-    id: 4,
-    enunciado: 'Qual é o resultado de 15 + 28?',
-    alternativas: ['33', '43', '42', '53'],
-    respostaCorretaIndex: 1,
-  },
-  {
-    id: 5,
-    enunciado: '100 ÷ 4 = ?',
-    alternativas: ['20', '25', '30', '40'],
-    respostaCorretaIndex: 1,
-  },
-];
 
 const FacaUmTeste = () => {
   const navigate = useNavigate();
@@ -66,11 +36,14 @@ const FacaUmTeste = () => {
   const [leadLoading, setLeadLoading] = useState(false);
   const [leadError, setLeadError] = useState<string | null>(null);
   
-  // Quiz state
+  // Quiz state - exercícios reais
+  const [exercicios, setExercicios] = useState<ExercicioDemo[]>([]);
+  const [loadingExercicios, setLoadingExercicios] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
-  const [answers, setAnswers] = useState<{ questionId: number; correct: boolean }[]>([]);
+  const [resposta, setResposta] = useState('');
+  const [answers, setAnswers] = useState<{ exercicioId: string; correct: boolean; esperado: number; digitado: number }[]>([]);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackCorrect, setFeedbackCorrect] = useState(false);
 
   const handleStartTest = async () => {
     setLeadError(null);
@@ -107,35 +80,102 @@ const FacaUmTeste = () => {
     console.log('[FacaUmTeste]', 'lead-insert-success', { email });
     toast.success('Obrigado! Agora veja como o aluno da sua escola utilizaria o Total Matemática.');
     setLeadLoading(false);
-    setStep('quiz');
+    
+    // Carregar exercícios reais
+    await carregarExercicios();
   };
 
-  const handleSelectOption = (index: number) => {
-    if (showFeedback) return;
-    setSelectedOptionIndex(index);
+  const carregarExercicios = async () => {
+    setLoadingExercicios(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('exercicios')
+        .select('id, formula, margem_erro, imagem_url')
+        .eq('exemplo_teste_publico', true)
+        .eq('ativo', true)
+        .limit(3);
+
+      if (error) {
+        console.error('[FacaUmTeste]', 'fetch-exercicios-error', error);
+        setExercicios([]);
+        setStep('quiz');
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setExercicios([]);
+        setStep('quiz');
+        return;
+      }
+
+      // Gerar N aleatório para cada exercício e calcular resposta esperada
+      const exerciciosComN: ExercicioDemo[] = data
+        .filter(ex => ex.formula && SafeMathEvaluator.isValidFormula(ex.formula))
+        .map(ex => {
+          const n = Math.floor(Math.random() * 20) + 1; // N entre 1 e 20
+          let respostaEsperada = 0;
+          try {
+            respostaEsperada = SafeMathEvaluator.evaluate(ex.formula!, n);
+          } catch (e) {
+            console.error('Erro ao calcular fórmula:', e);
+          }
+          return {
+            id: ex.id,
+            formula: ex.formula!,
+            margem_erro: ex.margem_erro || 0,
+            imagem_url: ex.imagem_url,
+            n,
+            respostaEsperada: Math.round(respostaEsperada * 100) / 100, // 2 casas decimais
+          };
+        });
+
+      setExercicios(exerciciosComN);
+      setStep('quiz');
+    } catch (err) {
+      console.error('[FacaUmTeste]', 'fetch-exercicios-catch', err);
+      setExercicios([]);
+      setStep('quiz');
+    } finally {
+      setLoadingExercicios(false);
+    }
   };
 
   const handleConfirmAnswer = () => {
-    if (selectedOptionIndex === null) {
-      toast.error('Selecione uma alternativa antes de continuar.');
+    if (!resposta.trim()) {
+      toast.error('Digite sua resposta antes de continuar.');
       return;
     }
 
-    const currentQuestion = TEST_QUESTIONS[currentIndex];
-    const isCorrect = selectedOptionIndex === currentQuestion.respostaCorretaIndex;
+    const currentExercicio = exercicios[currentIndex];
+    const respostaDigitada = parseFloat(resposta.replace(',', '.'));
     
-    setAnswers([...answers, { questionId: currentQuestion.id, correct: isCorrect }]);
+    if (isNaN(respostaDigitada)) {
+      toast.error('Digite um número válido.');
+      return;
+    }
+
+    const diferenca = Math.abs(respostaDigitada - currentExercicio.respostaEsperada);
+    const isCorrect = diferenca <= currentExercicio.margem_erro;
+    
+    setAnswers([...answers, { 
+      exercicioId: currentExercicio.id, 
+      correct: isCorrect,
+      esperado: currentExercicio.respostaEsperada,
+      digitado: respostaDigitada
+    }]);
+    setFeedbackCorrect(isCorrect);
     setShowFeedback(true);
 
     setTimeout(() => {
-      if (currentIndex < TEST_QUESTIONS.length - 1) {
+      if (currentIndex < exercicios.length - 1) {
         setCurrentIndex(currentIndex + 1);
-        setSelectedOptionIndex(null);
+        setResposta('');
         setShowFeedback(false);
       } else {
         setStep('result');
       }
-    }, 1500);
+    }, 2000);
   };
 
   const handleContactTeam = () => {
@@ -148,9 +188,9 @@ const FacaUmTeste = () => {
     }, 100);
   };
 
-  const totalQuestions = TEST_QUESTIONS.length;
+  const totalQuestions = exercicios.length;
   const correctCount = answers.filter((a) => a.correct).length;
-  const currentQuestion = TEST_QUESTIONS[currentIndex];
+  const currentExercicio = exercicios[currentIndex];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -220,11 +260,20 @@ const FacaUmTeste = () => {
                   
                   <Button 
                     onClick={handleStartTest} 
-                    disabled={leadLoading}
+                    disabled={leadLoading || loadingExercicios}
                     className="w-full bg-totalYellow text-totalBlue hover:bg-yellow-400 font-semibold text-lg py-6"
                   >
-                    {leadLoading ? 'Iniciando...' : 'Começar Teste'}
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    {leadLoading || loadingExercicios ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Carregando...
+                      </>
+                    ) : (
+                      <>
+                        Começar Teste
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -234,88 +283,137 @@ const FacaUmTeste = () => {
           {/* Step 2: Quiz */}
           {step === 'quiz' && (
             <div className="space-y-6">
-              <div className="text-center mb-6">
-                <p className="text-sm text-gray-500">
-                  Questão {currentIndex + 1} de {totalQuestions}
-                </p>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                  <div 
-                    className="bg-totalBlue h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              <Card className="shadow-lg">
-                <CardHeader className="bg-blue-50">
-                  <CardTitle className="text-xl text-totalBlue">
-                    {currentQuestion.enunciado}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-3">
-                    {currentQuestion.alternativas.map((alt, index) => {
-                      const isSelected = selectedOptionIndex === index;
-                      const isCorrect = index === currentQuestion.respostaCorretaIndex;
-                      
-                      let cardClass = 'border-2 p-4 rounded-lg cursor-pointer transition-all duration-200 ';
-                      
-                      if (showFeedback) {
-                        if (isCorrect) {
-                          cardClass += 'border-green-500 bg-green-50';
-                        } else if (isSelected && !isCorrect) {
-                          cardClass += 'border-red-500 bg-red-50';
-                        } else {
-                          cardClass += 'border-gray-200 opacity-50';
-                        }
-                      } else {
-                        cardClass += isSelected 
-                          ? 'border-totalBlue bg-blue-50' 
-                          : 'border-gray-200 hover:border-totalBlue hover:bg-blue-50';
-                      }
-
-                      return (
-                        <div
-                          key={index}
-                          className={cardClass}
-                          onClick={() => handleSelectOption(index)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">
-                              {String.fromCharCode(65 + index)}) {alt}
-                            </span>
-                            {showFeedback && isCorrect && (
-                              <CheckCircle className="h-5 w-5 text-green-600" />
-                            )}
-                            {showFeedback && isSelected && !isCorrect && (
-                              <XCircle className="h-5 w-5 text-red-600" />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {!showFeedback && (
+              {exercicios.length === 0 ? (
+                // Fallback quando não há exercícios de exemplo
+                <Card className="shadow-lg">
+                  <CardHeader className="bg-amber-50">
+                    <CardTitle className="text-xl text-amber-800 flex items-center gap-2">
+                      <AlertCircle className="h-6 w-6" />
+                      Demonstração em Configuração
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <p className="text-gray-600 mb-4">
+                      No momento, não há exercícios de demonstração configurados pelo administrador.
+                    </p>
+                    <p className="text-gray-600 mb-6">
+                      Mas não se preocupe! O Total Matemática oferece centenas de exercícios 
+                      organizados por nível de dificuldade, todos acompanhados de relatórios 
+                      detalhados para professores e gestão escolar.
+                    </p>
                     <Button 
-                      onClick={handleConfirmAnswer}
-                      className="w-full mt-6 bg-totalBlue hover:bg-blue-700"
-                      disabled={selectedOptionIndex === null}
+                      onClick={handleContactTeam}
+                      className="w-full bg-totalYellow text-totalBlue hover:bg-yellow-400 font-semibold"
                     >
-                      Responder e Continuar
+                      Falar com Nossa Equipe
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
-                  )}
-
-                  {showFeedback && (
-                    <p className="text-center mt-4 text-gray-500">
-                      {currentIndex < TEST_QUESTIONS.length - 1 
-                        ? 'Avançando para a próxima questão...' 
-                        : 'Calculando seu resultado...'}
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div className="text-center mb-6">
+                    <p className="text-sm text-gray-500">
+                      Exercício {currentIndex + 1} de {totalQuestions}
                     </p>
-                  )}
-                </CardContent>
-              </Card>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                      <div 
+                        className="bg-totalBlue h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Você está respondendo exercícios reais da plataforma Total Matemática
+                    </p>
+                  </div>
+
+                  <Card className="shadow-lg">
+                    <CardHeader className="bg-blue-50">
+                      <CardTitle className="text-xl text-totalBlue">
+                        Usando N = {currentExercicio?.n}, calcule o resultado:
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {currentExercicio?.imagem_url && (
+                        <div className="mb-4 flex justify-center">
+                          <img 
+                            src={currentExercicio.imagem_url} 
+                            alt="Exercício" 
+                            className="max-w-full max-h-64 rounded-lg shadow"
+                          />
+                        </div>
+                      )}
+
+                      <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                        <p className="text-sm text-gray-500 mb-1">Fórmula:</p>
+                        <p className="font-mono text-lg">{currentExercicio?.formula}</p>
+                        <p className="text-sm text-gray-500 mt-2">
+                          Substitua <span className="font-bold">n</span> por <span className="font-bold text-totalBlue">{currentExercicio?.n}</span> e calcule.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="resposta">Sua resposta:</Label>
+                          <Input
+                            id="resposta"
+                            type="text"
+                            value={resposta}
+                            onChange={(e) => setResposta(e.target.value)}
+                            placeholder="Digite o resultado"
+                            className="mt-1 text-lg"
+                            disabled={showFeedback}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !showFeedback) {
+                                handleConfirmAnswer();
+                              }
+                            }}
+                          />
+                        </div>
+
+                        {showFeedback && (
+                          <div className={`p-4 rounded-lg flex items-center gap-3 ${
+                            feedbackCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                          }`}>
+                            {feedbackCorrect ? (
+                              <>
+                                <CheckCircle className="h-6 w-6 text-green-600" />
+                                <span className="font-medium">Correto! Muito bem!</span>
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="h-6 w-6 text-red-600" />
+                                <span className="font-medium">
+                                  Resposta esperada: {currentExercicio?.respostaEsperada}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        )}
+
+                        {!showFeedback && (
+                          <Button 
+                            onClick={handleConfirmAnswer}
+                            className="w-full bg-totalBlue hover:bg-blue-700"
+                            disabled={!resposta.trim()}
+                          >
+                            Responder e Continuar
+                            <ArrowRight className="ml-2 h-5 w-5" />
+                          </Button>
+                        )}
+
+                        {showFeedback && (
+                          <p className="text-center text-gray-500">
+                            {currentIndex < exercicios.length - 1 
+                              ? 'Avançando para o próximo exercício...' 
+                              : 'Calculando seu resultado...'}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           )}
 
