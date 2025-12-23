@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Clock, TrendingUp } from 'lucide-react';
+import { BookOpen, Clock, GraduationCap, Shield, Book } from 'lucide-react';
 import { useStudentActivities } from '@/hooks/useStudentActivities';
 import WelcomeSection from './sections/WelcomeSection';
 import NotificationsSection from './sections/NotificationsSection';
@@ -15,7 +14,7 @@ import MedalsSection from './sections/MedalsSection';
 
 const DashboardContent = () => {
   const { user } = useAuth();
-  const { isStudent } = usePermissions();
+  const { isStudent, isAdmin, canCreateExercises } = usePermissions();
   const navigate = useNavigate();
   const userName = user?.user_metadata?.nome || 'Usuário';
   
@@ -107,22 +106,49 @@ const DashboardContent = () => {
     );
   }
   
-  // Dashboard para professores/coordenadores/admins
+  // Dashboard para professores/coordenadores/admins - Cards de navegação
   return (
     <div className="container mx-auto px-4 py-6">
       <WelcomeSection userName={userName} />
       
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-6">
-        <div className="md:col-span-9">
-          <DailyExerciseSection />
-        </div>
-        <div className="md:col-span-3">
-          <MedalsSection />
-        </div>
-      </div>
-      
-      <div className="mt-6">
-        <NotificationsSection />
+      {/* Cards de navegação rápida para perfis não-aluno */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+        {/* Card para Área do Professor (se professor) */}
+        {canCreateExercises() && (
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/professor')}>
+            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+              <div className="flex-1">
+                <CardTitle className="text-lg">Área do Professor</CardTitle>
+                <CardDescription>Gerenciar atividades e turmas</CardDescription>
+              </div>
+              <GraduationCap className="h-8 w-8 text-primary" />
+            </CardHeader>
+          </Card>
+        )}
+        
+        {/* Card para Exercícios */}
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/exercicios')}>
+          <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+            <div className="flex-1">
+              <CardTitle className="text-lg">Exercícios</CardTitle>
+              <CardDescription>Ver e gerenciar exercícios</CardDescription>
+            </div>
+            <Book className="h-8 w-8 text-primary" />
+          </CardHeader>
+        </Card>
+        
+        {/* Card para Admin (se admin) */}
+        {isAdmin && (
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/admin')}>
+            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+              <div className="flex-1">
+                <CardTitle className="text-lg">Painel Admin</CardTitle>
+                <CardDescription>Gerenciar sistema</CardDescription>
+              </div>
+              <Shield className="h-8 w-8 text-red-600" />
+            </CardHeader>
+          </Card>
+        )}
       </div>
     </div>
   );
