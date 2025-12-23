@@ -9,6 +9,7 @@ export interface Exercise {
   ordem: number;
   imagem_url: string | null;
   ativo: boolean;
+  exemplo_teste_publico: boolean;
   subcategoria: {
     id: string;
     nome: string;
@@ -28,6 +29,7 @@ export const useExercises = () => {
         .from('exercicios')
         .select(`
           *,
+          exemplo_teste_publico,
           subcategoria:subcategorias(
             id,
             nome,

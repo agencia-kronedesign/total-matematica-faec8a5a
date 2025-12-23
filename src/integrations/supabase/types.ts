@@ -505,6 +505,7 @@ export type Database = {
         Row: {
           ativo: boolean | null
           created_at: string
+          exemplo_teste_publico: boolean | null
           formula: string | null
           id: string
           imagem_url: string | null
@@ -516,6 +517,7 @@ export type Database = {
         Insert: {
           ativo?: boolean | null
           created_at?: string
+          exemplo_teste_publico?: boolean | null
           formula?: string | null
           id?: string
           imagem_url?: string | null
@@ -527,6 +529,7 @@ export type Database = {
         Update: {
           ativo?: boolean | null
           created_at?: string
+          exemplo_teste_publico?: boolean | null
           formula?: string | null
           id?: string
           imagem_url?: string | null

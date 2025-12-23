@@ -3,12 +3,13 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -52,6 +53,28 @@ const ExerciseActions = ({ exercise }: ExerciseActionsProps) => {
     },
   });
 
+  const toggleExemploMutation = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: boolean }) => {
+      const { error } = await supabase
+        .from('exercicios')
+        .update({ exemplo_teste_publico: value })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      const message = variables.value 
+        ? 'Exercício marcado como exemplo público' 
+        : 'Exercício removido dos exemplos públicos';
+      toast.success(message);
+      queryClient.invalidateQueries({ queryKey: ['exercises'] });
+    },
+    onError: (error) => {
+      toast.error('Erro ao atualizar exercício');
+      console.error('Error updating exercise:', error);
+    },
+  });
+
   const handleEdit = () => {
     navigate(`/exercicios/editar/${exercise.id}`);
   };
@@ -59,6 +82,13 @@ const ExerciseActions = ({ exercise }: ExerciseActionsProps) => {
   const handleDelete = () => {
     deleteMutation.mutate(exercise.id);
   };
+
+  const handleToggleExemplo = () => {
+    const currentValue = (exercise as any).exemplo_teste_publico ?? false;
+    toggleExemploMutation.mutate({ id: exercise.id, value: !currentValue });
+  };
+
+  const isExemploPublico = (exercise as any).exemplo_teste_publico ?? false;
 
   return (
     <div className="absolute right-2 top-2">
@@ -74,6 +104,11 @@ const ExerciseActions = ({ exercise }: ExerciseActionsProps) => {
             <Pencil className="mr-2 h-4 w-4" />
             Editar
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleToggleExemplo}>
+            <Eye className="mr-2 h-4 w-4" />
+            {isExemploPublico ? 'Remover do teste público' : 'Usar no teste público'}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <DropdownMenuItem
