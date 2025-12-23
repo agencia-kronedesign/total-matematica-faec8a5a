@@ -9,12 +9,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import Logo from '@/components/Logo';
 import { useLoginRateLimiter } from '@/hooks/useLoginRateLimiter';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { getHomeByRole } from '@/utils/routes';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { signIn, user, loading, authLoading } = useAuth();
+  const { signIn, user, userProfile, loading, authLoading } = useAuth();
   const { isBlocked, remainingSeconds, registerFailedAttempt, resetAttempts } = useLoginRateLimiter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,8 +41,19 @@ const Login = () => {
     }
   };
 
-  if (!loading && user) {
-    return <Navigate to="/" />;
+  // Se usuário está logado E temos o perfil, redirecionar para home correta
+  if (!loading && user && userProfile?.tipo_usuario) {
+    const destino = getHomeByRole(userProfile.tipo_usuario);
+    return <Navigate to={destino} replace />;
+  }
+
+  // Se está logado MAS ainda carregando perfil, mostrar loading
+  if (!loading && user && !userProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-totalBlue" />
+      </div>
+    );
   }
 
   return (

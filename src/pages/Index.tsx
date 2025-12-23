@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BenefitCard from '@/components/BenefitCard';
 import Faq from '@/components/Faq';
 import VideoButton from '@/components/VideoButton';
 import VideoModal from '@/components/VideoModal';
-
 import LeadForm from '@/components/forms/LeadForm';
 import Testimonial from '@/components/Testimonial';
-import { Book, Users, Calendar, Video } from 'lucide-react';
+import { Book, Users, Calendar, Video, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { getHomeByRole } from '@/utils/routes';
 
 const scrollToSection = (id: string) => {
   const element = document.getElementById(id);
@@ -20,8 +22,24 @@ const scrollToSection = (id: string) => {
 };
 
 const Index = () => {
+  const { user, userProfile, loading } = useAuth();
   const [isMethodVideoOpen, setIsMethodVideoOpen] = useState(false);
   const [isPracticeVideoOpen, setIsPracticeVideoOpen] = useState(false);
+
+  // Enquanto verifica autenticação, mostrar loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-totalBlue" />
+      </div>
+    );
+  }
+
+  // Se usuário está logado e tem perfil, redirecionar para home do perfil
+  if (user && userProfile?.tipo_usuario) {
+    const destino = getHomeByRole(userProfile.tipo_usuario);
+    return <Navigate to={destino} replace />;
+  }
 
   const benefits = [
     {
