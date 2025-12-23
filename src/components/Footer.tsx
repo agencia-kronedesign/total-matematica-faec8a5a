@@ -17,12 +17,10 @@ const Footer = () => {
           
           <div className="space-y-3">
             <h3 className="font-semibold text-lg mb-4">Links Rápidos</h3>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               <li><Link to="/" className="hover:underline">HOME</Link></li>
-              <li><Link to="/exercicios" className="hover:underline">EXERCÍCIOS PRÁTICOS</Link></li>
-              <li><Link to="/questionarios" className="hover:underline">QUESTIONÁRIOS</Link></li>
-              <li><Link to="/exercicios-teoricos" className="hover:underline">EXERCÍCIOS TEÓRICOS</Link></li>
-              <li><Link to="/tipos-de-relatorios" className="hover:underline">TIPOS DE RELATÓRIOS</Link></li>
+              <li><Link to="/faca-um-teste" className="hover:underline">FAÇA UM TESTE</Link></li>
+              <li><a href="/#contato" className="hover:underline">CONTATO</a></li>
             </ul>
           </div>
           
