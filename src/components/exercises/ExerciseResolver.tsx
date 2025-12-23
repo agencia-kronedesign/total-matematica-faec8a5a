@@ -147,6 +147,9 @@ export function ExerciseResolver({
         queryClient.invalidateQueries({ queryKey: ['student-activities'] });
         // Invalidar query do relatório do professor para sincronizar
         queryClient.invalidateQueries({ queryKey: ['activity-report', atividadeId] });
+        // Invalidar query de exercícios para atualizar filtros Pendentes/Concluídos
+        queryClient.invalidateQueries({ queryKey: ['exercises'] });
+        console.log('[ExerciseResolver] Cache invalidado: exercises, student-activities, activity-report');
         
         const toastType = getToastType(evaluationResult.acertoNivel);
         if (toastType === 'success') {
