@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, BookOpen, LayoutDashboard, Shield, Users } from 'lucide-react';
+import { User, LogOut, BookOpen, LayoutDashboard, Shield, Users } from 'lucide-react';
 
 const UserMenu = () => {
   const { user, userProfile, signOut } = useAuth();
@@ -118,12 +118,6 @@ const UserMenu = () => {
           <Link to="/perfil" className="flex items-center gap-2 cursor-pointer">
             <User className="h-4 w-4" />
             <span>Meu Perfil</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/configuracoes" className="flex items-center gap-2 cursor-pointer">
-            <Settings className="h-4 w-4" />
-            <span>Configurações</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
