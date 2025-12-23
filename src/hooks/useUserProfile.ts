@@ -56,5 +56,11 @@ export const useUserProfile = () => {
     fetchingRef.current = false;
   }, []);
 
-  return { userProfile, fetchUserProfile, clearUserProfile };
+  const refreshUserProfile = useCallback(async (userId: string) => {
+    console.log('🔄 [useUserProfile] Refreshing profile for:', userId);
+    fetchingRef.current = false; // Reset para permitir nova busca
+    await fetchUserProfile(userId);
+  }, [fetchUserProfile]);
+
+  return { userProfile, fetchUserProfile, clearUserProfile, refreshUserProfile };
 };

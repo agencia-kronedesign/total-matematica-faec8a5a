@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const { verifyUserStatus, forceLogout } = useUserStatusVerification();
   const { signUp: authSignUp, signIn: authSignIn, signOut: authSignOut } = useAuthService();
-  const { userProfile, fetchUserProfile, clearUserProfile } = useUserProfile();
+  const { userProfile, fetchUserProfile, clearUserProfile, refreshUserProfile } = useUserProfile();
 
   const isAdmin = userProfile?.tipo_usuario === 'admin';
   const isProfessor = userProfile?.tipo_usuario === 'professor';
@@ -268,7 +268,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     session,
     loading,
@@ -279,7 +279,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     userType,
     signUp,
     signIn,
-    signOut
+    signOut,
+    refreshUserProfile: () => user?.id ? refreshUserProfile(user.id) : Promise.resolve(),
   };
 
   return (

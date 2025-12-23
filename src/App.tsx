@@ -42,6 +42,7 @@ import AlunoEvolucao from "./pages/professor/AlunoEvolucao";
 import RedinPrintPage from "./pages/professor/RedinPrintPage";
 import RedalgrafPrintPage from "./pages/professor/RedalgrafPrintPage";
 import RelatoriosRedirect from "./pages/RelatoriosRedirect";
+import Profile from "./pages/Profile";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -98,6 +99,13 @@ const App = () => (
               <Route path="/atividades/:atividadeId" element={
                 <ProtectedRoute>
                   <ActivityExercises />
+                </ProtectedRoute>
+              } />
+              
+              {/* Profile Route */}
+              <Route path="/perfil" element={
+                <ProtectedRoute>
+                  <Profile />
                 </ProtectedRoute>
               } />
               
