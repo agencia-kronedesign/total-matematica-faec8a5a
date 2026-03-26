@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
 import { useEscolaForm } from '@/hooks/useEscolaForm';
 import { BasicInfoSection } from './escola-form/BasicInfoSection';
 import { InscriptionsSection } from './escola-form/InscriptionsSection';
@@ -24,6 +25,7 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
     isLoadingCidades,
     onSubmit,
   } = useEscolaForm({ escola, onClose });
+  const { toast } = useToast();
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -42,7 +44,14 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+            console.log('[EscolaForm] Validation errors:', errors);
+            toast({
+              title: "Campos obrigatórios",
+              description: "Verifique os campos destacados em vermelho.",
+              variant: "destructive",
+            });
+          })} className="space-y-6">
           <BasicInfoSection form={form} formatCEP={() => ''} />
           
           <InscriptionsSection form={form} />
