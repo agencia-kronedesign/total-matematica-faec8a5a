@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
 import { useEscolaForm } from '@/hooks/useEscolaForm';
 import { BasicInfoSection } from './escola-form/BasicInfoSection';
 import { InscriptionsSection } from './escola-form/InscriptionsSection';
