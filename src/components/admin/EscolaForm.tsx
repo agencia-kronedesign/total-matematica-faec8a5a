@@ -24,6 +24,7 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
     isLoadingCidades,
     onSubmit,
   } = useEscolaForm({ escola, onClose });
+  const { toast } = useToast();
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
