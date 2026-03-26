@@ -44,7 +44,14 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+            console.log('[EscolaForm] Validation errors:', errors);
+            toast({
+              title: "Campos obrigatórios",
+              description: "Verifique os campos destacados em vermelho.",
+              variant: "destructive",
+            });
+          })} className="space-y-6">
           <BasicInfoSection form={form} formatCEP={() => ''} />
           
           <InscriptionsSection form={form} />
