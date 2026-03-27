@@ -653,46 +653,54 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
                     <FormField
                       control={form.control}
                       name="cidade"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cidade</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                            disabled={!selectedEstado || isLoadingCidades}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue 
-                                  placeholder={
-                                    !selectedEstado 
-                                      ? "Primeiro selecione o Estado" 
-                                      : isLoadingCidades 
-                                        ? "Carregando cidades..." 
-                                        : "Selecione a Cidade"
-                                  } 
-                                />
-                                {isLoadingCidades && (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
+                      render={({ field }) => {
+                        const opcoesCidades = field.value && !cidadesDisponiveis.includes(field.value)
+                          ? [field.value, ...cidadesDisponiveis]
+                          : cidadesDisponiveis;
+
+                        return (
+                          <FormItem>
+                            <FormLabel>Cidade</FormLabel>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              disabled={!selectedEstado || isLoadingCidades}
+                            >
+                              <FormControl>
+                                <div className="relative">
+                                  <SelectTrigger>
+                                    <SelectValue 
+                                      placeholder={
+                                        !selectedEstado 
+                                          ? "Primeiro selecione o Estado" 
+                                          : isLoadingCidades 
+                                            ? "Carregando cidades..." 
+                                            : "Selecione a Cidade"
+                                      } 
+                                    />
+                                  </SelectTrigger>
+                                  {isLoadingCidades && (
+                                    <Loader2 className="absolute right-8 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                                  )}
+                                </div>
+                              </FormControl>
+                              <SelectContent>
+                                {opcoesCidades.length === 0 && !isLoadingCidades && selectedEstado && (
+                                  <SelectItem value="no-cities" disabled>
+                                    Nenhuma cidade disponível
+                                  </SelectItem>
                                 )}
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {cidadesDisponiveis.length === 0 && !isLoadingCidades && selectedEstado && (
-                                <SelectItem value="no-cities" disabled>
-                                  Nenhuma cidade disponível
-                                </SelectItem>
-                              )}
-                              {cidadesDisponiveis.map((cidade) => (
-                                <SelectItem key={cidade} value={cidade}>
-                                  {cidade}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                                {opcoesCidades.map((cidade) => (
+                                  <SelectItem key={cidade} value={cidade}>
+                                    {cidade}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                   </div>
                 </TabsContent>
