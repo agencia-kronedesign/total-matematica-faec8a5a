@@ -1,53 +1,58 @@
 
-Objetivo: corrigir a edição da escola para que a cidade já salva continue aparecendo selecionada no campo “Cidade” ao abrir o formulário.
+Objetivo: corrigir o campo Cidade na edição de escolas para que o valor já salvo apareça selecionado de forma estável, sem voltar para o placeholder.
 
-Diagnóstico
-- O valor está sendo salvo corretamente no banco e listado na tela de administração.
-- O problema é visual no formulário de edição: o `Select` da cidade recebe `field.value`, mas a opção salva nem sempre existe na lista carregada naquele momento.
-- Há dois fatores fortes no código atual:
-  1. O `Loader2` está dentro do `SelectTrigger`, o que pode interferir na renderização do `SelectValue` no Radix.
-  2. A lista `fallbackCitiesByState.SP` é incompleta e não contém cidades já salvas no banco, como `Altair`. Se a API do IBGE falhar ou demorar, o select fica sem a opção correspondente e mostra o placeholder.
+Diagnóstico confirmado
+- O banco está correto: a cidade está sendo salva e aparece na listagem administrativa.
+- O problema está no formulário de edição, na combinação entre:
+  1. `form.reset(...)` carregando `estado` e `cidade` ao mesmo tempo;
+  2. `useCidades(selectedEstado)` carregando opções de forma assíncrona;
+  3. `Radix Select` nem sempre exibindo corretamente o texto inicial quando o valor controlado entra antes da opção estabilizar.
+- O ajuste anterior ajudou, mas não resolveu o caso de edição já aberta com valor salvo.
 
-O que vou ajustar
-1. Corrigir o layout do `Select` de cidade
-- Arquivo: `src/components/admin/escola-form/ContactAddressSection.tsx`
-- Tirar o `Loader2` de dentro do `SelectTrigger`.
-- Colocar o spinner posicionado externamente, para o trigger conter apenas o `SelectValue`.
-
-2. Garantir que a cidade atual exista nas opções durante a edição
-- Arquivo: `src/components/admin/escola-form/ContactAddressSection.tsx`
-- Criar uma lista derivada para renderização:
-  - usar `cidadesDisponiveis` normalmente;
-  - se `field.value` já existir e não estiver na lista, incluir temporariamente essa cidade no array exibido.
-- Assim, mesmo se a API falhar ou o fallback estiver incompleto, o valor salvo continua selecionável e visível.
-
-3. Evitar comportamento que “apaga visualmente” a cidade ao trocar estado
-- Manter o reset de `cidade` apenas quando o estado realmente mudar por ação do usuário.
-- Na edição inicial, o `reset` do formulário não deve causar perda visual do valor já salvo.
-
-4. Aplicar o mesmo padrão no cadastro de usuário
-- Arquivo: `src/components/auth/UserRegistrationForm.tsx`
-- O mesmo problema estrutural existe lá: spinner dentro do `SelectTrigger`.
-- Vou alinhar o componente para evitar o mesmo bug em outro formulário.
-
-Arquivos envolvidos
+Arquivos principais
 - `src/components/admin/escola-form/ContactAddressSection.tsx`
-- `src/components/auth/UserRegistrationForm.tsx`
+- `src/hooks/useEscolaForm.ts`
+- `src/components/auth/UserRegistrationForm.tsx` (alinhar o mesmo padrão para evitar o mesmo bug em outro formulário)
+- Documentação do módulo de escolas
+
+O que vou implementar
+1. Separar “valor salvo da cidade” das opções carregadas
+- No hook/formulário, criar uma referência estável da cidade inicial da edição.
+- Garantir que essa cidade inicial entre nas opções renderizadas enquanto o carregamento das cidades não estabiliza.
+
+2. Evitar reset visual indevido da cidade
+- Ajustar a lógica do campo `estado` para limpar `cidade` apenas quando a troca de estado for feita manualmente pelo usuário.
+- Não limpar a cidade durante a carga inicial do formulário em modo edição.
+
+3. Tornar o trigger do select explicitamente controlado
+- Em vez de depender só do comportamento automático do `SelectValue`, renderizar o texto visível da cidade selecionada de forma mais explícita quando houver `field.value`.
+- Isso elimina o efeito de “ficar salvo por trás, mas mostrar placeholder”.
+
+4. Manter spinner e layout sem interferir no valor
+- Preservar o loader fora do `SelectTrigger`.
+- Ajustar posicionamento para não competir com o texto nem com o ícone do select.
+
+5. Aplicar o mesmo padrão no cadastro/edição de usuários
+- O mesmo componente/lógica de cidade em `UserRegistrationForm.tsx` deve seguir a mesma abordagem para evitar inconsistência futura.
+
+6. Documentação
+- Atualizar/criar documentação do módulo de gerenciamento de escolas explicando:
+  - causa do bug;
+  - estratégia adotada para selects dependentes de estado/cidade;
+  - cuidado para edição com dados assíncronos.
 
 Resultado esperado
 - Ao editar uma escola, a cidade já salva aparece selecionada imediatamente.
-- Se a cidade existir no banco, mas não vier da API/fallback, ela ainda aparece no select.
-- O campo não volta para “Selecione a Cidade” indevidamente.
-- O comportamento continua correto ao cadastrar e ao trocar estado.
-- Sem impacto no salvamento em banco, que já está funcionando.
+- O campo não volta para “Selecione a Cidade”.
+- Trocar o estado manualmente continua limpando a cidade corretamente.
+- Cadastro novo continua funcionando.
+- Mesmo comportamento consistente no formulário de usuário.
 
-Detalhes técnicos
+Detalhe técnico
 ```text
-Fonte do bug:
-Banco OK -> form.reset carrega cidade OK -> lista de opções não contém o valor atual
-ou SelectValue é afetado pela estrutura do Trigger -> placeholder aparece
-
-Correção:
-valor atual + opções carregadas -> união segura para renderização
-spinner fora do SelectTrigger
+Fluxo corrigido:
+escola carregada -> reset do form -> cidade inicial preservada
+-> opções de cidade = cidades carregadas + cidade atual, se necessário
+-> trigger mostra explicitamente o valor atual
+-> limpar cidade apenas em mudança manual de estado
 ```
