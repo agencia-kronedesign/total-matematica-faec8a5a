@@ -9,7 +9,7 @@ const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <div>
-            <div className="bg-white p-3 inline-block rounded-md mb-4">
+            <div className="bg-[#FFD700] p-3 inline-block rounded-md mb-4">
               <Logo />
             </div>
             <p className="text-sm">Total de sucessos matemáticos</p>

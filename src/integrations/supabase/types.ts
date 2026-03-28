@@ -1125,12 +1125,14 @@ export type Database = {
           data_nascimento: string | null
           email: string
           email_responsavel: string | null
+          email_responsavel2: string | null
           endereco: string | null
           estado: string | null
           foto_url: string | null
           id: string
           nome: string
           nome_responsavel: string | null
+          nome_responsavel2: string | null
           numero_chamada: number | null
           numero_matricula: string | null
           perfil_acesso_id: string | null
@@ -1155,12 +1157,14 @@ export type Database = {
           data_nascimento?: string | null
           email: string
           email_responsavel?: string | null
+          email_responsavel2?: string | null
           endereco?: string | null
           estado?: string | null
           foto_url?: string | null
           id: string
           nome: string
           nome_responsavel?: string | null
+          nome_responsavel2?: string | null
           numero_chamada?: number | null
           numero_matricula?: string | null
           perfil_acesso_id?: string | null
@@ -1185,12 +1189,14 @@ export type Database = {
           data_nascimento?: string | null
           email?: string
           email_responsavel?: string | null
+          email_responsavel2?: string | null
           endereco?: string | null
           estado?: string | null
           foto_url?: string | null
           id?: string
           nome?: string
           nome_responsavel?: string | null
+          nome_responsavel2?: string | null
           numero_chamada?: number | null
           numero_matricula?: string | null
           perfil_acesso_id?: string | null

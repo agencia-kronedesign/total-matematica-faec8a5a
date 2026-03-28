@@ -74,7 +74,15 @@ export const useExercises = () => {
         };
       });
       
-      return exercisesWithUserResponses as Exercise[];
+      // Ordenar por nivel_dificuldade da subcategoria (crescente), depois por ordem
+      const sorted = (exercisesWithUserResponses as Exercise[])?.sort((a, b) => {
+        const diffA = a.subcategoria?.nivel_dificuldade ?? 999;
+        const diffB = b.subcategoria?.nivel_dificuldade ?? 999;
+        if (diffA !== diffB) return diffA - diffB;
+        return (a.ordem ?? 0) - (b.ordem ?? 0);
+      });
+      
+      return sorted;
     }
   });
 };

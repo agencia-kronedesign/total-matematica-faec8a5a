@@ -9,9 +9,11 @@ import { EscolaFormData } from '@/schemas/escolaSchema';
 interface BasicInfoSectionProps {
   form: UseFormReturn<EscolaFormData>;
   formatCEP: (value: string) => string;
+  onCEPChange?: (cep: string) => void;
+  cepLoading?: boolean;
 }
 
-export function BasicInfoSection({ form, formatCEP }: BasicInfoSectionProps) {
+export function BasicInfoSection({ form, formatCEP, onCEPChange, cepLoading }: BasicInfoSectionProps) {
   return (
     <Card>
       <CardHeader>
@@ -82,6 +84,7 @@ export function BasicInfoSection({ form, formatCEP }: BasicInfoSectionProps) {
                     placeholder="00000-000"
                     onValueChange={(unformatted, formatted) => {
                       field.onChange(unformatted);
+                      onCEPChange?.(unformatted);
                     }}
                     value={field.value}
                   />

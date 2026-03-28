@@ -1,10 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { useEscolas } from '@/hooks/useEscolas';
 import { useCidades } from '@/hooks/useCidades';
+import { useCEP } from '@/hooks/useCEP';
 import { escolaSchema, type EscolaFormData } from '@/schemas/escolaSchema';
 
 interface UseEscolaFormProps {
@@ -15,6 +16,7 @@ interface UseEscolaFormProps {
 export function useEscolaForm({ escola, onClose }: UseEscolaFormProps) {
   const { toast } = useToast();
   const { createEscola, updateEscola } = useEscolas();
+  const { fetchAddressByCEP, loading: cepLoading } = useCEP();
   const [loading, setLoading] = useState(false);
   const [observacoesCount, setObservacoesCount] = useState(0);
 
@@ -78,6 +80,21 @@ export function useEscolaForm({ escola, onClose }: UseEscolaFormProps) {
     setObservacoesCount(observacoes?.length || 0);
   }, [observacoes]);
 
+  const handleCEPSearch = useCallback(async (cep: string) => {
+    const cleanCEP = cep.replace(/\D/g, '');
+    if (cleanCEP.length === 8) {
+      const data = await fetchAddressByCEP(cleanCEP);
+      if (data) {
+        form.setValue('endereco', `${data.logradouro}${data.bairro ? ', ' + data.bairro : ''}`);
+        form.setValue('estado', data.uf);
+        // Aguardar um tick para o estado atualizar antes de setar cidade
+        setTimeout(() => {
+          form.setValue('cidade', data.localidade);
+        }, 100);
+      }
+    }
+  }, [fetchAddressByCEP, form]);
+
   const onSubmit = async (data: EscolaFormData) => {
     try {
       setLoading(true);
@@ -111,10 +128,12 @@ export function useEscolaForm({ escola, onClose }: UseEscolaFormProps) {
   return {
     form,
     loading,
+    cepLoading,
     observacoesCount,
     selectedEstado,
     cidadesDisponiveis,
     isLoadingCidades,
     onSubmit,
+    handleCEPSearch,
   };
 }
