@@ -19,11 +19,13 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
   const {
     form,
     loading,
+    cepLoading,
     observacoesCount,
     selectedEstado,
     cidadesDisponiveis,
     isLoadingCidades,
     onSubmit,
+    handleCEPSearch,
   } = useEscolaForm({ escola, onClose });
   const { toast } = useToast();
 
@@ -52,7 +54,7 @@ export function EscolaForm({ escola, onClose }: EscolaFormProps) {
               variant: "destructive",
             });
           })} className="space-y-6">
-          <BasicInfoSection form={form} formatCEP={() => ''} />
+          <BasicInfoSection form={form} formatCEP={() => ''} onCEPChange={handleCEPSearch} cepLoading={cepLoading} />
           
           <InscriptionsSection form={form} />
           
