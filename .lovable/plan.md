@@ -1,58 +1,95 @@
 
-Objetivo: corrigir o campo Cidade na edição de escolas para que o valor já salvo apareça selecionado de forma estável, sem voltar para o placeholder.
 
-Diagnóstico confirmado
-- O banco está correto: a cidade está sendo salva e aparece na listagem administrativa.
-- O problema está no formulário de edição, na combinação entre:
-  1. `form.reset(...)` carregando `estado` e `cidade` ao mesmo tempo;
-  2. `useCidades(selectedEstado)` carregando opções de forma assíncrona;
-  3. `Radix Select` nem sempre exibindo corretamente o texto inicial quando o valor controlado entra antes da opção estabilizar.
-- O ajuste anterior ajudou, mas não resolveu o caso de edição já aberta com valor salvo.
+## Plano: Corrigir os 7 itens da conferência
 
-Arquivos principais
-- `src/components/admin/escola-form/ContactAddressSection.tsx`
-- `src/hooks/useEscolaForm.ts`
-- `src/components/auth/UserRegistrationForm.tsx` (alinhar o mesmo padrão para evitar o mesmo bug em outro formulário)
-- Documentação do módulo de escolas
+### Resumo dos 7 itens
 
-O que vou implementar
-1. Separar “valor salvo da cidade” das opções carregadas
-- No hook/formulário, criar uma referência estável da cidade inicial da edição.
-- Garantir que essa cidade inicial entre nas opções renderizadas enquanto o carregamento das cidades não estabiliza.
+| # | Item | Causa raiz |
+|---|------|-----------|
+| 1 | Logo no footer sem fundo amarelo | `bg-white` no container do logo |
+| 2 | CEP não auto-preenche endereço/estado/cidade no cadastro de escolas | `useCEP` não está integrado no `useEscolaForm` |
+| 3 | Data de nascimento não salva | `data_nascimento` pode ser `""` (string vazia) — precisa sanitizar para `null` no `useUserRegistration` |
+| 4 | 2º responsável não salva | Tabela `usuarios` não tem colunas `nome_responsavel2`/`email_responsavel2`. Precisa adicionar via migration |
+| 5 | Direção/Coordenação sem restrição de acesso | Sidebar mostra itens admin para esses perfis mas as rotas não estão protegidas adequadamente |
+| 6 | Imagem do exercício não aparece | Bucket chama-se `Exercise Images` (com espaço) mas o código usa `exercise-images` (com hífen) |
+| 7 | Exercícios não ordenam por dificuldade crescente | Query ordena por `ordem` mas não por `nivel_dificuldade` da subcategoria |
 
-2. Evitar reset visual indevido da cidade
-- Ajustar a lógica do campo `estado` para limpar `cidade` apenas quando a troca de estado for feita manualmente pelo usuário.
-- Não limpar a cidade durante a carga inicial do formulário em modo edição.
+---
 
-3. Tornar o trigger do select explicitamente controlado
-- Em vez de depender só do comportamento automático do `SelectValue`, renderizar o texto visível da cidade selecionada de forma mais explícita quando houver `field.value`.
-- Isso elimina o efeito de “ficar salvo por trás, mas mostrar placeholder”.
+### Correções detalhadas
 
-4. Manter spinner e layout sem interferir no valor
-- Preservar o loader fora do `SelectTrigger`.
-- Ajustar posicionamento para não competir com o texto nem com o ícone do select.
+#### 1. Logo com fundo amarelo no footer
+**Arquivo:** `src/components/Footer.tsx`
+- Trocar `bg-white` por `bg-[#FFD700]` (amarelo) no container do logo
 
-5. Aplicar o mesmo padrão no cadastro/edição de usuários
-- O mesmo componente/lógica de cidade em `UserRegistrationForm.tsx` deve seguir a mesma abordagem para evitar inconsistência futura.
+#### 2. Auto-preenchimento por CEP no cadastro de escolas
+**Arquivos:** `src/hooks/useEscolaForm.ts`, `src/components/admin/escola-form/BasicInfoSection.tsx`
+- Integrar `useCEP` no hook `useEscolaForm`
+- Ao digitar CEP completo (8 dígitos), chamar `fetchAddressByCEP`
+- Preencher automaticamente `endereco` (logradouro + bairro), `estado` (uf) e `cidade` (localidade)
+- Retornar a função de busca CEP do hook para o componente BasicInfoSection disparar a busca no `onValueChange` do campo CEP
 
-6. Documentação
-- Atualizar/criar documentação do módulo de gerenciamento de escolas explicando:
-  - causa do bug;
-  - estratégia adotada para selects dependentes de estado/cidade;
-  - cuidado para edição com dados assíncronos.
+#### 3. Data de nascimento não salva
+**Arquivo:** `src/hooks/useUserRegistration.ts`
+- Sanitizar `data_nascimento`: converter `""` para `null` antes de enviar ao banco
+- Já tem sanitização no `updateUser` do `UserRegistrationForm.tsx`, falta no `registerUser`
+- Linha 243: trocar `data_nascimento: formData.data_nascimento` por `data_nascimento: formData.data_nascimento || null`
 
-Resultado esperado
-- Ao editar uma escola, a cidade já salva aparece selecionada imediatamente.
-- O campo não volta para “Selecione a Cidade”.
-- Trocar o estado manualmente continua limpando a cidade corretamente.
-- Cadastro novo continua funcionando.
-- Mesmo comportamento consistente no formulário de usuário.
+#### 4. Segundo responsável não salva
+**Mudança de banco + código:**
+- **Migration:** Adicionar colunas `nome_responsavel2 text` e `email_responsavel2 text` na tabela `usuarios`
+- **Arquivo:** `src/hooks/useUserRegistration.ts` — incluir `nome_responsavel2` e `email_responsavel2` no update
+- **Arquivo:** `src/components/auth/UserRegistrationForm.tsx` — incluir os campos no `updateUser`
 
-Detalhe técnico
-```text
-Fluxo corrigido:
-escola carregada -> reset do form -> cidade inicial preservada
--> opções de cidade = cidades carregadas + cidade atual, se necessário
--> trigger mostra explicitamente o valor atual
--> limpar cidade apenas em mudança manual de estado
+#### 5. Restrição de acesso para Direção/Coordenação
+**Arquivo:** `src/components/dashboard/DashboardSidebar.tsx`
+- Itens de professor (`professorItems`) devem aparecer para `professor`, `coordenador`, `direcao` (já funciona via `canCreateExercises`)
+- Itens de admin (`adminItems`) devem aparecer APENAS para `admin` (verificar se `canManageSystem()` está sendo usado corretamente)
+- Verificar se `direcao` e `coordenador` veem menus que não deveriam acessar
+
+**Arquivo:** `src/App.tsx` — verificar se as rotas `/admin/*` usam `AdminRoute` com `requiredRole` adequado; direção/coordenação NÃO devem acessar o painel admin completo
+
+#### 6. Imagem do exercício não aparece
+**Arquivo:** `src/components/exercises/ExerciseRegistrationForm.tsx`
+- O bucket no Supabase se chama `Exercise Images` (com espaço)
+- O código referencia `exercise-images` (com hífen)
+- Trocar todas as referências de `'exercise-images'` para `'Exercise Images'`
+
+#### 7. Exercícios ordenados por dificuldade crescente
+**Arquivo:** `src/hooks/useExercises.ts`
+- A query atual ordena apenas por `ordem`
+- Adicionar ordenação pela `nivel_dificuldade` da subcategoria: `.order('ordem')` não resolve sozinho pois `nivel_dificuldade` está na tabela relacionada
+- Solução: ordenar no frontend após fetch — `sort` por `subcategoria.nivel_dificuldade` ascendente, depois por `ordem`
+
+---
+
+### Arquivos modificados
+
+| Arquivo | Itens |
+|---------|-------|
+| `src/components/Footer.tsx` | #1 |
+| `src/hooks/useEscolaForm.ts` | #2 |
+| `src/components/admin/escola-form/BasicInfoSection.tsx` | #2 |
+| `src/hooks/useUserRegistration.ts` | #3, #4 |
+| `src/components/auth/UserRegistrationForm.tsx` | #4 |
+| `src/components/dashboard/DashboardSidebar.tsx` | #5 |
+| `src/components/exercises/ExerciseRegistrationForm.tsx` | #6 |
+| `src/hooks/useExercises.ts` | #7 |
+| Migration SQL | #4 (adicionar colunas) |
+
+### Migration SQL (item 4)
+```sql
+ALTER TABLE public.usuarios 
+  ADD COLUMN IF NOT EXISTS nome_responsavel2 text,
+  ADD COLUMN IF NOT EXISTS email_responsavel2 text;
 ```
+
+### Critérios de Sucesso
+- Logo no footer com fundo amarelo
+- CEP auto-preenche endereço, estado e cidade no cadastro de escolas
+- Data de nascimento salva corretamente
+- 2º responsável salva e carrega na edição
+- Direção/Coordenação não veem menu admin
+- Imagem do exercício aparece no preview e após salvar
+- Lista de exercícios ordenada por dificuldade crescente
+
