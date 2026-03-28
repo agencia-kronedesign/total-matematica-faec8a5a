@@ -82,7 +82,7 @@ const ExerciseRegistrationForm = ({ exerciseId }: ExerciseRegistrationFormProps)
           const filePath = `${exerciseData.id}/${imageFile.name}`;
           const { error: uploadError } = await supabase
             .storage
-            .from('exercise-images')
+            .from('Exercise Images')
             .upload(filePath, imageFile);
 
           if (uploadError) {
@@ -91,7 +91,7 @@ const ExerciseRegistrationForm = ({ exerciseId }: ExerciseRegistrationFormProps)
 
           const { data: urlData } = supabase
             .storage
-            .from('exercise-images')
+            .from('Exercise Images')
             .getPublicUrl(filePath);
 
           const { error: updateError } = await supabase

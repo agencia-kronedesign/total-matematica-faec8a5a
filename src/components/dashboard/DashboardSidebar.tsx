@@ -223,7 +223,7 @@ const DashboardSidebar = () => {
         )}
         
         {/* Admin Section */}
-        {isAdmin && (
+        {canManageSystem() && (
           <>
             <SidebarSeparator />
             <SidebarGroup>

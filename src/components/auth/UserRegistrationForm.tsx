@@ -282,6 +282,8 @@ const UserRegistrationForm = ({ userId }: UserRegistrationFormProps) => {
         turma: sanitize(data.turma),
         nome_responsavel: sanitize(data.nome_responsavel),
         email_responsavel: sanitize(data.email_responsavel),
+        nome_responsavel2: sanitize(data.nome_responsavel2),
+        email_responsavel2: sanitize(data.email_responsavel2),
         permissao_relatorios: data.permissao_relatorios,
         ativo: data.ativo,
       };

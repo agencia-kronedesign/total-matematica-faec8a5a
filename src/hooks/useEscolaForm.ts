@@ -1,10 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { useEscolas } from '@/hooks/useEscolas';
 import { useCidades } from '@/hooks/useCidades';
+import { useCEP } from '@/hooks/useCEP';
 import { escolaSchema, type EscolaFormData } from '@/schemas/escolaSchema';
 
 interface UseEscolaFormProps {
