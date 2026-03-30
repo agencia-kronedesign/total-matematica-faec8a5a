@@ -1,69 +1,122 @@
 
-Diagnóstico objetivo do que ainda não resolveu (e por quê)
 
-1) Data de nascimento e 2º responsável ainda falhando em alguns cadastros
-- Causa raiz: no `useUserRegistration.ts`, o update completo dos dados só roda dentro de `if (!isAdmin)`.
-- Efeito: quando o cadastro é feito por ADMIN via Edge Function, usuário é criado, mas campos complementares (ex.: `data_nascimento`, `nome_responsavel2`, `email_responsavel2`) podem ficar sem persistência.
+## Plano: Revisão Completa de Níveis de Acesso por Tipo de Usuário
 
-2) Restrição de acesso de Direção/Coordenação ainda inconsistente
-- Causa raiz: `DashboardSidebar` já oculta menu admin para não-admin, mas `AdminPage.tsx` ainda permite `requiredRole={['admin','direcao','coordenador']}`.
-- Efeito: mesmo sem menu, Direção/Coordenação ainda conseguem acessar `/admin/*` por URL direta.
+### Problema
+Todos os perfis estão vendo funcionalidades que não deveriam, porque as permissões no código não seguem a Política de Acessos oficial. O hook `usePermissions` agrupa perfis incorretamente (ex: coordenador pode criar exercícios quando deveria apenas visualizar relatórios).
 
-3) Imagem do exercício continua sem fixar no cadastro
-- Causa raiz: no código está sendo usado `.from('Exercise Images')`, mas o Supabase Storage usa **bucket id** `exercise-images` (nome visual pode ser “Exercise Images”).
-- Evidência: exercícios recentes no banco estão com `imagem_url = null`, e objetos existentes estão no bucket `exercise-images`.
+### Mapeamento da Política Oficial vs. Código Atual
 
-4) Ordenação por dificuldade não está aplicada no fluxo de resolução de atividades
-- Causa raiz: `useExercises.ts` foi ajustado (lista geral), mas `useActivityExercises.ts` ainda ordena apenas por `ordem`.
-- Efeito: em `/atividades/:id` a ordem ainda não respeita dificuldade crescente.
-- Extra: `ExerciseResolver.tsx` mostra texto fixo dizendo que “NÃO estão em ordem crescente”, reforçando percepção de erro.
+```text
+NÍVEL 0 - ADMIN         → Tudo (OK no código)
+NÍVEL 1 - DIREÇÃO       → CRUD usuários, importar, relatórios, gestão local
+                           PROBLEMA: bloqueada de /admin/* mas precisa gerenciar usuários/escolas
+NÍVEL 2 - COORDENADOR   → Apenas visualizar relatórios, monitorar atividades
+                           PROBLEMA: pode criar exercícios, ver menu professor, gerenciar categorias
+NÍVEL 3 - PROFESSOR     → Gerenciar PRÓPRIAS turmas/atividades, relatórios próprios alunos
+                           PROBLEMA: OK em geral, mas sidebar mostra itens demais
+NÍVEL 4 - ALUNO/RESP    → Apenas próprias atividades e relatórios individuais
+                           PROBLEMA: OK
+```
 
-Plano de execução para resolver de vez (em lote)
+### Correções por arquivo
 
-Etapa 1 — Corrigir persistência no cadastro de usuários (admin)
-- Arquivo: `src/hooks/useUserRegistration.ts`
-- Ação:
-  - Remover dependência de `if (!isAdmin)` para o bloco de update completo.
-  - Garantir update dos campos complementares para o usuário recém-criado também no fluxo via Edge Function.
-  - Manter sanitização de vazios para `null` em `data_nascimento`, `nome_responsavel2`, `email_responsavel2`.
+#### 1. `src/hooks/usePermissions.ts` — Reescrever permissões conforme política
 
-Etapa 2 — Fechar acesso de gestão ao painel admin completo
-- Arquivo: `src/pages/admin/AdminPage.tsx`
-- Ação:
-  - Alterar `requiredRole` para `admin` (somente).
-  - Resultado esperado: Direção/Coordenação continuam com área de professor/gestão, mas sem `/admin/*`.
+| Permissão | Antes | Depois (política) |
+|-----------|-------|--------------------|
+| `canCreateExercises` | admin, direcao, professor, coordenador | admin, professor |
+| `canManageCategories` | admin, direcao, professor, coordenador | admin, professor |
+| `canManageUsers` | admin, direcao, coordenador | admin, direcao |
+| `canDeleteStudents` | admin, direcao | admin, direcao |
+| `canViewReports` | admin, direcao, professor, coordenador | admin, direcao, professor, coordenador (OK) |
+| `canManageContent` | admin, direcao, professor, coordenador | admin, professor |
+| Nova: `canAccessProfessorArea` | - | admin, direcao, professor (coordenador só vê relatórios) |
+| Nova: `canManageSchools` | - | admin, direcao |
+| Nova: `canManageEnrollments` | - | admin, direcao, coordenador |
+| Nova: `isDirecao` | - | boolean helper |
+| Nova: `isCoordenador` | - | boolean helper |
 
-Etapa 3 — Corrigir upload/preview/fixação da imagem de exercício
-- Arquivo: `src/components/exercises/ExerciseRegistrationForm.tsx`
-- Ação:
-  - Trocar `.from('Exercise Images')` para `.from('exercise-images')`.
-  - Manter fluxo: upload → getPublicUrl → update `imagem_url`.
-  - Adicionar tratamento de erro mais explícito no toast para facilitar suporte.
+#### 2. `src/components/dashboard/DashboardSidebar.tsx` — Menu por nível
 
-Etapa 4 — Aplicar ordenação por dificuldade também nas atividades
-- Arquivo: `src/hooks/useActivityExercises.ts`
-- Ação:
-  - Incluir `nivel_dificuldade` da subcategoria no select.
-  - Ordenar por `nivel_dificuldade` ASC e, em empate, por `ordem` ASC.
-- Arquivo: `src/components/exercises/ExerciseResolver.tsx`
-- Ação:
-  - Remover/ajustar texto fixo “NÃO estão em ordem crescente” para não gerar falso negativo após correção.
+- **Aluno**: Home, Minhas Atividades, Mais Exercícios (sem alteração)
+- **Professor**: Home, Relatórios, Exercícios (com submenu Novo/Categorias), Atividades em Classe + Seção Professor (Área do Professor, Minhas Atividades, Minhas Turmas)
+- **Coordenador**: Home, Relatórios, Atividades em Classe (visualização). SEM seção Professor, SEM criar exercícios, SEM gerenciar categorias
+- **Direção**: Home, Relatórios, Atividades em Classe + Seção Gestão (Usuários, Escolas, Turmas, Matrículas) + Seção Professor (visualizar atividades/turmas)
+- **Admin**: Tudo acima + Seção Administração completa
 
-Etapa 5 — Documentação dos módulos alterados
-- Atualizar documentação em PT-BR (sem material de demo), cobrindo:
-  - fluxo de cadastro de usuário por admin (Edge Function + update completo),
-  - regra de acesso admin-only em rotas `/admin/*`,
-  - padrão correto de bucket id no storage de exercícios,
-  - regra de ordenação por dificuldade em listas e atividades.
-- Arquivos de documentação a atualizar: `GERENCIAMENTO_USUARIOS.md` e `ATIVIDADES_MODULO.md` (e seção de exercícios relacionada).
+#### 3. `src/pages/admin/AdminPage.tsx` — Permitir direção em rotas de gestão
 
-Validação final (checklist)
-- Admin cria usuário com data de nascimento e 2º responsável → campos persistem no banco.
-- Direção/Coordenação não acessam `/admin/*` por URL.
-- Cadastro de exercício com imagem → preview aparece e `imagem_url` grava.
-- Em atividade do aluno, exercícios aparecem em dificuldade crescente.
-- Sem erros novos no console e comportamento consistente em desktop/mobile.
+- Alterar `requiredRole` de `['admin']` para `['admin', 'direcao']`
+- Direção precisa acessar: Usuários, Escolas, Turmas, Matrículas
+- Direção NÃO acessa: Leads, Contatos, Painel Admin (dashboard admin)
 
-Detalhes técnicos (resumo)
-- Problema principal foi “correção parcial”: alguns pontos foram ajustados na tela/lista, mas não no fluxo real usado (admin-create-user e activity-exercises).
-- Não precisa nova migration para estes ajustes (colunas já existem).
+#### 4. `src/App.tsx` — Separar rotas admin por nível
+
+- Rotas de gestão (usuários, escolas, turmas, matrículas): `requiredRole=['admin', 'direcao']`
+- Rotas exclusivas admin (leads, contatos, dashboard admin): `requiredRole=['admin']`
+- Rotas professor: manter `canCreateExercises` (admin + professor) ou criar nova verificação
+- Coordenador acessa `/professor/*` apenas para visualizar relatórios, não para criar
+
+#### 5. `src/components/TeacherRoute.tsx` — Ajustar verificação
+
+- Usar nova permissão `canAccessProfessorArea` (admin, direcao, professor, coordenador) para visualização
+- Manter `canCreateExercises` (admin, professor) apenas para criação de exercícios
+
+#### 6. `src/pages/professor/ProfessorPage.tsx` — Permitir coordenador e direção verem relatórios
+
+- Trocar `canCreateExercises()` por `canAccessProfessorArea()` para permitir coordenador/direção acessar a área para fins de monitoramento
+
+#### 7. `src/components/Header.tsx` e `src/components/UserMenu.tsx` — Ajustar links por perfil
+
+- Direção: mostrar links de Gestão (Usuários, Escolas) além de Atividades/Turmas
+- Coordenador: mostrar apenas Relatórios e Turmas (monitoramento)
+- Remover links de criação para coordenador
+
+#### 8. `src/components/dashboard/DashboardContent.tsx` — Cards por perfil
+
+- Coordenador: mostrar card "Relatórios" e "Turmas" (monitoramento), sem "Área do Professor"
+- Direção: mostrar card "Gestão" (usuários/escolas) + "Relatórios"
+- Professor: manter "Área do Professor"
+
+### Resumo de impacto por perfil
+
+```text
+COORDENADOR perde:
+  - Criar exercícios
+  - Gerenciar categorias
+  - Menu "Professor" na sidebar
+  - Submenu "Novo Exercício"
+
+DIREÇÃO ganha:
+  - Acesso a /admin/usuarios, /admin/escolas, /admin/turmas, /admin/matriculas
+  - Seção "Gestão" na sidebar
+  - Links de gestão no header
+
+PROFESSOR sem mudanças significativas
+
+ALUNO sem mudanças
+```
+
+### Arquivos modificados
+
+| Arquivo | Mudança |
+|---------|---------|
+| `src/hooks/usePermissions.ts` | Reescrever todas as permissões |
+| `src/components/dashboard/DashboardSidebar.tsx` | Menu por nível hierárquico |
+| `src/pages/admin/AdminPage.tsx` | Aceitar direcao em rotas de gestão |
+| `src/App.tsx` | Separar rotas admin vs gestão |
+| `src/components/TeacherRoute.tsx` | Nova permissão para área professor |
+| `src/pages/professor/ProfessorPage.tsx` | Aceitar coordenador/direcao |
+| `src/components/Header.tsx` | Links por perfil ajustados |
+| `src/components/UserMenu.tsx` | Menu dropdown por perfil |
+| `src/components/dashboard/DashboardContent.tsx` | Cards por perfil |
+
+### Critérios de Sucesso
+- Admin vê tudo
+- Direção vê gestão (usuários, escolas, turmas, matrículas) + relatórios, sem leads/contatos/painel admin
+- Coordenador vê apenas relatórios e monitoramento, sem criar nada
+- Professor vê apenas suas turmas/atividades/exercícios
+- Aluno vê apenas suas atividades e exercícios para praticar
+- Nenhuma rota acessível por URL direta fora do nível permitido
+
