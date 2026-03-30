@@ -38,6 +38,7 @@ export function useActivityExercises(atividadeId?: string) {
             ativo,
             subcategorias!inner(
               nome,
+              nivel_dificuldade,
               categorias!inner(
                 nome
               )

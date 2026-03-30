@@ -10,7 +10,7 @@ interface AdminPageProps {
 const AdminPage: React.FC<AdminPageProps> = ({ children }) => {
   return (
     <ProtectedRoute>
-      <AdminRoute requiredRole={['admin', 'direcao', 'coordenador']}>
+      <AdminRoute requiredRole={['admin']}>
         <AppLayout title="Administração">
           {children}
         </AppLayout>

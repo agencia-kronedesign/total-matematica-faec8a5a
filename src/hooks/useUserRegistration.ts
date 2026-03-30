@@ -224,8 +224,8 @@ export const useUserRegistration = () => {
         tipo_usuario: formData.tipo_usuario 
       });
 
-      // Atualizar dados completos do usuário (se não foi criado via Edge Function)
-      if (!isAdmin) {
+      // Atualizar dados completos do usuário (sempre, inclusive via Edge Function)
+      {
         const { error: updateError, data: updateData } = await supabase
           .from('usuarios')
           .update({
