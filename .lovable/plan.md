@@ -1,95 +1,69 @@
 
+Diagnóstico objetivo do que ainda não resolveu (e por quê)
 
-## Plano: Corrigir os 7 itens da conferência
+1) Data de nascimento e 2º responsável ainda falhando em alguns cadastros
+- Causa raiz: no `useUserRegistration.ts`, o update completo dos dados só roda dentro de `if (!isAdmin)`.
+- Efeito: quando o cadastro é feito por ADMIN via Edge Function, usuário é criado, mas campos complementares (ex.: `data_nascimento`, `nome_responsavel2`, `email_responsavel2`) podem ficar sem persistência.
 
-### Resumo dos 7 itens
+2) Restrição de acesso de Direção/Coordenação ainda inconsistente
+- Causa raiz: `DashboardSidebar` já oculta menu admin para não-admin, mas `AdminPage.tsx` ainda permite `requiredRole={['admin','direcao','coordenador']}`.
+- Efeito: mesmo sem menu, Direção/Coordenação ainda conseguem acessar `/admin/*` por URL direta.
 
-| # | Item | Causa raiz |
-|---|------|-----------|
-| 1 | Logo no footer sem fundo amarelo | `bg-white` no container do logo |
-| 2 | CEP não auto-preenche endereço/estado/cidade no cadastro de escolas | `useCEP` não está integrado no `useEscolaForm` |
-| 3 | Data de nascimento não salva | `data_nascimento` pode ser `""` (string vazia) — precisa sanitizar para `null` no `useUserRegistration` |
-| 4 | 2º responsável não salva | Tabela `usuarios` não tem colunas `nome_responsavel2`/`email_responsavel2`. Precisa adicionar via migration |
-| 5 | Direção/Coordenação sem restrição de acesso | Sidebar mostra itens admin para esses perfis mas as rotas não estão protegidas adequadamente |
-| 6 | Imagem do exercício não aparece | Bucket chama-se `Exercise Images` (com espaço) mas o código usa `exercise-images` (com hífen) |
-| 7 | Exercícios não ordenam por dificuldade crescente | Query ordena por `ordem` mas não por `nivel_dificuldade` da subcategoria |
+3) Imagem do exercício continua sem fixar no cadastro
+- Causa raiz: no código está sendo usado `.from('Exercise Images')`, mas o Supabase Storage usa **bucket id** `exercise-images` (nome visual pode ser “Exercise Images”).
+- Evidência: exercícios recentes no banco estão com `imagem_url = null`, e objetos existentes estão no bucket `exercise-images`.
 
----
+4) Ordenação por dificuldade não está aplicada no fluxo de resolução de atividades
+- Causa raiz: `useExercises.ts` foi ajustado (lista geral), mas `useActivityExercises.ts` ainda ordena apenas por `ordem`.
+- Efeito: em `/atividades/:id` a ordem ainda não respeita dificuldade crescente.
+- Extra: `ExerciseResolver.tsx` mostra texto fixo dizendo que “NÃO estão em ordem crescente”, reforçando percepção de erro.
 
-### Correções detalhadas
+Plano de execução para resolver de vez (em lote)
 
-#### 1. Logo com fundo amarelo no footer
-**Arquivo:** `src/components/Footer.tsx`
-- Trocar `bg-white` por `bg-[#FFD700]` (amarelo) no container do logo
+Etapa 1 — Corrigir persistência no cadastro de usuários (admin)
+- Arquivo: `src/hooks/useUserRegistration.ts`
+- Ação:
+  - Remover dependência de `if (!isAdmin)` para o bloco de update completo.
+  - Garantir update dos campos complementares para o usuário recém-criado também no fluxo via Edge Function.
+  - Manter sanitização de vazios para `null` em `data_nascimento`, `nome_responsavel2`, `email_responsavel2`.
 
-#### 2. Auto-preenchimento por CEP no cadastro de escolas
-**Arquivos:** `src/hooks/useEscolaForm.ts`, `src/components/admin/escola-form/BasicInfoSection.tsx`
-- Integrar `useCEP` no hook `useEscolaForm`
-- Ao digitar CEP completo (8 dígitos), chamar `fetchAddressByCEP`
-- Preencher automaticamente `endereco` (logradouro + bairro), `estado` (uf) e `cidade` (localidade)
-- Retornar a função de busca CEP do hook para o componente BasicInfoSection disparar a busca no `onValueChange` do campo CEP
+Etapa 2 — Fechar acesso de gestão ao painel admin completo
+- Arquivo: `src/pages/admin/AdminPage.tsx`
+- Ação:
+  - Alterar `requiredRole` para `admin` (somente).
+  - Resultado esperado: Direção/Coordenação continuam com área de professor/gestão, mas sem `/admin/*`.
 
-#### 3. Data de nascimento não salva
-**Arquivo:** `src/hooks/useUserRegistration.ts`
-- Sanitizar `data_nascimento`: converter `""` para `null` antes de enviar ao banco
-- Já tem sanitização no `updateUser` do `UserRegistrationForm.tsx`, falta no `registerUser`
-- Linha 243: trocar `data_nascimento: formData.data_nascimento` por `data_nascimento: formData.data_nascimento || null`
+Etapa 3 — Corrigir upload/preview/fixação da imagem de exercício
+- Arquivo: `src/components/exercises/ExerciseRegistrationForm.tsx`
+- Ação:
+  - Trocar `.from('Exercise Images')` para `.from('exercise-images')`.
+  - Manter fluxo: upload → getPublicUrl → update `imagem_url`.
+  - Adicionar tratamento de erro mais explícito no toast para facilitar suporte.
 
-#### 4. Segundo responsável não salva
-**Mudança de banco + código:**
-- **Migration:** Adicionar colunas `nome_responsavel2 text` e `email_responsavel2 text` na tabela `usuarios`
-- **Arquivo:** `src/hooks/useUserRegistration.ts` — incluir `nome_responsavel2` e `email_responsavel2` no update
-- **Arquivo:** `src/components/auth/UserRegistrationForm.tsx` — incluir os campos no `updateUser`
+Etapa 4 — Aplicar ordenação por dificuldade também nas atividades
+- Arquivo: `src/hooks/useActivityExercises.ts`
+- Ação:
+  - Incluir `nivel_dificuldade` da subcategoria no select.
+  - Ordenar por `nivel_dificuldade` ASC e, em empate, por `ordem` ASC.
+- Arquivo: `src/components/exercises/ExerciseResolver.tsx`
+- Ação:
+  - Remover/ajustar texto fixo “NÃO estão em ordem crescente” para não gerar falso negativo após correção.
 
-#### 5. Restrição de acesso para Direção/Coordenação
-**Arquivo:** `src/components/dashboard/DashboardSidebar.tsx`
-- Itens de professor (`professorItems`) devem aparecer para `professor`, `coordenador`, `direcao` (já funciona via `canCreateExercises`)
-- Itens de admin (`adminItems`) devem aparecer APENAS para `admin` (verificar se `canManageSystem()` está sendo usado corretamente)
-- Verificar se `direcao` e `coordenador` veem menus que não deveriam acessar
+Etapa 5 — Documentação dos módulos alterados
+- Atualizar documentação em PT-BR (sem material de demo), cobrindo:
+  - fluxo de cadastro de usuário por admin (Edge Function + update completo),
+  - regra de acesso admin-only em rotas `/admin/*`,
+  - padrão correto de bucket id no storage de exercícios,
+  - regra de ordenação por dificuldade em listas e atividades.
+- Arquivos de documentação a atualizar: `GERENCIAMENTO_USUARIOS.md` e `ATIVIDADES_MODULO.md` (e seção de exercícios relacionada).
 
-**Arquivo:** `src/App.tsx` — verificar se as rotas `/admin/*` usam `AdminRoute` com `requiredRole` adequado; direção/coordenação NÃO devem acessar o painel admin completo
+Validação final (checklist)
+- Admin cria usuário com data de nascimento e 2º responsável → campos persistem no banco.
+- Direção/Coordenação não acessam `/admin/*` por URL.
+- Cadastro de exercício com imagem → preview aparece e `imagem_url` grava.
+- Em atividade do aluno, exercícios aparecem em dificuldade crescente.
+- Sem erros novos no console e comportamento consistente em desktop/mobile.
 
-#### 6. Imagem do exercício não aparece
-**Arquivo:** `src/components/exercises/ExerciseRegistrationForm.tsx`
-- O bucket no Supabase se chama `Exercise Images` (com espaço)
-- O código referencia `exercise-images` (com hífen)
-- Trocar todas as referências de `'exercise-images'` para `'Exercise Images'`
-
-#### 7. Exercícios ordenados por dificuldade crescente
-**Arquivo:** `src/hooks/useExercises.ts`
-- A query atual ordena apenas por `ordem`
-- Adicionar ordenação pela `nivel_dificuldade` da subcategoria: `.order('ordem')` não resolve sozinho pois `nivel_dificuldade` está na tabela relacionada
-- Solução: ordenar no frontend após fetch — `sort` por `subcategoria.nivel_dificuldade` ascendente, depois por `ordem`
-
----
-
-### Arquivos modificados
-
-| Arquivo | Itens |
-|---------|-------|
-| `src/components/Footer.tsx` | #1 |
-| `src/hooks/useEscolaForm.ts` | #2 |
-| `src/components/admin/escola-form/BasicInfoSection.tsx` | #2 |
-| `src/hooks/useUserRegistration.ts` | #3, #4 |
-| `src/components/auth/UserRegistrationForm.tsx` | #4 |
-| `src/components/dashboard/DashboardSidebar.tsx` | #5 |
-| `src/components/exercises/ExerciseRegistrationForm.tsx` | #6 |
-| `src/hooks/useExercises.ts` | #7 |
-| Migration SQL | #4 (adicionar colunas) |
-
-### Migration SQL (item 4)
-```sql
-ALTER TABLE public.usuarios 
-  ADD COLUMN IF NOT EXISTS nome_responsavel2 text,
-  ADD COLUMN IF NOT EXISTS email_responsavel2 text;
-```
-
-### Critérios de Sucesso
-- Logo no footer com fundo amarelo
-- CEP auto-preenche endereço, estado e cidade no cadastro de escolas
-- Data de nascimento salva corretamente
-- 2º responsável salva e carrega na edição
-- Direção/Coordenação não veem menu admin
-- Imagem do exercício aparece no preview e após salvar
-- Lista de exercícios ordenada por dificuldade crescente
-
+Detalhes técnicos (resumo)
+- Problema principal foi “correção parcial”: alguns pontos foram ajustados na tela/lista, mas não no fluxo real usado (admin-create-user e activity-exercises).
+- Não precisa nova migration para estes ajustes (colunas já existem).
