@@ -193,15 +193,7 @@ const App = () => (
                 } 
               />
 
-              {/* Admin Routes */}
-              <Route 
-                path="/admin"
-                element={
-                  <AdminPage>
-                    <AdminDashboard />
-                  </AdminPage>
-                } 
-              />
+              {/* Admin Routes — Gestão (admin + direção) */}
               <Route 
                 path="/admin/usuarios" 
                 element={
@@ -250,10 +242,20 @@ const App = () => (
                   </AdminPage>
                 } 
               />
+
+              {/* Admin Routes — Exclusivo admin */}
+              <Route 
+                path="/admin"
+                element={
+                  <AdminPage adminOnly>
+                    <AdminDashboard />
+                  </AdminPage>
+                } 
+              />
               <Route 
                 path="/admin/atividades" 
                 element={
-                  <AdminPage>
+                  <AdminPage adminOnly>
                     <AtividadesManagement />
                   </AdminPage>
                 } 
@@ -261,7 +263,7 @@ const App = () => (
               <Route 
                 path="/admin/leads" 
                 element={
-                  <AdminPage>
+                  <AdminPage adminOnly>
                     <LeadsManagement />
                   </AdminPage>
                 } 
@@ -269,7 +271,7 @@ const App = () => (
               <Route 
                 path="/admin/contatos" 
                 element={
-                  <AdminPage>
+                  <AdminPage adminOnly>
                     <ContactsManagement />
                   </AdminPage>
                 } 

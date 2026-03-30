@@ -12,7 +12,7 @@ interface ProfessorPageProps {
 
 const ProfessorPage: React.FC<ProfessorPageProps> = ({ children }) => {
   const { user, loading } = useAuth();
-  const { canCreateExercises } = usePermissions();
+  const { canAccessProfessorArea } = usePermissions();
   const location = useLocation();
 
   if (loading) {
@@ -27,7 +27,7 @@ const ProfessorPage: React.FC<ProfessorPageProps> = ({ children }) => {
     return <Navigate to="/entrar" state={{ from: location }} replace />;
   }
 
-  if (!canCreateExercises()) {
+  if (!canAccessProfessorArea()) {
     return <Navigate to="/dashboard" replace />;
   }
 
