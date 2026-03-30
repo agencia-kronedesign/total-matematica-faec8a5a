@@ -13,39 +13,54 @@ export const usePermissions = () => {
     return userProfile.tipo_usuario === requiredRole;
   };
 
-  // Permissões específicas por nível hierárquico
-  const canManageUsers = () => hasPermission(['admin', 'direcao', 'coordenador']);
-  const canDeleteStudents = () => hasPermission(['admin', 'direcao']); // DIREÇÃO pode descadastrar alunos
-  const canImportData = () => hasPermission(['admin', 'direcao']); // DIREÇÃO pode importar dados em massa
-  const canControlSubordinateSecretaries = () => hasPermission(['admin', 'direcao']); // DIREÇÃO controla secretarias
-  const canGenerateInternalReports = () => hasPermission(['admin', 'direcao']); // DIREÇÃO gera relatórios internos
-  
-  const canManageContent = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
-  const canViewReports = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
-  const canManageSystem = () => hasPermission('admin');
-  
-  // Controle específico para criação de exercícios
-  const canCreateExercises = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
-  const canManageCategories = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
-  
-  // Verificar se é aluno
+  // Helpers de tipo
+  const isDirecao = () => hasPermission('direcao');
+  const isCoordenador = () => hasPermission('coordenador');
   const isStudent = () => hasPermission('aluno');
+
+  // NÍVEL 0 - Admin: tudo
+  const canManageSystem = () => hasPermission('admin');
+
+  // NÍVEL 1 - Direção: gestão de usuários, escolas, turmas, matrículas
+  const canManageUsers = () => hasPermission(['admin', 'direcao']);
+  const canDeleteStudents = () => hasPermission(['admin', 'direcao']);
+  const canImportData = () => hasPermission(['admin', 'direcao']);
+  const canControlSubordinateSecretaries = () => hasPermission(['admin', 'direcao']);
+  const canGenerateInternalReports = () => hasPermission(['admin', 'direcao']);
+  const canManageSchools = () => hasPermission(['admin', 'direcao']);
+
+  // NÍVEL 2 - Coordenador: visualizar relatórios, monitorar, matrículas
+  const canManageEnrollments = () => hasPermission(['admin', 'direcao', 'coordenador']);
+  const canViewReports = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
+
+  // NÍVEL 3 - Professor: criar exercícios, gerenciar categorias, suas turmas
+  const canCreateExercises = () => hasPermission(['admin', 'professor']);
+  const canManageCategories = () => hasPermission(['admin', 'professor']);
+  const canManageContent = () => hasPermission(['admin', 'professor']);
+
+  // Acesso à área do professor (visualização): admin, direcao, professor, coordenador
+  const canAccessProfessorArea = () => hasPermission(['admin', 'direcao', 'professor', 'coordenador']);
 
   return {
     isAdmin,
     isProfessor,
     userType,
     hasPermission,
+    isDirecao,
+    isCoordenador,
+    isStudent,
     canManageUsers,
     canDeleteStudents,
     canImportData,
     canControlSubordinateSecretaries,
     canGenerateInternalReports,
-    canManageContent,
+    canManageSchools,
+    canManageEnrollments,
     canViewReports,
+    canManageContent,
     canManageSystem,
     canCreateExercises,
     canManageCategories,
-    isStudent,
+    canAccessProfessorArea,
   };
 };

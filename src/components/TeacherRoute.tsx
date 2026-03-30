@@ -7,9 +7,9 @@ interface TeacherRouteProps {
 }
 
 const TeacherRoute: React.FC<TeacherRouteProps> = ({ children }) => {
-  const { canCreateExercises } = usePermissions();
+  const { canAccessProfessorArea } = usePermissions();
 
-  if (!canCreateExercises()) {
+  if (!canAccessProfessorArea()) {
     return <Navigate to="/dashboard" replace />;
   }
 

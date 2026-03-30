@@ -12,9 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { User, LogOut, BookOpen, LayoutDashboard, Shield, Users } from 'lucide-react';
+import { User, LogOut, BookOpen, LayoutDashboard, Shield, Users, School, FileText } from 'lucide-react';
 
-// Gera as iniciais do nome (ex: "João Silva" → "JS")
 const getInitials = (nome: string | undefined) => {
   if (!nome) return 'U';
   const parts = nome.trim().split(' ').filter(Boolean);
@@ -24,7 +23,7 @@ const getInitials = (nome: string | undefined) => {
 
 const UserMenu = () => {
   const { user, userProfile, signOut } = useAuth();
-  const { isAdmin } = usePermissions();
+  const { isAdmin, isDirecao, isCoordenador } = usePermissions();
   const navigate = useNavigate();
 
   const primeiroNome = userProfile?.nome?.split(' ')[0] || 'Usuário';
@@ -67,7 +66,7 @@ const UserMenu = () => {
         <DropdownMenuLabel>Olá, {primeiroNome}!</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {/* Links dinâmicos por perfil */}
+        {/* ALUNO / RESPONSÁVEL */}
         {(tipoUsuario === 'aluno' || tipoUsuario === 'responsavel') && (
           <>
             <DropdownMenuItem asChild>
@@ -85,6 +84,7 @@ const UserMenu = () => {
           </>
         )}
 
+        {/* PROFESSOR */}
         {tipoUsuario === 'professor' && (
           <>
             <DropdownMenuItem asChild>
@@ -102,12 +102,37 @@ const UserMenu = () => {
           </>
         )}
 
-        {(tipoUsuario === 'coordenador' || tipoUsuario === 'direcao') && (
+        {/* COORDENADOR — apenas monitoramento */}
+        {isCoordenador() && (
           <>
             <DropdownMenuItem asChild>
-              <Link to="/professor/atividades" className="flex items-center gap-2 cursor-pointer">
-                <BookOpen className="h-4 w-4" />
-                <span>Atividades</span>
+              <Link to="/professor/turmas" className="flex items-center gap-2 cursor-pointer">
+                <Users className="h-4 w-4" />
+                <span>Turmas</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/relatorios" className="flex items-center gap-2 cursor-pointer">
+                <FileText className="h-4 w-4" />
+                <span>Relatórios</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
+        {/* DIREÇÃO — gestão + monitoramento */}
+        {isDirecao() && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/usuarios" className="flex items-center gap-2 cursor-pointer">
+                <Users className="h-4 w-4" />
+                <span>Gestão de Usuários</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/escolas" className="flex items-center gap-2 cursor-pointer">
+                <School className="h-4 w-4" />
+                <span>Escolas</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
@@ -116,9 +141,16 @@ const UserMenu = () => {
                 <span>Turmas</span>
               </Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/relatorios" className="flex items-center gap-2 cursor-pointer">
+                <FileText className="h-4 w-4" />
+                <span>Relatórios</span>
+              </Link>
+            </DropdownMenuItem>
           </>
         )}
 
+        {/* ADMIN */}
         {isAdmin && (
           <DropdownMenuItem asChild>
             <Link to="/admin" className="flex items-center gap-2 cursor-pointer">

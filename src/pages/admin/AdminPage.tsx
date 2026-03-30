@@ -5,12 +5,13 @@ import AppLayout from '@/components/layout/AppLayout';
 
 interface AdminPageProps {
   children: React.ReactNode;
+  adminOnly?: boolean;
 }
 
-const AdminPage: React.FC<AdminPageProps> = ({ children }) => {
+const AdminPage: React.FC<AdminPageProps> = ({ children, adminOnly = false }) => {
   return (
     <ProtectedRoute>
-      <AdminRoute requiredRole={['admin']}>
+      <AdminRoute requiredRole={adminOnly ? ['admin'] : ['admin', 'direcao']}>
         <AppLayout title="Administração">
           {children}
         </AppLayout>
