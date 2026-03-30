@@ -10,6 +10,7 @@ interface ActivityExercise {
   imagem_url: string | null;
   categoria: string;
   subcategoria: string;
+  nivel_dificuldade: number | null;
   ativo: boolean;
   formulaValida: boolean;
 }
