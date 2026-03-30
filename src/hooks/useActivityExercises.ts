@@ -97,11 +97,17 @@ export function useActivityExercises(atividadeId?: string) {
             imagem_url: item.exercicios.imagem_url,
             categoria: item.exercicios.subcategorias.categorias.nome,
             subcategoria: item.exercicios.subcategorias.nome,
+            nivel_dificuldade: item.exercicios.subcategorias.nivel_dificuldade,
             ativo: item.exercicios.ativo,
             formulaValida: formulaValida
           };
         })
-        .sort((a, b) => (a.ordem || 0) - (b.ordem || 0)) as ActivityExercise[];
+        .sort((a, b) => {
+          const diffA = a.nivel_dificuldade ?? 999;
+          const diffB = b.nivel_dificuldade ?? 999;
+          if (diffA !== diffB) return diffA - diffB;
+          return (a.ordem || 0) - (b.ordem || 0);
+        }) as ActivityExercise[];
 
       console.log('[useActivityExercises] Exercícios retornados:', result.length);
       
