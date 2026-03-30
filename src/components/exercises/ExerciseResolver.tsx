@@ -182,7 +182,7 @@ export function ExerciseResolver({
             Exercício {order}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            (OBS: Os exercícios NÃO estão em ordem crescente de dificuldade)
+            (Exercícios ordenados por nível de dificuldade)
           </p>
         </div>
 
