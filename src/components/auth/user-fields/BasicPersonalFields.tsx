@@ -147,6 +147,7 @@ const BasicPersonalFields = ({ form }: BasicPersonalFieldsProps) => {
               <FormattedInput 
                 formatter="date" 
                 placeholder="DD/MM/AAAA" 
+                value={field.value || ''}
                 onValueChange={handleDateChange}
               />
             </FormControl>
