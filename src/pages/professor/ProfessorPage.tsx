@@ -11,9 +11,19 @@ interface ProfessorPageProps {
 }
 
 const ProfessorPage: React.FC<ProfessorPageProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, userProfile } = useAuth();
   const { canAccessProfessorArea } = usePermissions();
   const location = useLocation();
+
+  const getAreaTitle = () => {
+    const tipo = userProfile?.tipo_usuario;
+    switch (tipo) {
+      case 'coordenador': return 'Monitoramento';
+      case 'direcao': return 'Gestão Pedagógica';
+      case 'admin': return 'Administração Pedagógica';
+      default: return 'Área do Professor';
+    }
+  };
 
   if (loading) {
     return (
@@ -39,7 +49,7 @@ const ProfessorPage: React.FC<ProfessorPageProps> = ({ children }) => {
           <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background px-4 lg:px-6">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="h-8 w-8" />
-              <h2 className="text-lg font-semibold text-primary">Área do Professor</h2>
+              <h2 className="text-lg font-semibold text-primary">{getAreaTitle()}</h2>
             </div>
             <UserMenu />
           </header>

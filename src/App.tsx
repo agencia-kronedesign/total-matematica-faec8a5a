@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import TeacherRoute from "@/components/TeacherRoute";
+import ExerciseCreatorRoute from "@/components/ExerciseCreatorRoute";
 import SessionManager from "@/components/SessionManager";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -81,16 +82,16 @@ const App = () => (
               } />
               <Route path="/exercicios/cadastrar" element={
                 <ProtectedRoute>
-                  <TeacherRoute>
+                  <ExerciseCreatorRoute>
                     <ExerciseForm />
-                  </TeacherRoute>
+                  </ExerciseCreatorRoute>
                 </ProtectedRoute>
               } />
               <Route path="/exercicios/editar/:id" element={
                 <ProtectedRoute>
-                  <TeacherRoute>
+                  <ExerciseCreatorRoute>
                     <ExerciseForm />
-                  </TeacherRoute>
+                  </ExerciseCreatorRoute>
                 </ProtectedRoute>
               } />
               
