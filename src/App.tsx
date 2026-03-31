@@ -82,16 +82,16 @@ const App = () => (
               } />
               <Route path="/exercicios/cadastrar" element={
                 <ProtectedRoute>
-                  <TeacherRoute>
+                  <ExerciseCreatorRoute>
                     <ExerciseForm />
-                  </TeacherRoute>
+                  </ExerciseCreatorRoute>
                 </ProtectedRoute>
               } />
               <Route path="/exercicios/editar/:id" element={
                 <ProtectedRoute>
-                  <TeacherRoute>
+                  <ExerciseCreatorRoute>
                     <ExerciseForm />
-                  </TeacherRoute>
+                  </ExerciseCreatorRoute>
                 </ProtectedRoute>
               } />
               

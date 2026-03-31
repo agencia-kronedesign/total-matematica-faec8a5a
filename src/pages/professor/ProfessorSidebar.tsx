@@ -68,7 +68,7 @@ const ProfessorSidebar = () => {
           {!isCollapsed && (
             <div className="flex flex-col overflow-hidden">
               <span className="font-medium truncate">{userName}</span>
-              <span className="text-xs text-muted-foreground">Professor</span>
+              <span className="text-xs text-muted-foreground">{roleLabel}</span>
             </div>
           )}
         </div>
