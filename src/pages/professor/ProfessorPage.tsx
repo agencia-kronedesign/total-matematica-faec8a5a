@@ -11,9 +11,19 @@ interface ProfessorPageProps {
 }
 
 const ProfessorPage: React.FC<ProfessorPageProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, userProfile } = useAuth();
   const { canAccessProfessorArea } = usePermissions();
   const location = useLocation();
+
+  const getAreaTitle = () => {
+    const tipo = userProfile?.tipo_usuario;
+    switch (tipo) {
+      case 'coordenador': return 'Monitoramento';
+      case 'direcao': return 'Gestão Pedagógica';
+      case 'admin': return 'Administração Pedagógica';
+      default: return 'Área do Professor';
+    }
+  };
 
   if (loading) {
     return (
