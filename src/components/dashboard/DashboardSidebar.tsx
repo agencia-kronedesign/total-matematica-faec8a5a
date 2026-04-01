@@ -22,15 +22,18 @@ import {
 import {
   Book,
   BookOpen,
+  Bot,
   FileText,
   Home,
   MessageSquare,
   Plus,
   Users,
   Shield,
+  ShieldCheck,
   School,
   Calendar,
-  GraduationCap
+  GraduationCap,
+  Settings
 } from 'lucide-react';
 
 const DashboardSidebar = () => {
@@ -101,6 +104,9 @@ const DashboardSidebar = () => {
     { title: "Atividades", icon: Calendar, path: "/admin/atividades" },
     { title: "Leads", icon: FileText, path: "/admin/leads" },
     { title: "Contatos", icon: MessageSquare, path: "/admin/contatos" },
+    { title: "Playground AI", icon: Bot, path: "/admin/playground" },
+    { title: "Regras de Acesso", icon: ShieldCheck, path: "/admin/regras-acesso" },
+    { title: "Config API", icon: Settings, path: "/admin/configuracoes-api" },
   ];
 
   // Itens professor

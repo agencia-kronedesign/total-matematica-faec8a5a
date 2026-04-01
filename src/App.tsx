@@ -30,6 +30,9 @@ import MatriculasManagement from "./pages/admin/MatriculasManagement";
 import AtividadesManagement from "./pages/admin/AtividadesManagement";
 import LeadsManagement from "./pages/admin/LeadsManagement";
 import ContactsManagement from "./pages/admin/ContactsManagement";
+import AdminPlayground from "./pages/admin/AdminPlayground";
+import AccessRulesManagement from "./pages/admin/AccessRulesManagement";
+import ApiSettings from "./pages/admin/ApiSettings";
 import UserRegistration from "./pages/UserRegistration";
 import StudentActivities from "./pages/StudentActivities";
 import ActivityExercises from "./pages/ActivityExercises";
@@ -274,6 +277,30 @@ const App = () => (
                 element={
                   <AdminPage adminOnly>
                     <ContactsManagement />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/playground" 
+                element={
+                  <AdminPage adminOnly>
+                    <AdminPlayground />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/regras-acesso" 
+                element={
+                  <AdminPage adminOnly>
+                    <AccessRulesManagement />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/configuracoes-api" 
+                element={
+                  <AdminPage adminOnly>
+                    <ApiSettings />
                   </AdminPage>
                 } 
               />
