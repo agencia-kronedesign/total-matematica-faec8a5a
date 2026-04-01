@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_rules: {
+        Row: {
+          action: string
+          conditions: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          resource_id: string | null
+          resource_type: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          action: string
+          conditions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          resource_id?: string | null
+          resource_type: string
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          action?: string
+          conditions?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          resource_id?: string | null
+          resource_type?: string
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ai_conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          model: string | null
+          response: string | null
+          tokens_used: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          model?: string | null
+          response?: string | null
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          model?: string | null
+          response?: string | null
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       aluno_responsavel: {
         Row: {
           aluno_id: string
@@ -977,6 +1049,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      role_hierarchy: {
+        Row: {
+          child_role: string
+          parent_role: string
+        }
+        Insert: {
+          child_role: string
+          parent_role: string
+        }
+        Update: {
+          child_role?: string
+          parent_role?: string
+        }
+        Relationships: []
       }
       subcategorias: {
         Row: {
