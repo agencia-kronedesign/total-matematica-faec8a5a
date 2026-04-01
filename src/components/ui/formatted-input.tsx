@@ -5,9 +5,10 @@ import { formatPhone, formatCPF, formatCEP, formatRG, formatCNPJ, formatDate, da
 
 export type FormatterType = 'phone' | 'cpf' | 'cep' | 'rg' | 'cnpj' | 'date';
 
-interface FormattedInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface FormattedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'defaultValue'> {
   formatter: FormatterType;
   onValueChange?: (unformattedValue: string, formattedValue: string) => void;
+  defaultValue?: string;
 }
 
 const formatters = {
