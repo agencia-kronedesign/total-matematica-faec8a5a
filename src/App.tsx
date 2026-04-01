@@ -280,6 +280,30 @@ const App = () => (
                   </AdminPage>
                 } 
               />
+              <Route 
+                path="/admin/playground" 
+                element={
+                  <AdminPage adminOnly>
+                    <AdminPlayground />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/regras-acesso" 
+                element={
+                  <AdminPage adminOnly>
+                    <AccessRulesManagement />
+                  </AdminPage>
+                } 
+              />
+              <Route 
+                path="/admin/configuracoes-api" 
+                element={
+                  <AdminPage adminOnly>
+                    <ApiSettings />
+                  </AdminPage>
+                } 
+              />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
