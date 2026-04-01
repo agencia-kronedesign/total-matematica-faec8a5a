@@ -51,7 +51,7 @@ export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
       const unformattedValue = rawValue.replace(/\D/g, '');
       
       // Atualizar estado interno se não há controle externo
-      if (value === undefined) {
+      if (!isControlled) {
         setInternalValue(formattedValue);
       }
       
