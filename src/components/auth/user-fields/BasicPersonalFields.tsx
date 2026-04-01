@@ -13,13 +13,11 @@ interface BasicPersonalFieldsProps {
 const BasicPersonalFields = ({ form }: BasicPersonalFieldsProps) => {
   // Callback otimizado para o campo de data
   const handleDateChange = useCallback((unformatted: string, formatted: string) => {
-    // Só converter para ISO se a data estiver completa (8 dígitos)
     if (unformatted.length === 8) {
       const isoDate = dateToISO(formatted);
       form.setValue('data_nascimento', isoDate);
     } else {
-      // Para datas incompletas, limpar o campo
-      form.setValue('data_nascimento', '');
+      form.setValue('data_nascimento', formatted);
     }
   }, [form]);
 
