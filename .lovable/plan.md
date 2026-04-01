@@ -1,52 +1,122 @@
 
 
-## Plano: Corrigir campo de data de nascimento travando ao digitar
+## Plano: Área Administrativa com Playground AI e Sistema de Controle de Acesso Baseado em Regras
 
-### Problema
-Loop destrutivo entre o componente e o formulário:
-1. Usuário digita "3" → `onValueChange("3", "3")` → `handleDateChange` vê que não tem 8 dígitos → `form.setValue('data_nascimento', '')` → value prop vira `''`
-2. `FormattedInput` recebe `value=""` → `displayValue = formatDate('') = ''` → campo volta para vazio
-3. Resultado: impossível digitar qualquer coisa — cada tecla é imediatamente apagada
+### Visão Geral
 
-### Causa raiz
-O `handleDateChange` limpa o valor do formulário (`''`) para datas incompletas, e o `value={field.value || ''}` faz o componente usar esse valor vazio como exibição, criando um ciclo que impede a digitação.
+Criar sistema completo com: (1) tabelas de regras de acesso configuráveis, (2) interface admin para gerenciar regras, (3) Playground AI com OpenRouter, (4) Edge Function para proxy de API. Tudo restrito ao perfil `admin`.
 
-### Correção
+### Fase 1: Banco de Dados (Migration)
 
-**Arquivo: `src/components/auth/user-fields/BasicPersonalFields.tsx`**
+Criar 3 tabelas novas com RLS:
 
-1. Remover `value={field.value || ''}` do `FormattedInput` de data — deixar o componente gerenciar seu estado interno de exibição
-2. Alterar `handleDateChange` para também armazenar o valor formatado parcial no campo (ex: `"31/0"`) enquanto incompleto, e converter para ISO apenas quando completo (8 dígitos)
-3. Passar o valor inicial via `defaultValue` ou inicializar via `useEffect` no FormattedInput (já existe lógica para isso internamente)
+```sql
+-- Regras de acesso configuráveis
+CREATE TABLE access_rules (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  role TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  resource_id TEXT,
+  action TEXT NOT NULL CHECK (action IN ('view','create','update','delete','execute')),
+  conditions JSONB DEFAULT '{}',
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_by UUID,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-**Arquivo: `src/components/ui/formatted-input.tsx`**
+-- Hierarquia de perfis
+CREATE TABLE role_hierarchy (
+  parent_role TEXT NOT NULL,
+  child_role TEXT NOT NULL,
+  PRIMARY KEY (parent_role, child_role)
+);
 
-4. Ajustar a lógica para que quando `value` não é passado mas o componente recebe um valor inicial via outra prop, o estado interno seja usado para exibição sem interferência externa
-
-### Mudança concreta
-
-```tsx
-// BasicPersonalFields.tsx - handleDateChange
-const handleDateChange = useCallback((unformatted: string, formatted: string) => {
-  if (unformatted.length === 8) {
-    const isoDate = dateToISO(formatted);
-    form.setValue('data_nascimento', isoDate);
-  } else {
-    form.setValue('data_nascimento', formatted); // Guardar parcial em vez de ''
-  }
-}, [form]);
-
-// Campo data_nascimento - remover value prop
-<FormattedInput 
-  formatter="date" 
-  placeholder="DD/MM/AAAA" 
-  onValueChange={handleDateChange}
-/>
+-- Conversas AI com auditoria
+CREATE TABLE ai_conversations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID,
+  message TEXT NOT NULL,
+  response TEXT,
+  model TEXT,
+  tokens_used INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 ```
 
-**Arquivo: `src/components/ui/formatted-input.tsx`** — Pequeno ajuste no `useEffect` para também inicializar o valor interno quando o componente monta com dados de edição (usando o form value passado externamente uma única vez).
+RLS: todas as tabelas com acesso apenas para `admin` via `get_current_user_role()`.
 
-### Escopo
-- 2 arquivos modificados
-- Corrige digitação e mantém exibição na edição
+Inserir hierarquia padrão: admin > direcao > coordenador > professor > aluno.
+
+### Fase 2: Edge Function `openrouter-proxy`
+
+- Recebe mensagem + histórico do frontend
+- Valida JWT do usuário (deve ser admin)
+- Busca chave API do Supabase secrets (`OPENROUTER_API_KEY`)
+- Faz chamada para `https://openrouter.ai/api/v1/chat/completions`
+- Suporta modelo free (`google/gemma-3-1b-it:free`) ou pago (configurável)
+- Retorna resposta e salva em `ai_conversations`
+
+### Fase 3: Páginas e Componentes
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/pages/admin/AdminPlayground.tsx` | Chat AI com textarea, histórico, seleção de modelo |
+| `src/pages/admin/AccessRulesManagement.tsx` | CRUD de regras: tabela com filtros, dialog para criar/editar |
+| `src/pages/admin/ApiSettings.tsx` | Config OpenRouter: switch free/pago, campo chave API, teste conexão |
+| `src/components/admin/RuleFormDialog.tsx` | Formulário para criar/editar regra (role, resource, action, conditions JSON) |
+| `src/components/admin/PlaygroundChat.tsx` | Componente de chat com markdown rendering |
+| `src/hooks/useAccessRules.ts` | Hook para CRUD de regras |
+| `src/hooks/useAIChat.ts` | Hook para enviar mensagens ao playground |
+
+### Fase 4: Rotas e Navegação
+
+Adicionar ao `App.tsx` (dentro de `AdminPage adminOnly`):
+- `/admin/playground` → `AdminPlayground`
+- `/admin/regras-acesso` → `AccessRulesManagement`
+- `/admin/configuracoes-api` → `ApiSettings`
+
+Adicionar ao `DashboardSidebar.tsx` nos `adminItems`:
+- "Playground AI" (ícone Bot)
+- "Regras de Acesso" (ícone ShieldCheck)
+- "Config API" (ícone Settings)
+
+### Fase 5: Secret para OpenRouter
+
+Solicitar ao usuário a chave `OPENROUTER_API_KEY` via ferramenta de secrets (ou usar modelo free sem chave inicialmente).
+
+### Arquivos criados/modificados
+
+| Arquivo | Ação |
+|---------|------|
+| Migration SQL | Criar 3 tabelas + RLS + hierarquia |
+| `supabase/functions/openrouter-proxy/index.ts` | Criar Edge Function |
+| `src/pages/admin/AdminPlayground.tsx` | Criar |
+| `src/pages/admin/AccessRulesManagement.tsx` | Criar |
+| `src/pages/admin/ApiSettings.tsx` | Criar |
+| `src/components/admin/RuleFormDialog.tsx` | Criar |
+| `src/components/admin/PlaygroundChat.tsx` | Criar |
+| `src/hooks/useAccessRules.ts` | Criar |
+| `src/hooks/useAIChat.ts` | Criar |
+| `src/App.tsx` | Adicionar 3 rotas |
+| `src/components/dashboard/DashboardSidebar.tsx` | Adicionar 3 itens no menu admin |
+
+### Restrições
+
+- Todas as novas funcionalidades acessíveis **apenas por admin**
+- Chaves API nunca expostas no frontend (sempre via Edge Function)
+- Não modifica nenhum componente existente além de `App.tsx` e `DashboardSidebar.tsx`
+- Usa o sistema de design existente (cores, componentes shadcn/ui)
+- Mobile-first com sidebar colapsível
+
+### Critérios de Sucesso
+
+- Playground AI funciona com modelo free (sem chave) e pago (com chave)
+- Admin pode criar/editar/desativar regras de acesso via interface
+- Hierarquia de perfis visível e editável
+- Histórico de conversas AI salvo no banco
+- Zero erros TypeScript
+- RLS em todas as novas tabelas
+- Responsivo em mobile
 
