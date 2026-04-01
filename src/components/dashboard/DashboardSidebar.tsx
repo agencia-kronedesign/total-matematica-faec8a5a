@@ -22,15 +22,18 @@ import {
 import {
   Book,
   BookOpen,
+  Bot,
   FileText,
   Home,
   MessageSquare,
   Plus,
   Users,
   Shield,
+  ShieldCheck,
   School,
   Calendar,
-  GraduationCap
+  GraduationCap,
+  Settings
 } from 'lucide-react';
 
 const DashboardSidebar = () => {
