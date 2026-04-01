@@ -21,24 +21,29 @@ const formatters = {
 };
 
 export const FormattedInput = forwardRef<HTMLInputElement, FormattedInputProps>(
-  ({ formatter, onValueChange, onChange, value, ...props }, ref) => {
-    // Estado interno para controlar o valor quando não há prop value
-    const [internalValue, setInternalValue] = useState('');
+  ({ formatter, onValueChange, onChange, value, defaultValue, ...props }, ref) => {
+    const [internalValue, setInternalValue] = useState(() => {
+      // Inicializar com defaultValue se fornecido
+      if (defaultValue && formatter === 'date') {
+        const dv = String(defaultValue);
+        return dv.includes('-') ? dateFromISO(dv) : dv;
+      }
+      if (defaultValue) return String(defaultValue);
+      return '';
+    });
     
-    // Usar valor controlado se fornecido, senão usar estado interno
-    const currentValue = value !== undefined ? value : internalValue;
+    const isControlled = value !== undefined;
+    const currentValue = isControlled ? value : internalValue;
     
-    // Inicializar valor interno baseado no prop value inicial (para casos de edição)
     useEffect(() => {
-      if (value !== undefined && formatter === 'date') {
-        // Para datas, converter de ISO se necessário
+      if (isControlled && formatter === 'date') {
         const stringValue = String(value);
         const displayValue = stringValue.includes('-') ? dateFromISO(stringValue) : stringValue;
         setInternalValue(displayValue);
-      } else if (value !== undefined) {
+      } else if (isControlled) {
         setInternalValue(String(value));
       }
-    }, [value, formatter]);
+    }, [value, formatter, isControlled]);
     
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value;
