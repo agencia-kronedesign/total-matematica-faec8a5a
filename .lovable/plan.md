@@ -1,51 +1,31 @@
 
 
-## Plano: Adicionar campo de chave API na página de configurações
+## Plano: Corrigir erro "Não autorizado" no Playground AI
 
 ### Problema
-A página `/admin/configuracoes-api` é apenas informativa, sem campo para inserir ou gerenciar uma chave de API.
+O hook `useAIChat.ts` envia a **anon key** (`VITE_SUPABASE_PUBLISHABLE_KEY`) como Authorization header. A edge function precisa do **token JWT do usuário logado** para identificar quem está fazendo a requisição via `supabase.auth.getUser()`.
 
-### Solução
+### Correção
 
-**1. Criar tabela `configuracoes_sistema` para armazenar a chave de forma segura**
+**Arquivo: `src/hooks/useAIChat.ts`**
 
-```sql
-CREATE TABLE configuracoes_sistema (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  chave TEXT UNIQUE NOT NULL,
-  valor TEXT,
-  updated_by UUID,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
--- RLS: apenas admin
+- Importar `supabase` do client
+- Antes de cada requisição, obter o token da sessão atual com `supabase.auth.getSession()`
+- Enviar `session.access_token` no header Authorization em vez da anon key
+- Manter o `apikey` header com a anon key (necessário para Supabase Edge Functions)
+
+```typescript
+// Antes
+Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+
+// Depois
+const { data: { session } } = await supabase.auth.getSession();
+// ...
+Authorization: `Bearer ${session?.access_token}`,
+apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
 ```
 
-**2. Atualizar `src/pages/admin/ApiSettings.tsx`**
-
-Adicionar:
-- Campo input `type="password"` para inserir chave OpenRouter
-- Botão "Salvar Chave" que grava na tabela `configuracoes_sistema`
-- Botão "Testar Conexão" que chama a edge function com uma mensagem de teste
-- Indicador de status (chave configurada ou não)
-- Switch para escolher entre Lovable AI Gateway (padrão, automático) ou OpenRouter (chave manual)
-
-**3. Atualizar `supabase/functions/ai-chat/index.ts`**
-
-- Buscar configuração de API na tabela `configuracoes_sistema`
-- Se houver chave OpenRouter configurada e modo OpenRouter ativo, usar `https://openrouter.ai/api/v1/chat/completions`
-- Caso contrário, continuar usando Lovable AI Gateway com `LOVABLE_API_KEY`
-
-### Arquivos
-
-| Arquivo | Ação |
-|---------|------|
-| Migration SQL | Criar tabela `configuracoes_sistema` com RLS |
-| `src/pages/admin/ApiSettings.tsx` | Adicionar formulário de chave API, switch de provider, botão testar |
-| `supabase/functions/ai-chat/index.ts` | Suportar OpenRouter como provider alternativo |
-
-### Critérios de Sucesso
-- Admin consegue inserir e salvar chave API pelo painel
-- Botão "Testar Conexão" valida a chave
-- Switch entre Lovable Gateway e OpenRouter funciona
-- Chave nunca aparece no frontend após salvar (mascarada)
+### Escopo
+- 1 arquivo modificado
+- Sem impacto em outros componentes
 
