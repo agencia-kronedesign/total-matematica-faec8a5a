@@ -1,122 +1,51 @@
 
 
-## Plano: Área Administrativa com Playground AI e Sistema de Controle de Acesso Baseado em Regras
+## Plano: Adicionar campo de chave API na página de configurações
 
-### Visão Geral
+### Problema
+A página `/admin/configuracoes-api` é apenas informativa, sem campo para inserir ou gerenciar uma chave de API.
 
-Criar sistema completo com: (1) tabelas de regras de acesso configuráveis, (2) interface admin para gerenciar regras, (3) Playground AI com OpenRouter, (4) Edge Function para proxy de API. Tudo restrito ao perfil `admin`.
+### Solução
 
-### Fase 1: Banco de Dados (Migration)
-
-Criar 3 tabelas novas com RLS:
+**1. Criar tabela `configuracoes_sistema` para armazenar a chave de forma segura**
 
 ```sql
--- Regras de acesso configuráveis
-CREATE TABLE access_rules (
+CREATE TABLE configuracoes_sistema (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  role TEXT NOT NULL,
-  resource_type TEXT NOT NULL,
-  resource_id TEXT,
-  action TEXT NOT NULL CHECK (action IN ('view','create','update','delete','execute')),
-  conditions JSONB DEFAULT '{}',
-  description TEXT,
-  is_active BOOLEAN DEFAULT true,
-  created_by UUID,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  chave TEXT UNIQUE NOT NULL,
+  valor TEXT,
+  updated_by UUID,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
--- Hierarquia de perfis
-CREATE TABLE role_hierarchy (
-  parent_role TEXT NOT NULL,
-  child_role TEXT NOT NULL,
-  PRIMARY KEY (parent_role, child_role)
-);
-
--- Conversas AI com auditoria
-CREATE TABLE ai_conversations (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID,
-  message TEXT NOT NULL,
-  response TEXT,
-  model TEXT,
-  tokens_used INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- RLS: apenas admin
 ```
 
-RLS: todas as tabelas com acesso apenas para `admin` via `get_current_user_role()`.
+**2. Atualizar `src/pages/admin/ApiSettings.tsx`**
 
-Inserir hierarquia padrão: admin > direcao > coordenador > professor > aluno.
+Adicionar:
+- Campo input `type="password"` para inserir chave OpenRouter
+- Botão "Salvar Chave" que grava na tabela `configuracoes_sistema`
+- Botão "Testar Conexão" que chama a edge function com uma mensagem de teste
+- Indicador de status (chave configurada ou não)
+- Switch para escolher entre Lovable AI Gateway (padrão, automático) ou OpenRouter (chave manual)
 
-### Fase 2: Edge Function `openrouter-proxy`
+**3. Atualizar `supabase/functions/ai-chat/index.ts`**
 
-- Recebe mensagem + histórico do frontend
-- Valida JWT do usuário (deve ser admin)
-- Busca chave API do Supabase secrets (`OPENROUTER_API_KEY`)
-- Faz chamada para `https://openrouter.ai/api/v1/chat/completions`
-- Suporta modelo free (`google/gemma-3-1b-it:free`) ou pago (configurável)
-- Retorna resposta e salva em `ai_conversations`
+- Buscar configuração de API na tabela `configuracoes_sistema`
+- Se houver chave OpenRouter configurada e modo OpenRouter ativo, usar `https://openrouter.ai/api/v1/chat/completions`
+- Caso contrário, continuar usando Lovable AI Gateway com `LOVABLE_API_KEY`
 
-### Fase 3: Páginas e Componentes
-
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/pages/admin/AdminPlayground.tsx` | Chat AI com textarea, histórico, seleção de modelo |
-| `src/pages/admin/AccessRulesManagement.tsx` | CRUD de regras: tabela com filtros, dialog para criar/editar |
-| `src/pages/admin/ApiSettings.tsx` | Config OpenRouter: switch free/pago, campo chave API, teste conexão |
-| `src/components/admin/RuleFormDialog.tsx` | Formulário para criar/editar regra (role, resource, action, conditions JSON) |
-| `src/components/admin/PlaygroundChat.tsx` | Componente de chat com markdown rendering |
-| `src/hooks/useAccessRules.ts` | Hook para CRUD de regras |
-| `src/hooks/useAIChat.ts` | Hook para enviar mensagens ao playground |
-
-### Fase 4: Rotas e Navegação
-
-Adicionar ao `App.tsx` (dentro de `AdminPage adminOnly`):
-- `/admin/playground` → `AdminPlayground`
-- `/admin/regras-acesso` → `AccessRulesManagement`
-- `/admin/configuracoes-api` → `ApiSettings`
-
-Adicionar ao `DashboardSidebar.tsx` nos `adminItems`:
-- "Playground AI" (ícone Bot)
-- "Regras de Acesso" (ícone ShieldCheck)
-- "Config API" (ícone Settings)
-
-### Fase 5: Secret para OpenRouter
-
-Solicitar ao usuário a chave `OPENROUTER_API_KEY` via ferramenta de secrets (ou usar modelo free sem chave inicialmente).
-
-### Arquivos criados/modificados
+### Arquivos
 
 | Arquivo | Ação |
 |---------|------|
-| Migration SQL | Criar 3 tabelas + RLS + hierarquia |
-| `supabase/functions/openrouter-proxy/index.ts` | Criar Edge Function |
-| `src/pages/admin/AdminPlayground.tsx` | Criar |
-| `src/pages/admin/AccessRulesManagement.tsx` | Criar |
-| `src/pages/admin/ApiSettings.tsx` | Criar |
-| `src/components/admin/RuleFormDialog.tsx` | Criar |
-| `src/components/admin/PlaygroundChat.tsx` | Criar |
-| `src/hooks/useAccessRules.ts` | Criar |
-| `src/hooks/useAIChat.ts` | Criar |
-| `src/App.tsx` | Adicionar 3 rotas |
-| `src/components/dashboard/DashboardSidebar.tsx` | Adicionar 3 itens no menu admin |
-
-### Restrições
-
-- Todas as novas funcionalidades acessíveis **apenas por admin**
-- Chaves API nunca expostas no frontend (sempre via Edge Function)
-- Não modifica nenhum componente existente além de `App.tsx` e `DashboardSidebar.tsx`
-- Usa o sistema de design existente (cores, componentes shadcn/ui)
-- Mobile-first com sidebar colapsível
+| Migration SQL | Criar tabela `configuracoes_sistema` com RLS |
+| `src/pages/admin/ApiSettings.tsx` | Adicionar formulário de chave API, switch de provider, botão testar |
+| `supabase/functions/ai-chat/index.ts` | Suportar OpenRouter como provider alternativo |
 
 ### Critérios de Sucesso
-
-- Playground AI funciona com modelo free (sem chave) e pago (com chave)
-- Admin pode criar/editar/desativar regras de acesso via interface
-- Hierarquia de perfis visível e editável
-- Histórico de conversas AI salvo no banco
-- Zero erros TypeScript
-- RLS em todas as novas tabelas
-- Responsivo em mobile
+- Admin consegue inserir e salvar chave API pelo painel
+- Botão "Testar Conexão" valida a chave
+- Switch entre Lovable Gateway e OpenRouter funciona
+- Chave nunca aparece no frontend após salvar (mascarada)
 
