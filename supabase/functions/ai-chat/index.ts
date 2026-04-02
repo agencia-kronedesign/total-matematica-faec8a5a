@@ -50,36 +50,61 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Determine provider: check configuracoes_sistema for custom OpenRouter key
+    const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    const { data: configs } = await serviceClient
+      .from("configuracoes_sistema")
+      .select("chave, valor")
+      .in("chave", ["AI_PROVIDER", "OPENROUTER_API_KEY"]);
+
+    const providerConfig = configs?.find((c: any) => c.chave === "AI_PROVIDER");
+    const openrouterKeyConfig = configs?.find((c: any) => c.chave === "OPENROUTER_API_KEY");
+
+    const useOpenRouter = providerConfig?.valor === "openrouter" && !!openrouterKeyConfig?.valor;
 
     const selectedModel = model || "google/gemini-3-flash-preview";
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        messages: [
-          {
-            role: "system",
-            content: `Você é o assistente AI do sistema Total Matemática (totalmatematica.com.br). 
+    const systemMessage = {
+      role: "system",
+      content: `Você é o assistente AI do sistema Total Matemática (totalmatematica.com.br). 
 Você ajuda o administrador a entender o sistema, responder dúvidas sobre funcionalidades, 
 sugerir melhorias e fornecer informações sobre a plataforma educacional de matemática.
 Responda sempre em português do Brasil, de forma clara e objetiva.
 O sistema possui: gestão de escolas, turmas, matrículas, exercícios matemáticos, 
 atividades para alunos, relatórios (REDIN, REDALGRAF), perfis de acesso 
 (admin, direção, coordenação, professor, aluno, responsável).`,
-          },
-          ...messages,
-        ],
+    };
+
+    let apiUrl: string;
+    let apiHeaders: Record<string, string>;
+
+    if (useOpenRouter) {
+      apiUrl = "https://openrouter.ai/api/v1/chat/completions";
+      apiHeaders = {
+        Authorization: `Bearer ${openrouterKeyConfig!.valor}`,
+        "Content-Type": "application/json",
+      };
+    } else {
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) {
+        return new Response(JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      apiUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
+      apiHeaders = {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      };
+    }
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: apiHeaders,
+      body: JSON.stringify({
+        model: selectedModel,
+        messages: [systemMessage, ...messages],
         stream: true,
       }),
     });
@@ -97,13 +122,12 @@ atividades para alunos, relatórios (REDIN, REDALGRAF), perfis de acesso
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Erro no gateway AI" }), {
+      return new Response(JSON.stringify({ error: useOpenRouter ? "Erro no OpenRouter. Verifique sua chave API." : "Erro no gateway AI" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Save conversation (fire and forget)
-    const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const lastUserMessage = messages.filter((m: any) => m.role === "user").pop();
     if (lastUserMessage) {
       serviceClient.from("ai_conversations").insert({
